@@ -1,0 +1,35 @@
+services:
+  showroom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/assoai/showroom:latest
+    container_name: showroom
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=https://yqioyfuxviiximembver.supabase.co
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_KZfNfiGqqAu2sKShjOys9Q_QtJyCKF7
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ADMIN_PIN=${ADMIN_PIN}
+      - NEXT_PUBLIC_FB_PIXEL_ID=${FB_PIXEL_ID}
+      - WHATSAPP_QUEUE_URL=${WHATSAPP_QUEUE_URL}
+    networks:
+      - assoai_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  assoai_network:
+    external: true

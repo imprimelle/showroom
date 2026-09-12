@@ -1,0 +1,9 @@
+.git
+.gitignore
+.github
+node_modules
+.next
+.env.local
+.env
+*.md
+!PRD-Showroom-AssoAI-FINAL.md

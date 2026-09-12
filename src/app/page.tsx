@@ -1,65 +1,218 @@
-import Image from "next/image";
+import Link from "next/link";
+import { getPublishedProducts } from "@/lib/products";
+import { getShowcaseSettings } from "@/lib/settings";
+import { CATEGORIES } from "@/lib/categories";
+import { ProductSlider } from "@/components/product/ProductSlider";
+import { Button } from "@/components/ui/Button";
+import { imgProxyUrl } from "@/lib/images";
+import { getWhatsAppUrl, normalizePhone } from "@/lib/utils";
+import { Truck, ShieldCheck, MapPin, Lock, ArrowRight } from "lucide-react";
+import type { ShowcaseProduct } from "@/lib/products";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+const steps = [
+  { icon: "🔍", title: "Choisissez", desc: "Parcourez le catalogue et sélectionnez votre enseigne" },
+  { icon: "🛒", title: "Commandez", desc: "4 champs suffisent pour passer commande en 2 minutes" },
+  { icon: "📞", title: "Confirmation", desc: "Notre équipe vous appelle sous 24h pour confirmer" },
+  { icon: "🚚", title: "Livraison", desc: "Fabrication 7-10 jours, installation incluse à Abidjan" },
+];
+
+const reassurances = [
+  { icon: Truck, title: "Livraison gratuite", desc: "Sur toute commande" },
+  { icon: ShieldCheck, title: "Garantie 2 ans", desc: "Sur tous nos produits" },
+  { icon: MapPin, title: "Made in CI", desc: "Fabrication locale" },
+  { icon: Lock, title: "Paiement livraison", desc: "Espèces ou mobile money" },
+];
+
+export default async function HomePage() {
+  const [settings, products] = await Promise.all([
+    getShowcaseSettings(),
+    getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
+  ]);
+
+  const whatsapp = normalizePhone(settings.contact?.whatsapp);
+  const heroTitle = settings.hero?.title || "Votre enseigne, livrée\net installée";
+  const heroSubtitle =
+    settings.hero?.subtitle ||
+    "Fabrication 100% ivoirienne. Caissons, lettres 3D, totems, néons. Livraison sous 10 jours.";
+  const heroCta = settings.hero?.cta_text || "Voir le catalogue";
+
+  const bestSellers = [...products]
+    .sort((a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0))
+    .slice(0, 6);
+
+  const heroImage = bestSellers[0]?.main_image_url || products.find((p) => p.main_image_url)?.main_image_url || null;
+
+  const categoryCounts = CATEGORIES.map((cat) => ({
+    ...cat,
+    count: products.filter((p) => p.showcase?.category === cat.id).length,
+  }));
+
+  const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div>
+      {/* ===== 1. Hero ===== */}
+      <section className="relative bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-tertiary)] py-16 md:py-24 px-4 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--color-accent-amber)/8%,transparent_70%)] pointer-events-none" />
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center relative">
+          <div className="text-center md:text-left">
+            <h1 className="font-display text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight whitespace-pre-line">
+              {heroTitle}
+            </h1>
+            <p className="mt-4 md:mt-6 text-base md:text-lg text-[var(--color-text-secondary)] max-w-xl md:mx-0 mx-auto">
+              {heroSubtitle}
+            </p>
+            <div className="mt-8 flex items-center justify-center md:justify-start gap-3">
+              <Link href="/collection">
+                <Button variant="primary" size="lg">{heroCta}</Button>
+              </Link>
+              <a href={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis pour une enseigne")} target="_blank" rel="noopener noreferrer">
+                <Button variant="whatsapp" size="lg">💬 WhatsApp</Button>
+              </a>
+            </div>
+          </div>
+          {heroImage && (
+            <div className="hidden md:block">
+              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src={imgProxyUrl(heroImage, 900)}
+                  alt="Enseigne lumineuse Imprimelle"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ===== 2. Réassurance (remontée) ===== */}
+      <section className="border-b border-[var(--color-border-default)]">
+        <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+          {reassurances.map((item) => (
+            <div key={item.title} className="flex flex-col items-center text-center gap-2">
+              <item.icon className="w-7 h-7 text-[var(--color-accent-amber)]" />
+              <h4 className="font-semibold text-sm text-[var(--color-text-primary)]">{item.title}</h4>
+              <p className="text-xs text-[var(--color-text-secondary)]">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== 3. Catégories (bento) ===== */}
+      <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
+        <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] text-center mb-10">
+          Nos types d&apos;enseignes
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {categoryCounts.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/collection/categorie/${cat.id}`}
+              className="group relative overflow-hidden rounded-2xl min-h-[140px] md:min-h-[180px] bg-[var(--color-bg-tertiary)] hover:scale-[1.02] transition-transform duration-300"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+              <div className={`absolute inset-0 bg-gradient-to-t ${cat.color} to-transparent opacity-60`} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
+                <span className="text-2xl md:text-3xl">{cat.icon}</span>
+                <h3 className="text-white text-base md:text-xl font-bold mt-1">{cat.name}</h3>
+                <span className="text-white/70 text-xs">{cat.count} produit{cat.count > 1 ? "s" : ""}</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== 4. Best Sellers ===== */}
+      {bestSellers.length > 0 && (
+        <section className="bg-[var(--color-bg-secondary)] py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">Nos best-sellers</h2>
+              <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline hidden md:block">
+                Voir tout →
+              </Link>
+            </div>
+            <ProductSlider products={bestSellers} />
+            <div className="mt-6 text-center md:hidden">
+              <Link href="/collection">
+                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 5. Réalisations ===== */}
+      {realisationImages.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
+          <div className="flex items-end justify-between mb-8">
+            <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">Nos dernières réalisations</h2>
+            <Link href="/realisations" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline hidden md:block">
+              Tout voir →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {realisationImages.map((p, i) => (
+              <Link key={p.id} href={`/collection/${p.slug}`} className="relative aspect-square rounded-2xl overflow-hidden group">
+                <img
+                  src={imgProxyUrl(p.main_image_url, 600)}
+                  alt={p.name}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <span className="absolute bottom-3 left-3 right-3 text-white text-sm font-medium truncate">{p.name}</span>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-6 text-center md:hidden">
+            <Link href="/realisations">
+              <Button variant="secondary" size="sm">Voir toutes les réalisations</Button>
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 6. Comment ça marche ===== */}
+      <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
+        <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] text-center mb-10">
+          Comment ça marche
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {steps.map((step) => (
+            <div key={step.title} className="text-center">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-[var(--color-bg-secondary)] flex items-center justify-center text-2xl">
+                {step.icon}
+              </div>
+              <h3 className="font-semibold text-[var(--color-text-primary)] mb-1">{step.title}</h3>
+              <p className="text-sm text-[var(--color-text-secondary)]">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== 7. CTA Devis ===== */}
+      <section className="bg-[var(--color-text-primary)] py-16 md:py-20 px-4">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="font-display text-2xl md:text-4xl font-bold text-[var(--color-bg-primary)]">
+            Un projet spécifique ?
+          </h2>
+          <p className="mt-3 text-[var(--color-bg-secondary)]/80">
+            Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.
           </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <a href={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis gratuit pour un projet d'enseigne")} target="_blank" rel="noopener noreferrer">
+              <Button variant="whatsapp" size="lg">💬 Devis gratuit sur WhatsApp</Button>
+            </a>
+            <Link href="/comment-ca-marche">
+              <Button variant="secondary" size="lg" className="bg-transparent text-[var(--color-bg-primary)] border-[var(--color-bg-primary)]/30 hover:bg-white/10">
+                Comment ça marche <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </section>
     </div>
   );
 }
