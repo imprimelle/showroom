@@ -10,7 +10,7 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCartStore } from "@/stores/cart";
 import { imgProxyUrl } from "@/lib/images";
 import { formatFCFA, cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
-import { getCategoryLabel } from "@/lib/categories";
+import { getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
 interface ProductPageClientProps {
@@ -35,6 +35,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const images: { url: string; alt: string }[] = product.main_image_url
     ? [{ url: product.main_image_url, alt: product.name }, ...(product.gallery_images || [])]
     : [];
+
+  const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
 
   const scrollToImage = (i: number) => {
     const c = carouselRef.current;
@@ -140,14 +142,20 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         <nav className="text-xs text-[var(--color-text-tertiary)] flex items-center gap-1 flex-wrap">
           <Link href="/" className="hover:text-[var(--color-text-primary)]">Accueil</Link>
           <span>/</span>
-          {product.showcase?.category ? (
+          {familyId && (
             <>
-              <Link href={`/collection/categorie/${product.showcase.category}`} className="hover:text-[var(--color-text-primary)]">
-                {getCategoryLabel(product.showcase.category)}
+              <Link href={`/collection/categorie/${familyId}`} className="hover:text-[var(--color-text-primary)]">
+                {getFamilyLabel(familyId)}
               </Link>
               <span>/</span>
             </>
-          ) : null}
+          )}
+          {product.showcase?.category && (
+            <>
+              <span className="text-[var(--color-text-secondary)]">{getCategoryLabel(product.showcase.category)}</span>
+              <span>/</span>
+            </>
+          )}
           <span className="text-[var(--color-text-secondary)] line-clamp-1">{product.name}</span>
         </nav>
 

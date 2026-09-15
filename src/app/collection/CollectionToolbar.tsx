@@ -3,23 +3,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, getCategory, getFamilyOfSubCategory } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { SortSelect } from "./SortSelect";
 
 interface CollectionToolbarProps {
+  currentFamily?: string;
   currentCategory?: string;
   currentQuery?: string;
   currentSort?: string;
 }
 
-export function CollectionToolbar({ currentCategory, currentQuery, currentSort }: CollectionToolbarProps) {
+export function CollectionToolbar({ currentFamily, currentCategory, currentQuery, currentSort }: CollectionToolbarProps) {
   const router = useRouter();
   const [q, setQ] = useState(currentQuery || "");
+
+  const activeFamily = getCategory(currentFamily) || getFamilyOfSubCategory(currentCategory);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
+    if (currentFamily) params.set("family", currentFamily);
     if (currentCategory) params.set("category", currentCategory);
     if (q.trim()) params.set("q", q.trim());
     router.push(`/collection${params.toString() ? `?${params.toString()}` : ""}`);
@@ -35,17 +39,32 @@ export function CollectionToolbar({ currentCategory, currentQuery, currentSort }
 
   return (
     <div className="space-y-3 mb-6">
-      {/* Category chips */}
+      {/* Familles (niveau 1) */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
-        <Link href="/collection" className={chipClass(!currentCategory)}>
+        <Link href="/collection" className={chipClass(!activeFamily)}>
           Toutes
         </Link>
-        {CATEGORIES.map((cat) => (
-          <Link key={cat.id} href={`/collection?category=${cat.id}`} className={chipClass(currentCategory === cat.id)}>
-            {cat.icon} {cat.name}
+        {CATEGORIES.map((fam) => (
+          <Link key={fam.id} href={`/collection?family=${fam.id}`} className={chipClass(activeFamily?.id === fam.id)}>
+            {fam.icon} {fam.name}
           </Link>
         ))}
       </div>
+
+      {/* Sous-catégories (niveau 2) */}
+      {activeFamily && activeFamily.children.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
+          {activeFamily.children.map((sub) => (
+            <Link
+              key={sub.id}
+              href={`/collection?family=${activeFamily.id}&category=${sub.id}`}
+              className={chipClass(currentCategory === sub.id)}
+            >
+              {sub.icon} {sub.name}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Search + sort */}
       <div className="flex gap-2 items-center">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getPublishedProducts } from "@/lib/products";
 import { getShowcaseSettings } from "@/lib/settings";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, resolveFamily } from "@/lib/categories";
 import { ProductSlider } from "@/components/product/ProductSlider";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
@@ -38,15 +38,15 @@ export default async function HomePage() {
     "Fabrication 100% ivoirienne. Caissons, lettres 3D, totems, néons. Livraison sous 10 jours.";
   const heroCta = settings.hero?.cta_text || "Voir le catalogue";
 
-  const bestSellers = [...products]
+  const featured = [...products]
     .sort((a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0))
-    .slice(0, 6);
+    .slice(0, 8);
 
-  const heroImage = bestSellers[0]?.main_image_url || products.find((p) => p.main_image_url)?.main_image_url || null;
+  const heroImage = featured[0]?.main_image_url || products.find((p) => p.main_image_url)?.main_image_url || null;
 
-  const categoryCounts = CATEGORIES.map((cat) => ({
-    ...cat,
-    count: products.filter((p) => p.showcase?.category === cat.id).length,
+  const familyCounts = CATEGORIES.map((fam) => ({
+    ...fam,
+    count: products.filter((p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id).length,
   }));
 
   const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
@@ -87,7 +87,81 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 2. Réassurance (remontée) ===== */}
+      {/* ===== 2. Slider produit (featured) ===== */}
+      {featured.length > 0 && (
+        <section className="py-14 md:py-20">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">Nos produits vedettes</h2>
+              <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline hidden md:block">
+                Voir tout →
+              </Link>
+            </div>
+            <ProductSlider products={featured} />
+            <div className="mt-6 text-center md:hidden">
+              <Link href="/collection">
+                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 3. Catégories (focus 3 familles) ===== */}
+      <section className="bg-[var(--color-bg-secondary)] py-16 md:py-24">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] text-center mb-4">
+            Nos catégories
+          </h2>
+          <p className="text-sm text-[var(--color-text-secondary)] text-center mb-10">
+            Trois univers pour illuminer vos espaces
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            {familyCounts.map((fam) => (
+              <div
+                key={fam.id}
+                className="group relative overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] p-6 flex flex-col hover:shadow-lg transition-shadow"
+              >
+                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${fam.color}`} />
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-4xl">{fam.icon}</span>
+                  <div>
+                    <h3 className="font-display text-xl font-bold text-[var(--color-text-primary)]">{fam.name}</h3>
+                    <span className="text-xs text-[var(--color-text-tertiary)]">
+                      {fam.count} produit{fam.count > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+
+                {fam.children.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {fam.children.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={`/collection?category=${sub.id}`}
+                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg-primary)] transition-colors"
+                      >
+                        {sub.icon} {sub.name}
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Bientôt disponible</p>
+                )}
+
+                <Link
+                  href={`/collection/categorie/${fam.id}`}
+                  className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent-blue)] hover:underline"
+                >
+                  Explorer la catégorie <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== 4. Réassurance ===== */}
       <section className="border-b border-[var(--color-border-default)]">
         <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
           {reassurances.map((item) => (
@@ -100,50 +174,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 3. Catégories (bento) ===== */}
-      <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] text-center mb-10">
-          Nos types d&apos;enseignes
-        </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {categoryCounts.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/collection/categorie/${cat.id}`}
-              className="group relative overflow-hidden rounded-2xl min-h-[140px] md:min-h-[180px] bg-[var(--color-bg-tertiary)] hover:scale-[1.02] transition-transform duration-300"
-            >
-              <div className={`absolute inset-0 bg-gradient-to-t ${cat.color} to-transparent opacity-60`} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 md:p-5">
-                <span className="text-2xl md:text-3xl">{cat.icon}</span>
-                <h3 className="text-white text-base md:text-xl font-bold mt-1">{cat.name}</h3>
-                <span className="text-white/70 text-xs">{cat.count} produit{cat.count > 1 ? "s" : ""}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== 4. Best Sellers ===== */}
-      {bestSellers.length > 0 && (
-        <section className="bg-[var(--color-bg-secondary)] py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex items-end justify-between mb-8">
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">Nos best-sellers</h2>
-              <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline hidden md:block">
-                Voir tout →
-              </Link>
-            </div>
-            <ProductSlider products={bestSellers} />
-            <div className="mt-6 text-center md:hidden">
-              <Link href="/collection">
-                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ===== 5. Réalisations ===== */}
       {realisationImages.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
@@ -154,7 +184,7 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {realisationImages.map((p, i) => (
+            {realisationImages.map((p) => (
               <Link key={p.id} href={`/collection/${p.slug}`} className="relative aspect-square rounded-2xl overflow-hidden group">
                 <img
                   src={imgProxyUrl(p.main_image_url, 600)}

@@ -6,7 +6,7 @@ import { ArrowLeft, Save, Plus, X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { formatFCFA } from "@/lib/utils";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, getCategory } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
 const deliveries = ["3-5 jours", "5-7 jours", "7-10 jours", "10-14 jours", "14-21 jours"];
@@ -20,6 +20,7 @@ export function ProductEditClient({ product }: { product: ShowcaseProduct }) {
   const [highlights, setHighlights] = useState<string[]>(product.showcase?.highlights || []);
   const [newHighlight, setNewHighlight] = useState("");
   const [category, setCategory] = useState(product.showcase?.category || "");
+  const [family, setFamily] = useState(product.showcase?.family || "");
   const [delivery, setDelivery] = useState(product.showcase?.delivery_time || "");
   const [usage, setUsage] = useState(product.showcase?.usage || "");
   const [seoTitle, setSeoTitle] = useState(product.showcase?.seo?.title || "");
@@ -51,6 +52,7 @@ export function ProductEditClient({ product }: { product: ShowcaseProduct }) {
           showcase: {
             short_description: shortDescription,
             highlights,
+            family,
             category,
             delivery_time: delivery,
             usage,
@@ -105,11 +107,21 @@ export function ProductEditClient({ product }: { product: ShowcaseProduct }) {
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Catégorie</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm">
+            <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Famille</label>
+            <select value={family} onChange={(e) => { setFamily(e.target.value); setCategory(""); }} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm">
               <option value="">Sélectionner...</option>
               {CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-[var(--color-text-secondary)] mb-1">Sous-catégorie</label>
+            <select value={category} onChange={(e) => setCategory(e.target.value)} disabled={!family} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm disabled:opacity-50">
+              <option value="">{family ? "Sélectionner..." : "Choisissez d'abord une famille"}</option>
+              {(getCategory(family)?.children || []).map((s) => (
+                <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
               ))}
             </select>
           </div>

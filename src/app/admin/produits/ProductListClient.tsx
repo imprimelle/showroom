@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { formatFCFA, cn } from "@/lib/utils";
-import { CATEGORIES, getCategoryLabel } from "@/lib/categories";
+import { CATEGORIES, getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
 interface ProductListClientProps {
@@ -18,7 +18,7 @@ export function ProductListClient({ products }: ProductListClientProps) {
   let filtered = products;
   if (filter === "published") filtered = filtered.filter((p) => p.is_published);
   if (filter === "hidden") filtered = filtered.filter((p) => !p.is_published);
-  if (categoryFilter !== "all") filtered = filtered.filter((p) => p.showcase?.category === categoryFilter);
+  if (categoryFilter !== "all") filtered = filtered.filter((p) => resolveFamily(p.showcase?.family, p.showcase?.category) === categoryFilter);
   if (search) {
     const q = search.toLowerCase();
     filtered = filtered.filter((p) => p.name.toLowerCase().includes(q));
@@ -56,7 +56,7 @@ export function ProductListClient({ products }: ProductListClientProps) {
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="h-9 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-secondary)]"
           >
-            <option value="all">Toutes catégories</option>
+            <option value="all">Toutes familles</option>
             {CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -76,6 +76,7 @@ export function ProductListClient({ products }: ProductListClientProps) {
       <div className="space-y-1">
         {filtered.map((product) => {
           const lowestPrice = product.variants?.length ? Math.min(...product.variants.map((v) => v.price)) : null;
+          const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
           return (
             <div key={product.id} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
               <div className={cn("w-3 h-3 rounded-full shrink-0", product.is_published ? "bg-[var(--color-success)]" : "bg-[var(--color-text-tertiary)]")} />
@@ -84,7 +85,7 @@ export function ProductListClient({ products }: ProductListClientProps) {
                   {product.name}
                 </Link>
                 <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
-                  <span>{product.showcase?.category ? getCategoryLabel(product.showcase.category) : "Sans catégorie"}</span>
+                  <span>{familyId ? getFamilyLabel(familyId) : "Sans famille"}{product.showcase?.category ? ` · ${getCategoryLabel(product.showcase.category)}` : ""}</span>
                   {product.variants?.length ? <span>· {product.variants.length} variante{product.variants.length > 1 ? "s" : ""}</span> : null}
                   {lowestPrice ? <span>· dès {formatFCFA(lowestPrice)}</span> : null}
                   {product.showcase?.popularity ? <span>· {product.showcase.popularity}</span> : null}

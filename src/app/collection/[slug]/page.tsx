@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProductBySlug, getPublishedProducts } from "@/lib/products";
+import { resolveFamily } from "@/lib/categories";
 import { getShowcaseSettings } from "@/lib/settings";
 import { normalizePhone } from "@/lib/utils";
 import { ProductPageClient } from "./ProductPageClient";
@@ -34,17 +35,20 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
 
-  // Related products: same category first, then fallback to any published
+  // Related products: same family first, then fallback to any published
   const [all, settings] = await Promise.all([
     getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
     getShowcaseSettings(),
   ]);
 
-  const sameCategory = all.filter(
-    (p) => p.id !== product.id && p.showcase?.category === product.showcase?.category
+  const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
+  const sameFamily = all.filter(
+    (p) => p.id !== product.id && resolveFamily(p.showcase?.family, p.showcase?.category) === familyId
   );
-  const fallback = all.filter((p) => p.id !== product.id && p.showcase?.category !== product.showcase?.category);
-  const relatedProducts = [...sameCategory, ...fallback].slice(0, 4);
+  const fallback = all.filter(
+    (p) => p.id !== product.id && resolveFamily(p.showcase?.family, p.showcase?.category) !== familyId
+  );
+  const relatedProducts = [...sameFamily, ...fallback].slice(0, 4);
 
   const whatsapp = normalizePhone(settings.contact?.whatsapp);
 

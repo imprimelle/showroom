@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { getPublishedProducts } from "@/lib/products";
+import { resolveFamily } from "@/lib/categories";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import { CollectionToolbar } from "./CollectionToolbar";
@@ -8,7 +9,7 @@ import type { ShowcaseProduct } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ category?: string; sort?: string; q?: string }>;
+  searchParams: Promise<{ family?: string; category?: string; sort?: string; q?: string }>;
 }
 
 function CatalogueGrid({ products }: { products: ShowcaseProduct[] }) {
@@ -39,7 +40,14 @@ export default async function CollectionPage({ searchParams }: Props) {
   const params = await searchParams;
   let products = await getPublishedProducts().catch(() => [] as ShowcaseProduct[]);
 
-  // Filter by category
+  // Filter by family (niveau 1)
+  if (params.family) {
+    products = products.filter(
+      (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === params.family
+    );
+  }
+
+  // Filter by sub-category (niveau 2)
   if (params.category) {
     products = products.filter((p) => p.showcase?.category === params.category);
   }
@@ -83,6 +91,7 @@ export default async function CollectionPage({ searchParams }: Props) {
 
       {/* Filters toolbar */}
       <CollectionToolbar
+        currentFamily={params.family}
         currentCategory={params.category}
         currentQuery={params.q}
         currentSort={params.sort}

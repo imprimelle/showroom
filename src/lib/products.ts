@@ -11,6 +11,7 @@ export interface ShowcaseProduct {
   showcase: {
     short_description?: string;
     highlights?: string[];
+    family?: string;
     category?: string;
     delivery_time?: string;
     usage?: string;
