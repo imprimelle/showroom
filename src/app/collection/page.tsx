@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getPublishedProducts } from "@/lib/products";
 import { resolveFamily } from "@/lib/categories";
+import { getMinPrice } from "@/lib/utils";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import { CollectionToolbar } from "./CollectionToolbar";
@@ -64,17 +65,9 @@ export default async function CollectionPage({ searchParams }: Props) {
 
   // Sort
   if (params.sort === "price-asc") {
-    products.sort((a, b) => {
-      const minA = Math.min(...(a.variants?.map((v) => v.price) || [Infinity]));
-      const minB = Math.min(...(b.variants?.map((v) => v.price) || [Infinity]));
-      return minA - minB;
-    });
+    products.sort((a, b) => (getMinPrice(a.variants) ?? Infinity) - (getMinPrice(b.variants) ?? Infinity));
   } else if (params.sort === "price-desc") {
-    products.sort((a, b) => {
-      const minA = Math.min(...(a.variants?.map((v) => v.price) || [0]));
-      const minB = Math.min(...(b.variants?.map((v) => v.price) || [0]));
-      return minB - minA;
-    });
+    products.sort((a, b) => (getMinPrice(b.variants) ?? -Infinity) - (getMinPrice(a.variants) ?? -Infinity));
   }
 
   return (

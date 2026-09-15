@@ -49,7 +49,9 @@ export const CATEGORIES: Category[] = [
     icon: "🛋️",
     color: "from-emerald-500/80",
     image: "/images/categories/table-mobilier-lumineux.svg",
-    children: [],
+    children: [
+      { id: "table-lumineuse", name: "Table lumineuse", icon: "🪑" },
+    ],
   },
 ];
 

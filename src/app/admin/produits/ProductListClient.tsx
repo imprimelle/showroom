@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Search, Eye, EyeOff, ExternalLink } from "lucide-react";
-import { formatFCFA, cn } from "@/lib/utils";
+import { formatFCFA, cn, getMinPrice } from "@/lib/utils";
 import { CATEGORIES, getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
@@ -75,7 +75,7 @@ export function ProductListClient({ products }: ProductListClientProps) {
 
       <div className="space-y-1">
         {filtered.map((product) => {
-          const lowestPrice = product.variants?.length ? Math.min(...product.variants.map((v) => v.price)) : null;
+          const lowestPrice = getMinPrice(product.variants);
           const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
           return (
             <div key={product.id} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">

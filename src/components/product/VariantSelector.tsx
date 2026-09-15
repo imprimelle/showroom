@@ -6,7 +6,7 @@ interface Variant {
   id: string;
   sku: string;
   name: string;
-  price: number;
+  price: number | null;
 }
 
 interface VariantSelectorProps {
@@ -40,7 +40,7 @@ export function VariantSelector({ variants, selectedSku, onSelect }: VariantSele
             >
               <span>{variant.name}</span>
               <span className={cn("ml-1.5 font-mono text-xs opacity-70", isSelected && "opacity-100")}>
-                {formatFCFA(variant.price)}
+                {variant.price != null ? formatFCFA(variant.price) : "Sur devis"}
               </span>
             </button>
           );

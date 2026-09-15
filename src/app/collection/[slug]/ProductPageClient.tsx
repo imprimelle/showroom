@@ -27,9 +27,11 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const addItem = useCartStore((s) => s.addItem);
 
   const selectedVariant = product.variants?.find((v) => v.sku === selectedSku) || null;
-  const currentPrice = selectedVariant?.price;
+  const currentPrice = selectedVariant?.price ?? null;
   const showWhatsAppMsg = selectedVariant
-    ? `Bonjour, je suis intéressé par le ${product.name} - ${selectedVariant.name} (${formatFCFA(selectedVariant.price)})`
+    ? selectedVariant.price != null
+      ? `Bonjour, je suis intéressé par le ${product.name} - ${selectedVariant.name} (${formatFCFA(selectedVariant.price)})`
+      : `Bonjour, je suis intéressé par le ${product.name} - ${selectedVariant.name} (merci de m'envoyer un devis)`
     : `Bonjour, je suis intéressé par le ${product.name}`;
 
   const images: { url: string; alt: string }[] = product.main_image_url
@@ -52,7 +54,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   };
 
   const handleAddToCart = () => {
-    if (!selectedVariant) return;
+    if (!selectedVariant || selectedVariant.price == null) return;
     addItem({
       product_id: product.id,
       product_name: product.name,
@@ -207,9 +209,17 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         {/* CTA */}
         <div className="flex flex-col gap-3 pt-4">
           {product.variants?.length > 0 ? (
-            <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
-              {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice!)}` : "Sélectionnez une taille"}
-            </Button>
+            currentPrice != null ? (
+              <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
+                {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice)}` : "Sélectionnez une taille"}
+              </Button>
+            ) : (
+              <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
+                <Button variant="whatsapp" size="lg" className="w-full">
+                  {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
+                </Button>
+              </a>
+            )
           ) : (
             <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
               <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>

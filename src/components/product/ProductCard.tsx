@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ShoppingCart, Eye } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { imgProxyUrl } from "@/lib/images";
-import { formatFCFA } from "@/lib/utils";
+import { formatFCFA, getMinPrice } from "@/lib/utils";
 import type { ShowcaseProduct } from "@/lib/products";
 
 interface ProductCardProps {
@@ -16,9 +16,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
 
-  const lowestPrice = product.variants?.length
-    ? Math.min(...product.variants.map((v) => v.price))
-    : null;
+  const lowestPrice = getMinPrice(product.variants);
 
   const firstVariant = product.variants?.[0];
   const popularity = product.showcase?.popularity || 0;
@@ -26,7 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!firstVariant) return;
+    if (!firstVariant || firstVariant.price == null) return;
     addItem({
       product_id: product.id,
       product_name: product.name,
@@ -101,7 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <Eye className="w-3.5 h-3.5" />
               Voir
             </Link>
-            {firstVariant && (
+            {firstVariant && firstVariant.price != null && (
               <button
                 onClick={handleQuickAdd}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] text-xs font-medium shadow-lg hover:bg-[#2A2A2A] transition-colors"

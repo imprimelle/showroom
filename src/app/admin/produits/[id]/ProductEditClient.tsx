@@ -184,7 +184,7 @@ export function ProductEditClient({ product }: { product: ShowcaseProduct }) {
         {product.variants?.map((v) => (
           <div key={v.id} className="flex justify-between text-sm py-1 border-b border-[var(--color-border-default)] last:border-0">
             <span className="text-[var(--color-text-secondary)]">{v.name}</span>
-            <span className="font-mono text-[var(--color-text-primary)]">{formatFCFA(v.price)}</span>
+            <span className="font-mono text-[var(--color-text-primary)]">{v.price != null ? formatFCFA(v.price) : "Sur devis"}</span>
           </div>
         ))}
         {(!product.variants || product.variants.length === 0) && <p className="text-sm text-[var(--color-text-tertiary)]">Aucune variante</p>}

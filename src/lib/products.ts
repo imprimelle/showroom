@@ -6,7 +6,7 @@ export interface ShowcaseProduct {
   slug: string;
   main_image_url: string | null;
   gallery_images: { url: string; alt: string }[];
-  variants: { id: string; sku: string; name: string; price: number; attributes?: Record<string, string> }[];
+  variants: { id: string; sku: string; name: string; price: number | null; attributes?: Record<string, string> }[];
   is_published: boolean;
   showcase: {
     short_description?: string;
