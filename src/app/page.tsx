@@ -44,10 +44,16 @@ export default async function HomePage() {
 
   const heroImage = featured[0]?.main_image_url || products.find((p) => p.main_image_url)?.main_image_url || null;
 
-  const familyCounts = CATEGORIES.map((fam) => ({
-    ...fam,
-    count: products.filter((p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id).length,
-  }));
+  const familyCounts = CATEGORIES.map((fam) => {
+    const prod = products.find(
+      (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id && p.main_image_url
+    );
+    return {
+      ...fam,
+      count: products.filter((p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id).length,
+      image: prod?.main_image_url ? imgProxyUrl(prod.main_image_url, 800) : fam.image,
+    };
+  });
 
   const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
 
@@ -120,41 +126,56 @@ export default async function HomePage() {
             {familyCounts.map((fam) => (
               <div
                 key={fam.id}
-                className="group relative overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] p-6 flex flex-col hover:shadow-lg transition-shadow"
+                className="group overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] flex flex-col hover:shadow-lg transition-shadow"
               >
-                <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${fam.color}`} />
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-4xl">{fam.icon}</span>
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-[var(--color-text-primary)]">{fam.name}</h3>
-                    <span className="text-xs text-[var(--color-text-tertiary)]">
-                      {fam.count} produit{fam.count > 1 ? "s" : ""}
-                    </span>
+                {/* Image bannière */}
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  {fam.image ? (
+                    <img
+                      src={fam.image}
+                      alt={fam.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${fam.color}`} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4 flex items-center gap-2.5">
+                    <span className="text-3xl">{fam.icon}</span>
+                    <div>
+                      <h3 className="text-white text-lg font-bold leading-tight">{fam.name}</h3>
+                      <span className="text-white/70 text-xs">
+                        {fam.count} produit{fam.count > 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {fam.children.length > 0 ? (
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {fam.children.map((sub) => (
-                      <Link
-                        key={sub.id}
-                        href={`/collection?category=${sub.id}`}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg-primary)] transition-colors"
-                      >
-                        {sub.icon} {sub.name}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Bientôt disponible</p>
-                )}
+                {/* Contenu */}
+                <div className="p-5 flex flex-col flex-1">
+                  {fam.children.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {fam.children.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={`/collection?category=${sub.id}`}
+                          className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg-primary)] transition-colors"
+                        >
+                          {sub.icon} {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--color-text-tertiary)]">Bientôt disponible</p>
+                  )}
 
-                <Link
-                  href={`/collection/categorie/${fam.id}`}
-                  className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent-blue)] hover:underline"
-                >
-                  Explorer la catégorie <ArrowRight className="w-4 h-4" />
-                </Link>
+                  <Link
+                    href={`/collection/categorie/${fam.id}`}
+                    className="mt-auto pt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--color-accent-blue)] hover:underline"
+                  >
+                    Explorer la catégorie <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>

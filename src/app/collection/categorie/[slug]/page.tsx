@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPublishedProducts } from "@/lib/products";
 import { getCategory, resolveFamily } from "@/lib/categories";
 import { ProductCard } from "@/components/product/ProductCard";
+import { imgProxyUrl } from "@/lib/images";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 
@@ -30,10 +31,15 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   if (!cat) notFound();
 
   const all = await getPublishedProducts().catch(() => []);
-  let products = all.filter(
+  const familyProducts = all.filter(
     (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === cat.id
   );
-  if (sub) products = products.filter((p) => p.showcase?.category === sub);
+  const products = sub
+    ? familyProducts.filter((p) => p.showcase?.category === sub)
+    : familyProducts;
+
+  const firstImage = familyProducts.find((p) => p.main_image_url)?.main_image_url;
+  const bannerImage = firstImage ? imgProxyUrl(firstImage, 1200) : cat.image;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
@@ -46,14 +52,22 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <span className="text-[var(--color-text-primary)]">{cat.name}</span>
       </nav>
 
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-          <span>{cat.icon}</span> {cat.name}
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          {products.length} produit{products.length > 1 ? "s" : ""}
-        </p>
+      {/* Bannière */}
+      <div className="relative aspect-[21/8] md:aspect-[21/6] rounded-2xl overflow-hidden mb-6">
+        {bannerImage ? (
+          <img src={bannerImage} alt={cat.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-br ${cat.color}`} />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute bottom-4 left-5 right-5">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+            <span>{cat.icon}</span> {cat.name}
+          </h1>
+          <p className="text-white/80 text-sm mt-1">
+            {products.length} produit{products.length > 1 ? "s" : ""}
+          </p>
+        </div>
       </div>
 
       {/* Sous-catégories chips */}

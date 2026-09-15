@@ -9,6 +9,7 @@ export interface Category {
   name: string;
   icon: string;
   color: string; // Tailwind gradient "from-..." class for the bento tiles
+  image?: string; // Image de la famille (SVG local ou URL storage)
   children: SubCategory[];
 }
 
@@ -24,6 +25,7 @@ export const CATEGORIES: Category[] = [
     name: "Enseignes lumineuses",
     icon: "💡",
     color: "from-amber-500/80",
+    image: "/images/categories/enseignes-lumineuses.svg",
     children: [
       { id: "caisson-lumineux", name: "Caisson lumineux", icon: "💡" },
       { id: "enseigne-dibond", name: "Enseigne dibond", icon: "🏢" },
@@ -38,6 +40,7 @@ export const CATEGORIES: Category[] = [
     name: "Tableau décoratif",
     icon: "🖼️",
     color: "from-purple-500/80",
+    image: "/images/categories/tableau-decoratif.svg",
     children: [],
   },
   {
@@ -45,6 +48,7 @@ export const CATEGORIES: Category[] = [
     name: "Table & mobilier lumineux",
     icon: "🛋️",
     color: "from-emerald-500/80",
+    image: "/images/categories/table-mobilier-lumineux.svg",
     children: [],
   },
 ];
