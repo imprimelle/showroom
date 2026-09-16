@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Menu,
   X,
   ShoppingCart,
   House,
@@ -33,6 +32,29 @@ const legalLinks = [
   { href: "/legal/confidentialite", label: "Confidentialité" },
 ];
 
+function BurgerSearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {/* Trois traits du burger */}
+      <line x1="4" y1="5" x2="20" y2="5" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="19" x2="13.5" y2="19" />
+      {/* Loupe incrustée (recherche) */}
+      <circle cx="16.5" cy="16.5" r="3.3" />
+      <line x1="18.9" y1="18.9" x2="22" y2="22" />
+    </svg>
+  );
+}
+
 export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -40,17 +62,17 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
 
-  const isHome = pathname === "/";
+  const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
   const [scrolled, setScrolled] = useState(false);
 
-  // Sur la home, la barre devient solide après un léger scroll
+  // Sur les pages avec bannière (home + univers), la barre devient solide après un léger scroll
   useEffect(() => {
-    if (!isHome) return;
+    if (!isHero) return;
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isHome]);
+  }, [isHero]);
 
   // Verrouille le scroll quand le menu plein écran est ouvert
   useEffect(() => {
@@ -68,7 +90,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
 
   if (pathname.startsWith("/admin")) return null;
 
-  const transparent = isHome && !scrolled;
+  const transparent = isHero && !scrolled;
   const fg = transparent ? "text-white" : "text-[var(--color-text-primary)]";
 
   return (
@@ -77,7 +99,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
       <header
         className={cn(
           "inset-x-0 top-0 z-40 transition-colors duration-300",
-          isHome ? "fixed" : "sticky",
+          isHero ? "fixed" : "sticky",
           transparent
             ? "bg-gradient-to-b from-black/50 to-transparent"
             : "bg-[var(--color-bg-primary)] border-b border-[var(--color-border-default)]"
@@ -118,7 +140,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
               aria-label="Menu"
               className={cn("p-2", fg)}
             >
-              <Menu className="w-6 h-6" />
+              <BurgerSearchIcon className="w-6 h-6" />
             </button>
           </div>
         </div>

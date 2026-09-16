@@ -44,33 +44,37 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const bannerImage = firstImage ? imgProxyUrl(firstImage, 1200) : cat.image;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
-      {/* Breadcrumb */}
-      <nav className="text-sm text-[var(--color-text-tertiary)] mb-4">
-        <Link href="/" className="hover:text-[var(--color-text-primary)]">Accueil</Link>
-        <span className="mx-2">/</span>
-        <Link href="/collection" className="hover:text-[var(--color-text-primary)]">Catalogue</Link>
-        <span className="mx-2">/</span>
-        <span className="text-[var(--color-text-primary)]">{cat.name}</span>
-      </nav>
-
-      {/* Bannière */}
-      <div className="relative aspect-[21/8] md:aspect-[21/6] rounded-2xl overflow-hidden mb-6">
+    <div>
+      {/* Bannière plein écran (sous la navbar transparente) */}
+      <div className="relative w-full h-[40vh] min-h-[260px] md:h-[46vh] md:min-h-[320px]">
         {bannerImage ? (
           <img src={bannerImage} alt={cat.name} className="w-full h-full object-cover" />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br ${cat.color}`} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute bottom-4 left-5 right-5">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
-            <span>{cat.icon}</span> {cat.name}
-          </h1>
-          <p className="text-white/80 text-sm mt-1">
-            {products.length} produit{products.length > 1 ? "s" : ""}
-          </p>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/20" />
+        <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 md:px-12 md:pb-10">
+          <div className="max-w-7xl mx-auto">
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
+              <span>{cat.icon}</span> {cat.name}
+            </h1>
+            <p className="text-white/80 text-sm mt-1">
+              {products.length} produit{products.length > 1 ? "s" : ""}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Contenu */}
+      <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+        {/* Breadcrumb */}
+        <nav className="text-sm text-[var(--color-text-tertiary)] mb-4">
+          <Link href="/" className="hover:text-[var(--color-text-primary)]">Accueil</Link>
+          <span className="mx-2">/</span>
+          <Link href="/collection" className="hover:text-[var(--color-text-primary)]">Catalogue</Link>
+          <span className="mx-2">/</span>
+          <span className="text-[var(--color-text-primary)]">{cat.name}</span>
+        </nav>
 
       {/* Sous-catégories chips */}
       {cat.children.length > 0 && (
@@ -146,6 +150,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <Button variant="whatsapp" size="lg">💬 Demander un devis WhatsApp</Button>
           </a>
         </div>
+      </div>
       </div>
     </div>
   );
