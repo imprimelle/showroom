@@ -51,7 +51,7 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
       {/* Contenu bas-gauche */}
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 md:px-12 md:pb-14">
         <div className="max-w-7xl mx-auto">
-          <h1 className="font-display text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-tight whitespace-pre-line max-w-2xl">
+          <h1 className="font-display text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight whitespace-pre-line max-w-2xl">
             {title}
           </h1>
           {subtitle && (
@@ -62,7 +62,7 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
           <div className="mt-7 md:mt-8 flex flex-wrap items-center gap-3">
             <Link
               href={ctaHref}
-              className="inline-flex items-center justify-center font-semibold rounded-full min-h-[52px] px-8 text-lg bg-white text-black hover:bg-gray-200 transition-colors"
+              className="inline-flex items-center justify-center font-semibold rounded-full min-h-[44px] px-6 text-base bg-white text-black hover:bg-gray-200 transition-colors"
             >
               {ctaText}
             </Link>
@@ -70,7 +70,7 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center font-semibold rounded-full min-h-[52px] px-8 text-lg bg-[#25D366] text-white hover:bg-[#1EA952] transition-colors"
+              className="inline-flex items-center justify-center font-semibold rounded-full min-h-[44px] px-6 text-base bg-[#25D366] text-white hover:bg-[#1EA952] transition-colors"
             >
               💬 WhatsApp
             </a>
