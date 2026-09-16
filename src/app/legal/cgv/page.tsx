@@ -3,7 +3,7 @@ export default function CGVPage() {
     <div className="max-w-2xl mx-auto px-4 py-8 pb-24 md:pb-8 prose prose-sm">
       <h1 className="font-display text-2xl font-bold text-[var(--color-text-primary)] mb-6">Conditions Générales de Vente</h1>
       <h2>1. Objet</h2>
-      <p>Les présentes CGV régissent les ventes d&apos;enseignes lumineuses réalisées par Imprimelle CI via le site imprimelle.com.</p>
+      <p>Les présentes CGV régissent les ventes de nos produits (enseignes, signalétique, mobilier et décorations lumineuses) réalisées par Imprimelle CI via le site imprimelle.com.</p>
       <h2>2. Prix</h2>
       <p>Tous les prix sont indiqués en Francs CFA (FCFA), toutes taxes comprises. Les prix sont susceptibles d&apos;être modifiés sans préavis.</p>
       <h2>3. Commande</h2>

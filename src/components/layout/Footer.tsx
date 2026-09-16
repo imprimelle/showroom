@@ -1,15 +1,16 @@
 import Link from "next/link";
+import { METIERS } from "@/lib/metiers";
 
 export function Footer() {
   return (
     <footer className="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border-default)]">
-      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         <div>
           <h3 className="font-display font-bold text-lg text-[var(--color-text-primary)] mb-3">
             Imprimelle<span className="text-[var(--color-accent-amber)]">CI</span>
           </h3>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            Fabricant d&apos;enseignes lumineuses en Côte d&apos;Ivoire.
+            Fabricant d&apos;enseignes lumineuses et de mobilier lumineux en Côte d&apos;Ivoire.
             Qualité professionnelle, fabrication locale.
           </p>
         </div>
@@ -25,6 +26,18 @@ export function Footer() {
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
                   {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">Par métier</h4>
+          <ul className="space-y-2">
+            {METIERS.map((m) => (
+              <li key={m.slug}>
+                <Link href={`/metier/${m.slug}`} className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
+                  {m.label}
                 </Link>
               </li>
             ))}

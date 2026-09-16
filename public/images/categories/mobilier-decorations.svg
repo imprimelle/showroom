@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mobilier et décorations">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="0.5" stop-color="#059669"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#d1fae5" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d1fae5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="500" fill="url(#bg)"/>
+  <circle cx="400" cy="210" r="180" fill="url(#glow)"/>
+  <!-- Table lumineuse -->
+  <rect x="180" y="200" width="320" height="40" rx="20" fill="#34d399"/>
+  <rect x="325" y="240" width="30" height="180" rx="10" fill="#34d399"/>
+  <rect x="150" y="420" width="380" height="22" rx="11" fill="#34d399"/>
+  <!-- Cadre tableau décoratif -->
+  <rect x="520" y="150" width="150" height="190" rx="14" fill="#1e1b2e"/>
+  <rect x="520" y="150" width="150" height="190" rx="14" fill="none" stroke="#a78bfa" stroke-width="7"/>
+  <circle cx="595" cy="245" r="52" fill="url(#purple)"/>
+  <circle cx="595" cy="245" r="26" fill="#f5f3ff"/>
+</svg>

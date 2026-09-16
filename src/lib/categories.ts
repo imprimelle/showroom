@@ -15,17 +15,17 @@ export interface Category {
 
 /**
  * Source unique de vérité pour la catégorisation (hiérarchie 2 niveaux) :
- * 3 familles (niveau 1) + sous-catégories (niveau 2).
+ * 2 univers (niveau 1) + sous-catégories (niveau 2).
  * Importée par la home, le catalogue, la page produit et l'admin.
  * Ne jamais re-déclarer ces valeurs ailleurs.
  */
 export const CATEGORIES: Category[] = [
   {
-    id: "enseignes-lumineuses",
-    name: "Enseignes lumineuses",
+    id: "enseignes-signaletique",
+    name: "Enseignes & Signalétique",
     icon: "💡",
     color: "from-amber-500/80",
-    image: "/images/categories/enseignes-lumineuses.svg",
+    image: "/images/categories/enseignes-signaletique.svg",
     children: [
       { id: "caisson-lumineux", name: "Caisson lumineux", icon: "💡" },
       { id: "enseigne-dibond", name: "Enseigne dibond", icon: "🏢" },
@@ -36,21 +36,14 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: "tableau-decoratif",
-    name: "Tableau décoratif",
-    icon: "🖼️",
-    color: "from-purple-500/80",
-    image: "/images/categories/tableau-decoratif.svg",
-    children: [],
-  },
-  {
-    id: "table-mobilier-lumineux",
-    name: "Table & mobilier lumineux",
+    id: "mobilier-decorations",
+    name: "Mobilier & Décorations",
     icon: "🛋️",
     color: "from-emerald-500/80",
-    image: "/images/categories/table-mobilier-lumineux.svg",
+    image: "/images/categories/mobilier-decorations.svg",
     children: [
       { id: "table-lumineuse", name: "Table lumineuse", icon: "🪑" },
+      { id: "tableau-decoratif", name: "Tableau décoratif", icon: "🖼️" },
     ],
   },
 ];

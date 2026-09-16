@@ -3,6 +3,8 @@ import { getPublishedProducts } from "@/lib/products";
 import { getShowcaseSettings } from "@/lib/settings";
 import { CATEGORIES, resolveFamily } from "@/lib/categories";
 import { ProductSlider } from "@/components/product/ProductSlider";
+import { HeroSlider } from "@/components/hero/HeroSlider";
+import { ChoiceGuide } from "@/components/decision/ChoiceGuide";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
 import { getWhatsAppUrl, normalizePhone } from "@/lib/utils";
@@ -12,7 +14,7 @@ import type { ShowcaseProduct } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 const steps = [
-  { icon: "🔍", title: "Choisissez", desc: "Parcourez le catalogue et sélectionnez votre enseigne" },
+  { icon: "🔍", title: "Choisissez", desc: "Parcourez le catalogue et sélectionnez votre produit" },
   { icon: "🛒", title: "Commandez", desc: "4 champs suffisent pour passer commande en 2 minutes" },
   { icon: "📞", title: "Confirmation", desc: "Notre équipe vous appelle sous 24h pour confirmer" },
   { icon: "🚚", title: "Livraison", desc: "Fabrication 7-10 jours, installation incluse à Abidjan" },
@@ -32,17 +34,17 @@ export default async function HomePage() {
   ]);
 
   const whatsapp = normalizePhone(settings.contact?.whatsapp);
-  const heroTitle = settings.hero?.title || "Votre enseigne, livrée\net installée";
-  const heroSubtitle =
-    settings.hero?.subtitle ||
-    "Fabrication 100% ivoirienne. Caissons, lettres 3D, totems, néons. Livraison sous 10 jours.";
+  const heroTitle = settings.hero?.title || "La lumière, sur mesure.";
   const heroCta = settings.hero?.cta_text || "Voir le catalogue";
 
   const featured = [...products]
     .sort((a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0))
     .slice(0, 8);
 
-  const heroImage = featured[0]?.main_image_url || products.find((p) => p.main_image_url)?.main_image_url || null;
+  const heroSlides = featured
+    .filter((p) => p.main_image_url)
+    .slice(0, 5)
+    .map((p) => ({ url: p.main_image_url as string, alt: p.name }));
 
   const familyCounts = CATEGORIES.map((fam) => {
     const prod = products.find(
@@ -59,38 +61,15 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ===== 1. Hero ===== */}
-      <section className="relative bg-gradient-to-br from-[var(--color-bg-secondary)] via-[var(--color-bg-primary)] to-[var(--color-bg-tertiary)] py-16 md:py-24 px-4 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--color-accent-amber)/8%,transparent_70%)] pointer-events-none" />
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center relative">
-          <div className="text-center md:text-left">
-            <h1 className="font-display text-4xl md:text-6xl font-extrabold text-[var(--color-text-primary)] tracking-tight leading-tight whitespace-pre-line">
-              {heroTitle}
-            </h1>
-            <p className="mt-4 md:mt-6 text-base md:text-lg text-[var(--color-text-secondary)] max-w-xl md:mx-0 mx-auto">
-              {heroSubtitle}
-            </p>
-            <div className="mt-8 flex items-center justify-center md:justify-start gap-3">
-              <Link href="/collection">
-                <Button variant="primary" size="lg">{heroCta}</Button>
-              </Link>
-              <a href={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis pour une enseigne")} target="_blank" rel="noopener noreferrer">
-                <Button variant="whatsapp" size="lg">💬 WhatsApp</Button>
-              </a>
-            </div>
-          </div>
-          {heroImage && (
-            <div className="hidden md:block">
-              <div className="relative aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                <img
-                  src={imgProxyUrl(heroImage, 900)}
-                  alt="Enseigne lumineuse Imprimelle"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
-        </div>
+      {/* ===== 1. Hero (slider plein écran, style Cozey) ===== */}
+      <section className="relative w-full h-[80dvh] min-h-[540px] max-h-[90dvh]">
+        <HeroSlider
+          slides={heroSlides}
+          title={heroTitle}
+          ctaText={heroCta}
+          ctaHref="/collection"
+          whatsappHref={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis")}
+        />
       </section>
 
       {/* ===== 2. Slider produit (featured) ===== */}
@@ -120,9 +99,9 @@ export default async function HomePage() {
             Nos catégories
           </h2>
           <p className="text-sm text-[var(--color-text-secondary)] text-center mb-10">
-            Trois univers pour illuminer vos espaces
+            Deux univers pour illuminer vos espaces
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {familyCounts.map((fam) => (
               <div
                 key={fam.id}
@@ -181,6 +160,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== 3.5 Guide de choix ===== */}
+      <ChoiceGuide products={products} />
 
       {/* ===== 4. Réassurance ===== */}
       <section className="border-b border-[var(--color-border-default)]">
@@ -253,7 +235,7 @@ export default async function HomePage() {
             Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
-            <a href={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis gratuit pour un projet d'enseigne")} target="_blank" rel="noopener noreferrer">
+            <a href={getWhatsAppUrl(whatsapp, "Bonjour, je souhaite un devis gratuit")} target="_blank" rel="noopener noreferrer">
               <Button variant="whatsapp" size="lg">💬 Devis gratuit sur WhatsApp</Button>
             </a>
             <Link href="/comment-ca-marche">

@@ -30,11 +30,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Imprimelle CI — Enseignes Lumineuses Sur Mesure",
+    default: "Imprimelle CI — Enseignes & Mobilier Lumineux Sur Mesure",
     template: "%s | Imprimelle CI",
   },
   description:
-    "Fabricant d'enseignes lumineuses en Côte d'Ivoire. Caissons, lettres 3D, totems, néons. Fabrication 7-10 jours. Installation Abidjan. Demandez votre devis.",
+    "Fabricant d'enseignes, de signalétique et de mobilier lumineux en Côte d'Ivoire. Caissons, lettres 3D, totems, néons, tables et décorations lumineuses. Fabrication 7-10 jours. Installation à Abidjan.",
   metadataBase: new URL("https://imprimelle.com"),
   openGraph: {
     type: "website",

@@ -15,7 +15,7 @@ export default function CartPage() {
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <ShoppingCart className="w-16 h-16 text-[var(--color-text-tertiary)] mx-auto mb-4" />
         <h1 className="text-xl font-semibold text-[var(--color-text-secondary)]">Votre panier est vide</h1>
-        <p className="text-sm text-[var(--color-text-tertiary)] mt-1 mb-6">Découvrez nos enseignes lumineuses</p>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1 mb-6">Découvrez nos produits</p>
         <Link href="/collection">
           <Button variant="primary">Voir le catalogue</Button>
         </Link>

@@ -4,17 +4,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { CATEGORIES, getCategory, getFamilyOfSubCategory } from "@/lib/categories";
+import { USAGES } from "@/lib/usages";
 import { cn } from "@/lib/utils";
 import { SortSelect } from "./SortSelect";
 
 interface CollectionToolbarProps {
   currentFamily?: string;
   currentCategory?: string;
+  currentUsage?: string;
   currentQuery?: string;
   currentSort?: string;
 }
 
-export function CollectionToolbar({ currentFamily, currentCategory, currentQuery, currentSort }: CollectionToolbarProps) {
+export function CollectionToolbar({ currentFamily, currentCategory, currentUsage, currentQuery, currentSort }: CollectionToolbarProps) {
   const router = useRouter();
   const [q, setQ] = useState(currentQuery || "");
 
@@ -25,8 +27,19 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentQuery
     const params = new URLSearchParams();
     if (currentFamily) params.set("family", currentFamily);
     if (currentCategory) params.set("category", currentCategory);
+    if (currentUsage) params.set("usage", currentUsage);
     if (q.trim()) params.set("q", q.trim());
     router.push(`/collection${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  // Préserve famille + catégorie quand on bascule l'emplacement
+  const usageHref = (usageId: string | null) => {
+    const params = new URLSearchParams();
+    if (currentFamily) params.set("family", currentFamily);
+    if (currentCategory) params.set("category", currentCategory);
+    if (usageId) params.set("usage", usageId);
+    const s = params.toString();
+    return `/collection${s ? `?${s}` : ""}`;
   };
 
   const chipClass = (active: boolean) =>
@@ -66,6 +79,19 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentQuery
         </div>
       )}
 
+      {/* Emplacement (usage intérieur/extérieur) */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 items-center">
+        <span className="text-xs font-medium text-[var(--color-text-tertiary)] shrink-0">Emplacement :</span>
+        <Link href={usageHref(null)} className={chipClass(!currentUsage)}>
+          Tous
+        </Link>
+        {USAGES.map((u) => (
+          <Link key={u.id} href={usageHref(u.id)} className={chipClass(currentUsage === u.id)}>
+            {u.label}
+          </Link>
+        ))}
+      </div>
+
       {/* Search + sort */}
       <div className="flex gap-2 items-center">
         <form onSubmit={submitSearch} className="flex-1 relative">
@@ -73,7 +99,7 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentQuery
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher une enseigne..."
+            placeholder="Rechercher un produit..."
             className="w-full h-10 pl-9 pr-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)]"
           />
         </form>

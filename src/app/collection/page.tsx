@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { getPublishedProducts } from "@/lib/products";
 import { resolveFamily } from "@/lib/categories";
 import { getMinPrice } from "@/lib/utils";
+import { getUsage } from "@/lib/usages";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import { CollectionToolbar } from "./CollectionToolbar";
@@ -10,7 +11,7 @@ import type { ShowcaseProduct } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 interface Props {
-  searchParams: Promise<{ family?: string; category?: string; sort?: string; q?: string }>;
+  searchParams: Promise<{ family?: string; category?: string; usage?: string; sort?: string; q?: string }>;
 }
 
 function CatalogueGrid({ products }: { products: ShowcaseProduct[] }) {
@@ -53,6 +54,14 @@ export default async function CollectionPage({ searchParams }: Props) {
     products = products.filter((p) => p.showcase?.category === params.category);
   }
 
+  // Filter by emplacement (usage intérieur/extérieur/les deux)
+  if (params.usage) {
+    const usage = getUsage(params.usage);
+    if (usage) {
+      products = products.filter((p) => p.showcase?.usage === usage.value);
+    }
+  }
+
   // Filter by search query (name + short description)
   if (params.q) {
     const q = params.q.toLowerCase();
@@ -75,7 +84,7 @@ export default async function CollectionPage({ searchParams }: Props) {
       {/* Header */}
       <div className="mb-6 text-center md:text-left">
         <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
-          Toutes nos enseignes
+          Tous nos produits
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">
           {products.length} produit{products.length > 1 ? "s" : ""}
@@ -86,6 +95,7 @@ export default async function CollectionPage({ searchParams }: Props) {
       <CollectionToolbar
         currentFamily={params.family}
         currentCategory={params.category}
+        currentUsage={params.usage}
         currentQuery={params.q}
         currentSort={params.sort}
       />

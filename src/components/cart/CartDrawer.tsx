@@ -80,7 +80,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <ShoppingCart className="w-16 h-16 text-[var(--color-text-tertiary)] mb-4" />
                   <p className="text-xl font-semibold text-[var(--color-text-secondary)]">Votre panier est vide</p>
-                  <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Découvrez nos enseignes lumineuses</p>
+                  <p className="text-sm text-[var(--color-text-tertiary)] mt-1">Découvrez nos produits</p>
                   <Button variant="primary" size="sm" className="mt-6" onClick={onClose}>
                     Voir le catalogue
                   </Button>

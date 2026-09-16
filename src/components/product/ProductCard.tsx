@@ -127,6 +127,11 @@ export function ProductCard({ product }: ProductCardProps) {
         ) : (
           <p className="text-sm text-[var(--color-text-secondary)] mt-1">Sur devis</p>
         )}
+        {product.showcase?.delivery_time && (
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+            ⏱ {product.showcase.delivery_time}
+          </p>
+        )}
       </div>
     </Link>
   );

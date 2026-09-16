@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { getPublishedProducts } from "@/lib/products";
 import { getCategory, resolveFamily } from "@/lib/categories";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Comparator } from "@/components/decision/Comparator";
+import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
-import { cn } from "@/lib/utils";
+import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -101,6 +103,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
       )}
 
+      {/* Comparateur (uniquement pour les enseignes) */}
+      {cat.id === "enseignes-signaletique" && <Comparator />}
+
       {products.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
           {products.map((product) => (
@@ -123,6 +128,25 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           </Link>
         </div>
       )}
+
+      {/* CTA devis contextualisé */}
+      <div className="mt-12 rounded-3xl bg-[var(--color-bg-secondary)] px-6 py-10 text-center">
+        <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
+          Un projet {cat.name} sur mesure ?
+        </h2>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+          Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.
+        </p>
+        <div className="mt-6 flex items-center justify-center">
+          <a
+            href={getWhatsAppUrl(DEFAULT_WHATSAPP, `Bonjour, je souhaite un devis pour : ${cat.name}`)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="whatsapp" size="lg">💬 Demander un devis WhatsApp</Button>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
