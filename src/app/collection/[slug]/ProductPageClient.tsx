@@ -237,33 +237,33 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </div>
           )}
 
-          {/* Couleur + Option (tables uniquement) */}
+          {/* Couleur + Option (tables uniquement) — accordion inline */}
           {isTable && (
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-2.5">
               {/* Couleur */}
-              <div>
-                <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Couleur</h3>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => { setColorOpen((o) => !o); setOptionOpen(false); }}
-                    className="w-full flex items-center justify-between rounded-2xl border border-[var(--color-border-strong)] px-4 py-3 bg-[var(--color-surface-card)] hover:border-[var(--color-text-tertiary)] transition-colors"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      {selectedColor && (
-                        <span
-                          className="w-5 h-5 rounded-full border border-[var(--color-border-strong)] shrink-0"
-                          style={{ backgroundColor: selectedColor.hex }}
-                        />
-                      )}
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                        {selectedColor ? selectedColor.label : "Choisir une couleur"}
-                      </span>
+              <div className="rounded-2xl border border-[var(--color-border-strong)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => { setColorOpen((o) => !o); setOptionOpen(false); }}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface-card)]"
+                >
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Couleur</span>
+                  <span className="flex items-center gap-2">
+                    {selectedColor && (
+                      <span
+                        className="w-5 h-5 rounded-full border border-[var(--color-border-strong)] shrink-0"
+                        style={{ backgroundColor: selectedColor.hex }}
+                      />
+                    )}
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      {selectedColor ? selectedColor.label : "Choisir"}
                     </span>
                     <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", colorOpen && "rotate-180")} />
-                  </button>
-                  {colorOpen && (
-                    <div className="absolute z-20 mt-2 w-full rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-lg p-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  </span>
+                </button>
+                {colorOpen && (
+                  <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+                    <div className="grid grid-cols-5 gap-2">
                       {tableColors.map((c) => (
                         <button
                           key={c.id}
@@ -280,43 +280,43 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         </button>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Option */}
-              <div>
-                <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Option</h3>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => { setOptionOpen((o) => !o); setColorOpen(false); }}
-                    className="w-full flex items-center justify-between rounded-2xl border border-[var(--color-border-strong)] px-4 py-3 bg-[var(--color-surface-card)] hover:border-[var(--color-text-tertiary)] transition-colors"
-                  >
-                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
-                      {selectedOption ? selectedOption.label : "Choisir une option"}
+              <div className="rounded-2xl border border-[var(--color-border-strong)] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => { setOptionOpen((o) => !o); setColorOpen(false); }}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface-card)]"
+                >
+                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Option</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm text-[var(--color-text-secondary)]">
+                      {selectedOption ? selectedOption.label : "Choisir"}
                     </span>
                     <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", optionOpen && "rotate-180")} />
-                  </button>
-                  {optionOpen && (
-                    <div className="absolute z-20 mt-2 w-full rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-lg p-2">
-                      {tableOptions.map((o) => (
-                        <button
-                          key={o.id}
-                          type="button"
-                          onClick={() => { setSelectedOption(o); setOptionOpen(false); }}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-[var(--color-text-primary)] transition-colors",
-                            selectedOption?.id === o.id ? "bg-[var(--color-bg-tertiary)] font-medium" : "hover:bg-[var(--color-bg-tertiary)]"
-                          )}
-                        >
-                          {o.label}
-                          {selectedOption?.id === o.id && <Check className="w-4 h-4 text-[var(--color-accent-amber)]" />}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  </span>
+                </button>
+                {optionOpen && (
+                  <div className="border-t border-[var(--color-border-default)] p-2">
+                    {tableOptions.map((o) => (
+                      <button
+                        key={o.id}
+                        type="button"
+                        onClick={() => { setSelectedOption(o); setOptionOpen(false); }}
+                        className={cn(
+                          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-[var(--color-text-primary)] transition-colors",
+                          selectedOption?.id === o.id ? "bg-[var(--color-bg-tertiary)] font-medium" : "hover:bg-[var(--color-bg-tertiary)]"
+                        )}
+                      >
+                        {o.label}
+                        {selectedOption?.id === o.id && <Check className="w-4 h-4 text-[var(--color-accent-amber)]" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -334,25 +334,28 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               currentPrice != null ? (
                 <>
                   {/* Sélecteur de quantité (bloc arrondi) */}
-                  <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      disabled={quantity <= 1}
-                      aria-label="Diminuer la quantité"
-                      className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="text-base font-semibold text-[var(--color-text-primary)]">{quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((q) => q + 1)}
-                      aria-label="Augmenter la quantité"
-                      className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                        disabled={quantity <= 1}
+                        aria-label="Diminuer la quantité"
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity((q) => q + 1)}
+                        aria-label="Augmenter la quantité"
+                        className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
                     {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice)}` : "Sélectionnez une taille"}
