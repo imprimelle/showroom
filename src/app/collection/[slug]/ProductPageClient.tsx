@@ -1,7 +1,22 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Clock, Ruler, Shield, ChevronDown } from "lucide-react";
+import {
+  Clock,
+  Ruler,
+  Shield,
+  ChevronDown,
+  Zap,
+  Layers,
+  Sparkles,
+  Droplets,
+  Palette,
+  Truck,
+  ShieldCheck,
+  MapPin,
+  Lock,
+  type LucideIcon,
+} from "lucide-react";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/Button";
@@ -32,6 +47,24 @@ function usageLabel(u?: string): string | null {
       return null;
   }
 }
+
+/** Associe une icône à un point fort (mots-clés → icône). */
+function highlightIcon(text: string): LucideIcon {
+  const t = text.toLowerCase();
+  if (/(led|éclairage|lumineu|lumière|neon|retro)/.test(t)) return Zap;
+  if (/(verre|aluminium|acier|bois|structure|materiau)/.test(t)) return Layers;
+  if (/(garantie)/.test(t)) return Shield;
+  if (/(etanche|ip|exterieur|intemper|resistan)/.test(t)) return Droplets;
+  if (/(couleur|finition|design|moderne|epure|soigne)/.test(t)) return Palette;
+  return Sparkles;
+}
+
+const reassurances = [
+  { icon: Truck, label: "Livraison gratuite" },
+  { icon: ShieldCheck, label: "Garantie 2 ans" },
+  { icon: MapPin, label: "Fabrication locale" },
+  { icon: Lock, label: "Paiement à la livraison" },
+];
 
 const productFaq = [
   {
@@ -73,6 +106,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const highlights = product.showcase?.highlights || [];
   const variants = product.variants || [];
   const galleryImages = product.gallery_images || [];
+  const hasVariantsTable = variants.some((v) => v.attributes?.dimensions || v.attributes?.materials);
 
   const handleAddToCart = () => {
     if (!selectedVariant || selectedVariant.price == null) return;
@@ -90,7 +124,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   };
 
   return (
-    <div className="pb-16">
+    <div className="pb-12">
       {/* ===== Breadcrumb ===== */}
       <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6">
         <nav className="text-xs text-[var(--color-text-tertiary)] flex items-center gap-1 flex-wrap">
@@ -115,7 +149,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       </div>
 
       {/* ===== Produit : galerie + panneau info ===== */}
-      <div className="max-w-7xl mx-auto px-4 py-6 md:py-10 grid grid-cols-1 lg:grid-cols-2 lg:gap-12">
+      <div className="max-w-7xl mx-auto px-4 py-5 md:py-8 grid grid-cols-1 lg:grid-cols-2 lg:gap-12">
         {/* Galerie */}
         <div>
           <div className="relative aspect-[4/5] md:aspect-square rounded-2xl overflow-hidden bg-[var(--color-bg-tertiary)]">
@@ -153,11 +187,11 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </h1>
 
           {/* Prix */}
-          <div className="mt-4">
+          <div className="mt-3">
             {currentPrice != null ? (
               <div>
                 <span className="text-xs text-[var(--color-text-tertiary)]">À partir de</span>
-                <p className="text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] font-mono">
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
                   {formatFCFA(currentPrice)}
                 </p>
               </div>
@@ -168,7 +202,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* Sélecteur de variante */}
           {variants.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-4">
               <VariantSelector
                 variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price }))}
                 selectedSku={selectedSku}
@@ -179,13 +213,13 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* Description courte */}
           {product.showcase?.short_description && (
-            <p className="mt-5 text-sm md:text-base text-[var(--color-text-secondary)] leading-relaxed">
+            <p className="mt-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">
               {product.showcase.short_description}
             </p>
           )}
 
           {/* CTA */}
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-5 flex flex-col gap-2.5">
             {variants.length > 0 ? (
               currentPrice != null ? (
                 <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
@@ -208,80 +242,76 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </a>
           </div>
 
-          {/* Quick specs */}
-          <div className="mt-8 grid grid-cols-2 gap-4 pt-6 border-t border-[var(--color-border-default)]">
-            {product.showcase?.delivery_time && (
-              <div className="flex items-center gap-2.5 text-sm text-[var(--color-text-secondary)]">
-                <Clock className="w-4 h-4 text-[var(--color-accent-amber)] shrink-0" />
-                <span>Délai : {product.showcase.delivery_time}</span>
+          {/* Réassurance (grille compacte) */}
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5 border-t border-[var(--color-border-default)]">
+            {reassurances.map((r) => (
+              <div key={r.label} className="flex flex-col items-center gap-1.5 text-center">
+                <r.icon className="w-5 h-5 text-[var(--color-accent-amber)]" />
+                <span className="text-[11px] leading-tight text-[var(--color-text-secondary)]">{r.label}</span>
               </div>
-            )}
-            {usage && (
-              <div className="flex items-center gap-2.5 text-sm text-[var(--color-text-secondary)]">
-                <Shield className="w-4 h-4 text-[var(--color-accent-amber)] shrink-0" />
-                <span>Usage : {usage}</span>
-              </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ===== Rubriques ===== */}
-      {/* Points forts */}
+      {/* ===== Points forts : slider minimaliste ===== */}
       {highlights.length > 0 && (
         <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-8">
+          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
               Points forts
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {highlights.map((h, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-xl bg-[var(--color-bg-secondary)]"
-                >
-                  <span className="w-6 h-6 rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)] flex items-center justify-center shrink-0">
-                    <Check className="w-3.5 h-3.5" />
-                  </span>
-                  <span className="text-sm text-[var(--color-text-primary)]">{h}</span>
-                </div>
-              ))}
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-2">
+              {highlights.map((h, i) => {
+                const Icon = highlightIcon(h);
+                return (
+                  <div
+                    key={i}
+                    className="snap-start shrink-0 w-[150px] sm:w-[170px] rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 flex flex-col items-center gap-2.5 text-center"
+                  >
+                    <span className="w-9 h-9 rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-accent-amber)] flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <span className="text-xs font-medium text-[var(--color-text-primary)] leading-snug">{h}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
       )}
 
-      {/* Caractéristiques */}
-      {(variants.length > 0 || usage || product.showcase?.delivery_time) && (
+      {/* ===== Caractéristiques (compact) ===== */}
+      {(hasVariantsTable || usage || product.showcase?.delivery_time) && (
         <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-8">
+          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
               Caractéristiques
             </h2>
 
-            {/* Tableau des variantes */}
-            {variants.some((v) => v.attributes?.dimensions || v.attributes?.materials) && (
-              <div className="overflow-x-auto mb-8">
-                <table className="w-full text-sm border-collapse">
+            {/* Tableau compact des variantes */}
+            {hasVariantsTable && (
+              <div className="overflow-x-auto mb-5">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-[var(--color-text-tertiary)] border-b border-[var(--color-border-default)]">
-                      <th className="py-3 pr-4 font-medium">Taille</th>
-                      <th className="py-3 pr-4 font-medium">Dimensions</th>
-                      <th className="py-3 pr-4 font-medium">Matériaux</th>
-                      <th className="py-3 font-medium text-right">Prix</th>
+                    <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)] border-b border-[var(--color-border-default)]">
+                      <th className="py-2 pr-3 font-medium">Taille</th>
+                      <th className="py-2 pr-3 font-medium">Dimensions</th>
+                      <th className="py-2 pr-3 font-medium">Matériaux</th>
+                      <th className="py-2 font-medium text-right">Prix</th>
                     </tr>
                   </thead>
                   <tbody>
                     {variants.map((v) => (
-                      <tr key={v.id} className="border-b border-[var(--color-border-default)]">
-                        <td className="py-3 pr-4 font-medium text-[var(--color-text-primary)]">{v.name}</td>
-                        <td className="py-3 pr-4 text-[var(--color-text-secondary)]">
+                      <tr key={v.id} className="border-b border-[var(--color-border-default)] last:border-0">
+                        <td className="py-2 pr-3 font-medium text-[13px] text-[var(--color-text-primary)]">{v.name}</td>
+                        <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
                           {v.attributes?.dimensions || "—"}
                         </td>
-                        <td className="py-3 pr-4 text-[var(--color-text-secondary)]">
+                        <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
                           {v.attributes?.materials || "—"}
                         </td>
-                        <td className="py-3 text-right font-medium text-[var(--color-text-primary)] whitespace-nowrap">
+                        <td className="py-2 text-right font-medium text-[13px] text-[var(--color-text-primary)] whitespace-nowrap">
                           {v.price != null ? formatFCFA(v.price) : "Sur devis"}
                         </td>
                       </tr>
@@ -291,31 +321,31 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </div>
             )}
 
-            {/* Quick specs générales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Specs générales (grille compacte) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {product.showcase?.delivery_time && (
-                <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border-default)]">
+                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
                   <Clock className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
                   <div>
-                    <p className="text-xs text-[var(--color-text-tertiary)]">Délai de fabrication</p>
-                    <p className="text-sm font-medium text-[var(--color-text-primary)]">{product.showcase.delivery_time}</p>
+                    <p className="text-[11px] text-[var(--color-text-tertiary)]">Délai</p>
+                    <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{product.showcase.delivery_time}</p>
                   </div>
                 </div>
               )}
               {usage && (
-                <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border-default)]">
+                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
                   <Ruler className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
                   <div>
-                    <p className="text-xs text-[var(--color-text-tertiary)]">Emplacement</p>
-                    <p className="text-sm font-medium text-[var(--color-text-primary)]">{usage}</p>
+                    <p className="text-[11px] text-[var(--color-text-tertiary)]">Emplacement</p>
+                    <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{usage}</p>
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[var(--color-border-default)]">
+              <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
                 <Shield className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
                 <div>
-                  <p className="text-xs text-[var(--color-text-tertiary)]">Garantie</p>
-                  <p className="text-sm font-medium text-[var(--color-text-primary)]">2 ans</p>
+                  <p className="text-[11px] text-[var(--color-text-tertiary)]">Garantie</p>
+                  <p className="text-[13px] font-medium text-[var(--color-text-primary)]">2 ans</p>
                 </div>
               </div>
             </div>
@@ -323,34 +353,34 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         </section>
       )}
 
-      {/* FAQ */}
+      {/* ===== FAQ ===== */}
       <section className="border-t border-[var(--color-border-default)]">
-        <div className="max-w-3xl mx-auto px-4 py-12 md:py-16">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-8">
+        <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
+          <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
             Questions fréquentes
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {productFaq.map((faq, i) => (
               <details
                 key={i}
                 className="group rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]"
               >
-                <summary className="flex items-center justify-between gap-4 px-4 py-3.5 cursor-pointer text-sm font-medium text-[var(--color-text-primary)] select-none">
+                <summary className="flex items-center justify-between gap-4 px-4 py-3 cursor-pointer text-sm font-medium text-[var(--color-text-primary)] select-none">
                   {faq.q}
                   <ChevronDown className="w-4 h-4 text-[var(--color-text-tertiary)] group-open:rotate-180 transition-transform shrink-0" />
                 </summary>
-                <p className="px-4 pb-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">{faq.a}</p>
+                <p className="px-4 pb-3.5 text-sm text-[var(--color-text-secondary)] leading-relaxed">{faq.a}</p>
               </details>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Produits similaires */}
+      {/* ===== Produits similaires ===== */}
       {relatedProducts.length > 0 && (
         <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-            <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-8">
+          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-6">
               Vous aimerez aussi
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
