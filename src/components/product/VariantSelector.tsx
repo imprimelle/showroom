@@ -22,8 +22,10 @@ export function VariantSelector({ variants, selectedSku, onSelect }: VariantSele
 
   return (
     <div>
-      <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Taille</h3>
-      <div className="flex flex-wrap gap-2">
+      <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+        Choisissez vos dimensions
+      </h3>
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
         {variants.map((variant) => {
           const isSelected = selectedSku === variant.sku;
           return (
@@ -31,7 +33,7 @@ export function VariantSelector({ variants, selectedSku, onSelect }: VariantSele
               key={variant.id}
               onClick={() => onSelect(variant)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-150",
+                "shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150",
                 "focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] focus-visible:outline-offset-2",
                 isSelected
                   ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"

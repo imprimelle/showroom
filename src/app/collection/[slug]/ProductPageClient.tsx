@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   MapPin,
   Lock,
+  Minus,
+  Plus,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import { VariantSelector } from "@/components/product/VariantSelector";
@@ -24,7 +27,7 @@ import { Badge } from "@/components/ui/Badge";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCartStore } from "@/stores/cart";
 import { imgProxyUrl } from "@/lib/images";
-import { formatFCFA, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
+import { formatFCFA, getWhatsAppUrl, DEFAULT_WHATSAPP, cn } from "@/lib/utils";
 import { getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
@@ -66,6 +69,23 @@ const reassurances = [
   { icon: Lock, label: "Paiement à la livraison" },
 ];
 
+// Couleurs disponibles pour les tables (miniatures à remplacer par des images plus tard)
+const tableColors = [
+  { id: "bois-naturel", label: "Bois naturel", hex: "#C89B6D" },
+  { id: "noyer", label: "Noyer", hex: "#7A5230" },
+  { id: "noir", label: "Noir", hex: "#1A1A1A" },
+  { id: "blanc", label: "Blanc", hex: "#F5F5F5" },
+  { id: "gris", label: "Gris", hex: "#9CA3AF" },
+];
+
+// Options disponibles pour les tables
+const tableOptions = [
+  { id: "led-blanc", label: "LED blanc chaud" },
+  { id: "led-rgb", label: "LED RGB" },
+  { id: "variateur", label: "Variateur" },
+  { id: "telecommande", label: "Télécommande" },
+];
+
 const productFaq = [
   {
     q: "Quels sont les délais de fabrication ?",
@@ -88,6 +108,11 @@ const productFaq = [
 export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP }: ProductPageClientProps) {
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [colorOpen, setColorOpen] = useState(false);
+  const [optionOpen, setOptionOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<(typeof tableColors)[number] | null>(null);
+  const [selectedOption, setSelectedOption] = useState<(typeof tableOptions)[number] | null>(null);
   const addItem = useCartStore((s) => s.addItem);
 
   const selectedVariant = product.variants?.find((v) => v.sku === selectedSku) || null;
@@ -107,6 +132,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const variants = product.variants || [];
   const galleryImages = product.gallery_images || [];
   const hasVariantsTable = variants.some((v) => v.attributes?.dimensions || v.attributes?.materials);
+  const isTable = product.showcase?.category === "table-lumineuse";
 
   const handleAddToCart = () => {
     if (!selectedVariant || selectedVariant.price == null) return;
@@ -116,7 +142,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       product_slug: product.slug,
       variant_label: selectedVariant.name,
       variant_sku: selectedVariant.sku,
-      quantity: 1,
+      quantity,
       unit_price_fcfa: selectedVariant.price,
       image_url: product.main_image_url,
     });
@@ -200,7 +226,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             )}
           </div>
 
-          {/* Sélecteur de variante */}
+          {/* Sélecteur de variante (dimensions) */}
           {variants.length > 0 && (
             <div className="mt-4">
               <VariantSelector
@@ -211,6 +237,90 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </div>
           )}
 
+          {/* Couleur + Option (tables uniquement) */}
+          {isTable && (
+            <div className="mt-4 space-y-3">
+              {/* Couleur */}
+              <div>
+                <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Couleur</h3>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => { setColorOpen((o) => !o); setOptionOpen(false); }}
+                    className="w-full flex items-center justify-between rounded-2xl border border-[var(--color-border-strong)] px-4 py-3 bg-[var(--color-surface-card)] hover:border-[var(--color-text-tertiary)] transition-colors"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      {selectedColor && (
+                        <span
+                          className="w-5 h-5 rounded-full border border-[var(--color-border-strong)] shrink-0"
+                          style={{ backgroundColor: selectedColor.hex }}
+                        />
+                      )}
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        {selectedColor ? selectedColor.label : "Choisir une couleur"}
+                      </span>
+                    </span>
+                    <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", colorOpen && "rotate-180")} />
+                  </button>
+                  {colorOpen && (
+                    <div className="absolute z-20 mt-2 w-full rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-lg p-3 grid grid-cols-4 sm:grid-cols-5 gap-2">
+                      {tableColors.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => { setSelectedColor(c); setColorOpen(false); }}
+                          className={cn(
+                            "flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors",
+                            selectedColor?.id === c.id ? "bg-[var(--color-bg-tertiary)]" : "hover:bg-[var(--color-bg-tertiary)]"
+                          )}
+                        >
+                          {/* TODO: remplacer par une vraie image miniature (img) quand dispo */}
+                          <span className="w-8 h-8 rounded-lg border border-[var(--color-border-strong)]" style={{ backgroundColor: c.hex }} />
+                          <span className="text-[10px] text-[var(--color-text-secondary)] leading-none text-center">{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Option */}
+              <div>
+                <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Option</h3>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => { setOptionOpen((o) => !o); setColorOpen(false); }}
+                    className="w-full flex items-center justify-between rounded-2xl border border-[var(--color-border-strong)] px-4 py-3 bg-[var(--color-surface-card)] hover:border-[var(--color-text-tertiary)] transition-colors"
+                  >
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                      {selectedOption ? selectedOption.label : "Choisir une option"}
+                    </span>
+                    <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", optionOpen && "rotate-180")} />
+                  </button>
+                  {optionOpen && (
+                    <div className="absolute z-20 mt-2 w-full rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-lg p-2">
+                      {tableOptions.map((o) => (
+                        <button
+                          key={o.id}
+                          type="button"
+                          onClick={() => { setSelectedOption(o); setOptionOpen(false); }}
+                          className={cn(
+                            "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-[var(--color-text-primary)] transition-colors",
+                            selectedOption?.id === o.id ? "bg-[var(--color-bg-tertiary)] font-medium" : "hover:bg-[var(--color-bg-tertiary)]"
+                          )}
+                        >
+                          {o.label}
+                          {selectedOption?.id === o.id && <Check className="w-4 h-4 text-[var(--color-accent-amber)]" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Description courte */}
           {product.showcase?.short_description && (
             <p className="mt-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">
@@ -218,13 +328,36 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </p>
           )}
 
-          {/* CTA */}
+          {/* Quantité + CTA */}
           <div className="mt-5 flex flex-col gap-2.5">
             {variants.length > 0 ? (
               currentPrice != null ? (
-                <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
-                  {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice)}` : "Sélectionnez une taille"}
-                </Button>
+                <>
+                  {/* Sélecteur de quantité (bloc arrondi) */}
+                  <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                      aria-label="Diminuer la quantité"
+                      className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="text-base font-semibold text-[var(--color-text-primary)]">{quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQuantity((q) => q + 1)}
+                      aria-label="Augmenter la quantité"
+                      className="w-11 h-11 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
+                    {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice)}` : "Sélectionnez une taille"}
+                  </Button>
+                </>
               ) : (
                 <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
                   <Button variant="whatsapp" size="lg" className="w-full">
