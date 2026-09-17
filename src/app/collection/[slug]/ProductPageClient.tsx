@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Clock,
@@ -18,8 +18,11 @@ import {
   Minus,
   Plus,
   Check,
+  ChevronRight,
+  X,
   type LucideIcon,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/Button";
@@ -105,6 +108,16 @@ const productFaq = [
   },
 ];
 
+// Pilules FAQ (bottom sheet) — 6 boutons 2×3
+const productFaqPills = [
+  { id: "livraison", label: "Livraison", content: "Nous livrons partout en Côte d'Ivoire. La livraison est gratuite et l'installation est incluse à Abidjan. Délai : 7 à 10 jours ouvrés." },
+  { id: "retours", label: "Retours", content: "Produit fabriqué sur mesure. En cas de défaut de fabrication, nous le remplaçons ou le réparons gratuitement sous garantie." },
+  { id: "materiaux", label: "Matériaux", content: "Matériaux de qualité : verre trempé, aluminium, LED haute luminosité. Chaque produit est fabriqué localement à Abidjan." },
+  { id: "garantie", label: "Garantie", content: "Garantie 2 ans pièces et main d'œuvre sur tous nos produits." },
+  { id: "dimensions", label: "Dimensions", content: "Toutes les dimensions sont sur mesure. Choisissez votre taille ou contactez-nous pour du sur-mesure." },
+  { id: "paiement", label: "Paiement", content: "Paiement à la livraison en espèces ou par mobile money (Orange Money, Wave)." },
+];
+
 export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP }: ProductPageClientProps) {
   const [selectedSku, setSelectedSku] = useState<string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
@@ -113,7 +126,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [optionOpen, setOptionOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<(typeof tableColors)[number] | null>(null);
   const [selectedOption, setSelectedOption] = useState<(typeof tableOptions)[number] | null>(null);
+  const [activeFaq, setActiveFaq] = useState<(typeof productFaqPills)[number] | null>(null);
   const addItem = useCartStore((s) => s.addItem);
+
+  // Verrouille le scroll quand le bottom sheet FAQ est ouvert
+  useEffect(() => {
+    document.body.style.overflow = activeFaq ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [activeFaq]);
 
   const selectedVariant = product.variants?.find((v) => v.sku === selectedSku) || null;
   const currentPrice = selectedVariant?.price ?? null;
@@ -226,6 +246,13 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             )}
           </div>
 
+          {/* Description courte (sous le prix) */}
+          {product.showcase?.short_description && (
+            <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
+              {product.showcase.short_description}
+            </p>
+          )}
+
           {/* Sélecteur de variante (dimensions) */}
           {variants.length > 0 && (
             <div className="mt-4">
@@ -321,13 +348,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </div>
           )}
 
-          {/* Description courte */}
-          {product.showcase?.short_description && (
-            <p className="mt-4 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              {product.showcase.short_description}
-            </p>
-          )}
-
           {/* Quantité + CTA */}
           <div className="mt-5 flex flex-col gap-2.5">
             {variants.length > 0 ? (
@@ -373,6 +393,24 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
               </a>
             )}
+            {/* FAQ : 6 boutons pilules (2×3) */}
+            <div className="mt-1">
+              <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">FAQ</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {productFaqPills.map((pill) => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setActiveFaq(pill)}
+                    className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                  >
+                    <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{pill.label}</span>
+                    <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
               <Button variant="secondary" size="lg" className="w-full">💬 Parler à un conseiller</Button>
             </a>
@@ -527,6 +565,42 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </div>
         </section>
       )}
+
+      {/* Bottom sheet FAQ */}
+      <AnimatePresence>
+        {activeFaq && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/40"
+              onClick={() => setActiveFaq(null)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 32 }}
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-[var(--color-surface-card)] rounded-t-2xl px-5 pt-4 pb-6 max-h-[70vh] overflow-y-auto"
+            >
+              <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-[var(--color-border-strong)]" />
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-lg font-semibold text-[var(--color-text-primary)]">{activeFaq.label}</h3>
+                <button
+                  type="button"
+                  onClick={() => setActiveFaq(null)}
+                  aria-label="Fermer"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed">{activeFaq.content}</p>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
