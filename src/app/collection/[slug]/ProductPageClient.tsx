@@ -393,9 +393,19 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
               </a>
             )}
-            {/* FAQ : 6 boutons pilules (2×3) */}
+            {/* Réassurance (sous Ajouter au panier) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-[var(--color-border-default)]">
+              {reassurances.map((r) => (
+                <div key={r.label} className="flex flex-col items-center gap-1.5 text-center">
+                  <r.icon className="w-5 h-5 text-[var(--color-accent-amber)]" />
+                  <span className="text-[11px] leading-tight text-[var(--color-text-secondary)]">{r.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Questions fréquentes : 6 boutons pilules (2×3) */}
             <div className="mt-1">
-              <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">FAQ</h3>
+              <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Questions fréquentes</h3>
               <div className="grid grid-cols-2 gap-2">
                 {productFaqPills.map((pill) => (
                   <button
@@ -414,16 +424,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
               <Button variant="secondary" size="lg" className="w-full">💬 Parler à un conseiller</Button>
             </a>
-          </div>
-
-          {/* Réassurance (grille compacte) */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 pt-5 border-t border-[var(--color-border-default)]">
-            {reassurances.map((r) => (
-              <div key={r.label} className="flex flex-col items-center gap-1.5 text-center">
-                <r.icon className="w-5 h-5 text-[var(--color-accent-amber)]" />
-                <span className="text-[11px] leading-tight text-[var(--color-text-secondary)]">{r.label}</span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
