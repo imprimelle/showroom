@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Clock,
-  Ruler,
   Shield,
   ChevronDown,
   Zap,
@@ -11,10 +10,7 @@ import {
   Sparkles,
   Droplets,
   Palette,
-  Truck,
-  ShieldCheck,
   MapPin,
-  Lock,
   Minus,
   Plus,
   Check,
@@ -40,20 +36,6 @@ interface ProductPageClientProps {
   whatsapp?: string;
 }
 
-/** Traduit l'emplacement (usage) en libellé lisible. */
-function usageLabel(u?: string): string | null {
-  switch (u) {
-    case "intérieur":
-      return "Intérieur";
-    case "extérieur":
-      return "Extérieur";
-    case "les deux":
-      return "Intérieur & extérieur";
-    default:
-      return null;
-  }
-}
-
 /** Associe une icône à un point fort (mots-clés → icône). */
 function highlightIcon(text: string): LucideIcon {
   const t = text.toLowerCase();
@@ -64,13 +46,6 @@ function highlightIcon(text: string): LucideIcon {
   if (/(couleur|finition|design|moderne|epure|soigne)/.test(t)) return Palette;
   return Sparkles;
 }
-
-const reassurances = [
-  { icon: Truck, label: "Livraison gratuite" },
-  { icon: ShieldCheck, label: "Garantie 2 ans" },
-  { icon: MapPin, label: "Fabrication locale" },
-  { icon: Lock, label: "Paiement à la livraison" },
-];
 
 // Couleurs disponibles pour les tables (miniatures à remplacer par des images plus tard)
 const tableColors = [
@@ -147,7 +122,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const categoryLabel = product.showcase?.category
     ? getCategoryLabel(product.showcase.category)
     : null;
-  const usage = usageLabel(product.showcase?.usage);
   const highlights = product.showcase?.highlights || [];
   const variants = product.variants || [];
   const galleryImages = product.gallery_images || [];
@@ -393,37 +367,33 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
               </a>
             )}
-            {/* Réassurance (sous Ajouter au panier) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-[var(--color-border-default)]">
-              {reassurances.map((r) => (
-                <div key={r.label} className="flex flex-col items-center gap-1.5 text-center">
-                  <r.icon className="w-5 h-5 text-[var(--color-accent-amber)]" />
-                  <span className="text-[11px] leading-tight text-[var(--color-text-secondary)]">{r.label}</span>
+            {/* Réassurance compacte : 3 cartes sur une ligne */}
+            <div className="grid grid-cols-3 gap-2">
+              {product.showcase?.delivery_time && (
+                <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Délai</p>
+                    <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">{product.showcase.delivery_time}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Questions fréquentes : 6 boutons pilules (2×3) */}
-            <div className="mt-1">
-              <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">Questions fréquentes</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {productFaqPills.map((pill) => (
-                  <button
-                    key={pill.id}
-                    type="button"
-                    onClick={() => setActiveFaq(pill)}
-                    className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                  >
-                    <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{pill.label}</span>
-                    <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] shrink-0" />
-                  </button>
-                ))}
+              )}
+              <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Fabrication</p>
+                  <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">local</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Garantie</p>
+                  <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">2 ans</p>
+                </div>
               </div>
             </div>
 
-            <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-              <Button variant="secondary" size="lg" className="w-full">💬 Parler à un conseiller</Button>
-            </a>
           </div>
         </div>
       </div>
@@ -455,85 +425,30 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         </section>
       )}
 
-      {/* ===== Caractéristiques (compact) ===== */}
-      {(hasVariantsTable || usage || product.showcase?.delivery_time) && (
-        <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
-            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
-              Caractéristiques
-            </h2>
-
-            {/* Tableau compact des variantes */}
-            {hasVariantsTable && (
-              <div className="overflow-x-auto mb-5">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)] border-b border-[var(--color-border-default)]">
-                      <th className="py-2 pr-3 font-medium">Taille</th>
-                      <th className="py-2 pr-3 font-medium">Dimensions</th>
-                      <th className="py-2 pr-3 font-medium">Matériaux</th>
-                      <th className="py-2 font-medium text-right">Prix</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {variants.map((v) => (
-                      <tr key={v.id} className="border-b border-[var(--color-border-default)] last:border-0">
-                        <td className="py-2 pr-3 font-medium text-[13px] text-[var(--color-text-primary)]">{v.name}</td>
-                        <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
-                          {v.attributes?.dimensions || "—"}
-                        </td>
-                        <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
-                          {v.attributes?.materials || "—"}
-                        </td>
-                        <td className="py-2 text-right font-medium text-[13px] text-[var(--color-text-primary)] whitespace-nowrap">
-                          {v.price != null ? formatFCFA(v.price) : "Sur devis"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Specs générales (grille compacte) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {product.showcase?.delivery_time && (
-                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
-                  <Clock className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
-                  <div>
-                    <p className="text-[11px] text-[var(--color-text-tertiary)]">Délai</p>
-                    <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{product.showcase.delivery_time}</p>
-                  </div>
-                </div>
-              )}
-              {usage && (
-                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
-                  <Ruler className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
-                  <div>
-                    <p className="text-[11px] text-[var(--color-text-tertiary)]">Emplacement</p>
-                    <p className="text-[13px] font-medium text-[var(--color-text-primary)]">{usage}</p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-[var(--color-border-default)]">
-                <Shield className="w-5 h-5 text-[var(--color-accent-amber)] shrink-0" />
-                <div>
-                  <p className="text-[11px] text-[var(--color-text-tertiary)]">Garantie</p>
-                  <p className="text-[13px] font-medium text-[var(--color-text-primary)]">2 ans</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ===== FAQ ===== */}
+      {/* ===== Questions fréquentes ===== */}
       <section className="border-t border-[var(--color-border-default)]">
         <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
           <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
             Questions fréquentes
           </h2>
-          <div className="space-y-2.5">
+
+          {/* Pilules : 6 boutons (2×3) → bottom sheet */}
+          <div className="grid grid-cols-2 gap-2 mb-6">
+            {productFaqPills.map((pill) => (
+              <button
+                key={pill.id}
+                type="button"
+                onClick={() => setActiveFaq(pill)}
+                className="flex items-center justify-between gap-2 px-4 py-3 rounded-full bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+              >
+                <span className="text-sm font-medium text-[var(--color-text-primary)] truncate">{pill.label}</span>
+                <ChevronRight className="w-4 h-4 text-[var(--color-text-tertiary)] shrink-0" />
+              </button>
+            ))}
+          </div>
+
+          {/* Accordion FAQ */}
+          <div className="space-y-2.5 mb-6">
             {productFaq.map((faq, i) => (
               <details
                 key={i}
@@ -547,8 +462,54 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </details>
             ))}
           </div>
+
+          {/* CTA conseiller */}
+          <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary" size="lg" className="w-full">💬 Parler à un conseiller</Button>
+          </a>
         </div>
       </section>
+
+      {/* ===== Caractéristiques (compact) ===== */}
+      {hasVariantsTable && (
+        <section className="border-t border-[var(--color-border-default)]">
+          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
+              Caractéristiques
+            </h2>
+
+            {/* Tableau compact des variantes */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)] border-b border-[var(--color-border-default)]">
+                    <th className="py-2 pr-3 font-medium">Taille</th>
+                    <th className="py-2 pr-3 font-medium">Dimensions</th>
+                    <th className="py-2 pr-3 font-medium">Matériaux</th>
+                    <th className="py-2 font-medium text-right">Prix</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {variants.map((v) => (
+                    <tr key={v.id} className="border-b border-[var(--color-border-default)] last:border-0">
+                      <td className="py-2 pr-3 font-medium text-[13px] text-[var(--color-text-primary)]">{v.name}</td>
+                      <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
+                        {v.attributes?.dimensions || "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
+                        {v.attributes?.materials || "—"}
+                      </td>
+                      <td className="py-2 text-right font-medium text-[13px] text-[var(--color-text-primary)] whitespace-nowrap">
+                        {v.price != null ? formatFCFA(v.price) : "Sur devis"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ===== Produits similaires ===== */}
       {relatedProducts.length > 0 && (
