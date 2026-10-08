@@ -56,7 +56,7 @@ export default async function RealisationsPage({ searchParams }: Props) {
             return (
               <Link key={p.id} href={`/collection/${p.slug}`} className="relative aspect-square rounded-2xl overflow-hidden group">
                 <img
-                  src={imgProxyUrl(p.main_image_url, 600)}
+                  src={imgProxyUrl(p.main_image_url, 600, 600)}
                   alt={p.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />

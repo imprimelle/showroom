@@ -6,6 +6,7 @@ import { ArrowLeft, Phone, MessageCircle, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { formatFCFA } from "@/lib/utils";
+import { paymentMethodLabel, paymentStatusLabel } from "@/lib/payment";
 import type { OrderStatus } from "@/types";
 
 const statusTransitions: Record<string, { label: string; next: OrderStatus }[]> = {
@@ -102,6 +103,49 @@ export function OrderDetailClient({ order }: { order: any }) {
           <span>Total</span>
           <span className="font-mono">{formatFCFA(order.total_amount)}</span>
         </div>
+      </section>
+
+      {/* Paiement & livraison */}
+      <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+        <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Paiement & livraison</h2>
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <dt className="text-[var(--color-text-tertiary)]">Méthode</dt>
+            <dd className="text-[var(--color-text-primary)]">
+              {paymentMethodLabel(order.payment_method)}
+            </dd>
+          </div>
+          {order.payment_method && order.payment_method !== "cod" && (
+            <div className="flex justify-between">
+              <dt className="text-[var(--color-text-tertiary)]">Statut paiement</dt>
+              <dd className="text-[var(--color-text-primary)]">
+                <Badge variant={order.payment_status === "paid" ? "success" : order.payment_status === "failed" ? "danger" : "neutral"}>
+                  {paymentStatusLabel(order.payment_status)}
+                </Badge>
+              </dd>
+            </div>
+          )}
+          {order.payment_reference && (
+            <div className="flex justify-between">
+              <dt className="text-[var(--color-text-tertiary)]">Réf. FedaPay</dt>
+              <dd className="text-[var(--color-text-primary)] font-mono text-xs">{String(order.payment_reference)}</dd>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <dt className="text-[var(--color-text-tertiary)]">Pays</dt>
+            <dd className="text-[var(--color-text-primary)]">{order.shipping_country || "—"}</dd>
+          </div>
+          <div className="flex justify-between">
+            <dt className="text-[var(--color-text-tertiary)]">Frais de port</dt>
+            <dd className="text-[var(--color-text-primary)] font-mono">{formatFCFA(order.shipping_fee_fcfa ?? 0)}</dd>
+          </div>
+          {order.total_with_shipping != null && (
+            <div className="flex justify-between font-semibold">
+              <dt className="text-[var(--color-text-primary)]">Total TTC (avec livraison)</dt>
+              <dd className="text-[var(--color-text-primary)] font-mono">{formatFCFA(order.total_with_shipping)}</dd>
+            </div>
+          )}
+        </dl>
       </section>
 
       {/* Notes */}

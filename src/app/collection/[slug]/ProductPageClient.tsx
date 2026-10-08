@@ -1,108 +1,127 @@
 "use client";
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import {
   Clock,
   Shield,
+  Star,
   ChevronDown,
   Zap,
-  Layers,
-  Sparkles,
-  Droplets,
-  Palette,
   MapPin,
   Minus,
   Plus,
   Check,
   ChevronRight,
   X,
-  type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
+import { ProductMediaViewer } from "@/components/product/ProductMediaViewer";
+import { StickyProductBar } from "@/components/product/StickyProductBar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCartStore } from "@/stores/cart";
+import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
+import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
+import { useFormatPrice } from "@/stores/currency";
 import { imgProxyUrl } from "@/lib/images";
-import { formatFCFA, getWhatsAppUrl, DEFAULT_WHATSAPP, cn } from "@/lib/utils";
-import { getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
-import type { ShowcaseProduct } from "@/lib/products";
+import { getCategoryLabel } from "@/lib/categories";
+import { track } from "@/lib/analytics";
+import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
+import { normalizeHighlights } from "@/lib/highlights";
+import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
+import { HighlightCarousel } from "@/components/product/HighlightCarousel";
+import type { ProductParameter, CartItemOption, FaqPill } from "@/types";
 
 interface ProductPageClientProps {
   product: ShowcaseProduct;
   relatedProducts: ShowcaseProduct[];
   whatsapp?: string;
+  parameters?: ProductParameter[];
+  faqPills?: FaqPill[];
 }
 
-/** Associe une icône à un point fort (mots-clés → icône). */
-function highlightIcon(text: string): LucideIcon {
-  const t = text.toLowerCase();
-  if (/(led|éclairage|lumineu|lumière|neon|retro)/.test(t)) return Zap;
-  if (/(verre|aluminium|acier|bois|structure|materiau)/.test(t)) return Layers;
-  if (/(garantie)/.test(t)) return Shield;
-  if (/(etanche|ip|exterieur|intemper|resistan)/.test(t)) return Droplets;
-  if (/(couleur|finition|design|moderne|epure|soigne)/.test(t)) return Palette;
-  return Sparkles;
+/** Étoile pleine / demi / vide (lucide `Star`). */
+function StarIcon({ fill }: { fill: number }) {
+  if (fill >= 1) {
+    return <Star className="w-4 h-4 text-[var(--color-accent-amber)] fill-[var(--color-accent-amber)]" />;
+  }
+  if (fill >= 0.5) {
+    return (
+      <span className="relative inline-block w-4 h-4">
+        <Star className="absolute inset-0 w-4 h-4 text-[var(--color-border-strong)]" />
+        <span className="absolute inset-0 overflow-hidden" style={{ width: "50%" }}>
+          <Star className="w-4 h-4 text-[var(--color-accent-amber)] fill-[var(--color-accent-amber)]" />
+        </span>
+      </span>
+    );
+  }
+  return <Star className="w-4 h-4 text-[var(--color-border-strong)]" />;
 }
 
-// Couleurs disponibles pour les tables (miniatures à remplacer par des images plus tard)
-const tableColors = [
-  { id: "bois-naturel", label: "Bois naturel", hex: "#C89B6D" },
-  { id: "noyer", label: "Noyer", hex: "#7A5230" },
-  { id: "noir", label: "Noir", hex: "#1A1A1A" },
-  { id: "blanc", label: "Blanc", hex: "#F5F5F5" },
-  { id: "gris", label: "Gris", hex: "#9CA3AF" },
-];
+/** Note produit dérivée de `popularity` (0–100 → note 4,0–5,0). */
+function RatingStars({ popularity }: { popularity?: number }) {
+  const rating =
+    popularity != null
+      ? Math.min(5, Math.max(0, 4 + popularity / 100))
+      : 4.5;
+  const fullStars = Math.floor(rating);
+  const hasHalf = rating - fullStars >= 0.5;
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      <div
+        className="flex items-center gap-0.5"
+        aria-label={`Note ${rating.toFixed(1).replace(".", ",")} sur 5`}
+      >
+        {Array.from({ length: 5 }).map((_, i) => {
+          const fill = i < fullStars ? 1 : i === fullStars && hasHalf ? 0.5 : 0;
+          return <StarIcon key={i} fill={fill} />;
+        })}
+      </div>
+      <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
+        {rating.toFixed(1).replace(".", ",")}
+      </span>
+    </div>
+  );
+}
 
-// Options disponibles pour les tables
-const tableOptions = [
-  { id: "led-blanc", label: "LED blanc chaud" },
-  { id: "led-rgb", label: "LED RGB" },
-  { id: "variateur", label: "Variateur" },
-  { id: "telecommande", label: "Télécommande" },
-];
-
-const productFaq = [
-  {
-    q: "Quels sont les délais de fabrication ?",
-    a: "7 à 10 jours ouvrés selon le produit et la complexité de votre projet.",
-  },
-  {
-    q: "Puis-je personnaliser ce produit ?",
-    a: "Oui, tous nos produits sont fabriqués sur mesure : dimensions, couleurs, logo et finitions. Envoyez-nous votre projet sur WhatsApp pour un devis.",
-  },
-  {
-    q: "La livraison et l'installation sont-elles incluses ?",
-    a: "Nous livrons partout en Côte d'Ivoire et l'installation est incluse à Abidjan.",
-  },
-  {
-    q: "Quelle garantie est offerte ?",
-    a: "Tous nos produits sont garantis 2 ans, pièces et main d'œuvre.",
-  },
-];
-
-// Pilules FAQ (bottom sheet) — 6 boutons 2×3
-const productFaqPills = [
-  { id: "livraison", label: "Livraison", content: "Nous livrons partout en Côte d'Ivoire. La livraison est gratuite et l'installation est incluse à Abidjan. Délai : 7 à 10 jours ouvrés." },
-  { id: "retours", label: "Retours", content: "Produit fabriqué sur mesure. En cas de défaut de fabrication, nous le remplaçons ou le réparons gratuitement sous garantie." },
-  { id: "materiaux", label: "Matériaux", content: "Matériaux de qualité : verre trempé, aluminium, LED haute luminosité. Chaque produit est fabriqué localement à Abidjan." },
-  { id: "garantie", label: "Garantie", content: "Garantie 2 ans pièces et main d'œuvre sur tous nos produits." },
-  { id: "dimensions", label: "Dimensions", content: "Toutes les dimensions sont sur mesure. Choisissez votre taille ou contactez-nous pour du sur-mesure." },
-  { id: "paiement", label: "Paiement", content: "Paiement à la livraison en espèces ou par mobile money (Orange Money, Wave)." },
-];
-
-export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP }: ProductPageClientProps) {
-  const [selectedSku, setSelectedSku] = useState<string | null>(null);
+export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS }: ProductPageClientProps) {
+  const formatPrice = useFormatPrice();
+  const [selectedSku, setSelectedSku] = useState<string | null>(product.variants?.[0]?.sku ?? null);
   const [cartOpen, setCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [colorOpen, setColorOpen] = useState(false);
-  const [optionOpen, setOptionOpen] = useState(false);
-  const [selectedColor, setSelectedColor] = useState<(typeof tableColors)[number] | null>(null);
-  const [selectedOption, setSelectedOption] = useState<(typeof tableOptions)[number] | null>(null);
-  const [activeFaq, setActiveFaq] = useState<(typeof productFaqPills)[number] | null>(null);
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
+  const [openParam, setOpenParam] = useState<string | null>(null);
+  const [activeFaq, setActiveFaq] = useState<FaqPill | null>(null);
   const addItem = useCartStore((s) => s.addItem);
+
+  // === Barre produit sticky : apparaît quand l'image principale sort du viewport ===
+  const mediaRef = useRef<HTMLDivElement>(null);
+  const [stickyBarVisible, setStickyBarVisible] = useState(false);
+
+  useEffect(() => {
+    const el = mediaRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setStickyBarVisible(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Masque la TopNav quand la barre produit est visible (cf. globals.css)
+  useEffect(() => {
+    if (stickyBarVisible) {
+      document.body.dataset.stickyProduct = "1";
+    } else {
+      delete document.body.dataset.stickyProduct;
+    }
+    return () => {
+      delete document.body.dataset.stickyProduct;
+    };
+  }, [stickyBarVisible]);
 
   // Verrouille le scroll quand le bottom sheet FAQ est ouvert
   useEffect(() => {
@@ -110,317 +129,365 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     return () => { document.body.style.overflow = ""; };
   }, [activeFaq]);
 
+  // Tracking analytics : vue produit (une fois au montage)
+  useEffect(() => {
+    track("view_item", {
+      product_id: product.id,
+      product_name: product.name,
+      price: product.variants?.[0]?.price ?? undefined,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const selectedVariant = product.variants?.find((v) => v.sku === selectedSku) || null;
   const currentPrice = selectedVariant?.price ?? null;
-  const showWhatsAppMsg = selectedVariant
-    ? selectedVariant.price != null
-      ? `Bonjour, je suis intéressé par le ${product.name} - ${selectedVariant.name} (${formatFCFA(selectedVariant.price)})`
-      : `Bonjour, je suis intéressé par le ${product.name} - ${selectedVariant.name} (merci de m'envoyer un devis)`
-    : `Bonjour, je suis intéressé par le ${product.name}`;
 
-  const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
+  // === Sélection des options de paramètres (single/multi) + coûts ===
+  const toggleOption = (param: ProductParameter, optionId: string) => {
+    setSelectedOptions((prev) => {
+      const current = prev[param.id] || [];
+      if (param.type === "single") {
+        return { ...prev, [param.id]: current.includes(optionId) ? [] : [optionId] };
+      }
+      return {
+        ...prev,
+        [param.id]: current.includes(optionId)
+          ? current.filter((id) => id !== optionId)
+          : [...current, optionId],
+      };
+    });
+  };
+  const selectedOptionsList: CartItemOption[] = parameters.flatMap((param) => {
+    const ids = selectedOptions[param.id] || [];
+    return ids
+      .map((optionId) => {
+        const opt = param.options.find((o) => o.id === optionId);
+        if (!opt) return null;
+        return {
+          param_id: param.id,
+          option_id: opt.id,
+          label: `${param.name} : ${opt.label}`,
+          price: opt.price ?? 0,
+        };
+      })
+      .filter((x): x is CartItemOption => Boolean(x));
+  });
+  const optionsTotal = selectedOptionsList.reduce((sum, o) => sum + o.price, 0);
+  const totalPrice = currentPrice != null ? currentPrice + optionsTotal : null;
+  // Prix de la ligne = prix unitaire (variante + options) × quantité
+  const lineTotal = totalPrice != null ? totalPrice * quantity : null;
+  // Libellé prix pour la barre produit sticky (unitaire, options incluses)
+  const priceLabel = currentPrice != null ? formatPrice(totalPrice ?? currentPrice) : "Sur devis";
+
+  const showWhatsAppMsg = productInquiryMessage({
+    name: product.name,
+    variant: selectedVariant?.name,
+    priceFcfa: selectedVariant?.price ?? undefined,
+    url: productUrl(product.slug),
+    options: selectedOptionsList,
+  });
+
   const categoryLabel = product.showcase?.category
     ? getCategoryLabel(product.showcase.category)
     : null;
-  const highlights = product.showcase?.highlights || [];
+  const highlights = normalizeHighlights(product.showcase?.highlights);
   const variants = product.variants || [];
-  const galleryImages = product.gallery_images || [];
+  const galleryMedia = (product.gallery_images || []).map((url) => ({ url, alt: product.name }));
+  // La galerie peut contenir des photos ET des vidéos (détectées par extension d'URL).
+  const galleryVideos = galleryMedia.filter((m) => isVideoUrl(m.url));
+  const galleryImages = galleryMedia.filter((m) => !isVideoUrl(m.url));
+  const allImages = [
+    ...(product.main_image_url ? [{ url: product.main_image_url, alt: product.name }] : []),
+    ...galleryImages,
+  ];
+  const variantImage = selectedVariant?.image || null;
+  // Images du héro : principale + galerie + image de la variante sélectionnée (si absente de la galerie)
+  const heroImages =
+    variantImage && !allImages.some((i) => i.url === variantImage)
+      ? [...allImages, { url: variantImage, alt: `${product.name} — ${selectedVariant?.name || ""}` }]
+      : allImages;
+  const heroVideo = product.showcase?.hero_video_url || null;
   const hasVariantsTable = variants.some((v) => v.attributes?.dimensions || v.attributes?.materials);
-  const isTable = product.showcase?.category === "table-lumineuse";
+  const faqItems = product.showcase?.faq?.length ? product.showcase.faq : DEFAULT_FAQ;
 
   const handleAddToCart = () => {
     if (!selectedVariant || selectedVariant.price == null) return;
+    const key = `${product.id}:${selectedVariant.sku}:${selectedOptionsList
+      .map((o) => `${o.param_id}.${o.option_id}`)
+      .sort()
+      .join("|")}`;
     addItem({
+      key,
       product_id: product.id,
       product_name: product.name,
       product_slug: product.slug,
       variant_label: selectedVariant.name,
       variant_sku: selectedVariant.sku,
       quantity,
-      unit_price_fcfa: selectedVariant.price,
+      unit_price_fcfa: totalPrice ?? selectedVariant.price,
       image_url: product.main_image_url,
+      options: selectedOptionsList,
+      online_enabled: !!product.showcase?.payment?.online_enabled,
+      cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
     });
     setCartOpen(true);
   };
 
   return (
     <div className="pb-12">
-      {/* ===== Breadcrumb ===== */}
-      <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-6">
-        <nav className="text-xs text-[var(--color-text-tertiary)] flex items-center gap-1 flex-wrap">
-          <Link href="/" className="hover:text-[var(--color-text-primary)]">Accueil</Link>
-          <span>/</span>
-          {familyId && (
-            <>
-              <Link href={`/collection/categorie/${familyId}`} className="hover:text-[var(--color-text-primary)]">
-                {getFamilyLabel(familyId)}
-              </Link>
-              <span>/</span>
-            </>
-          )}
-          {product.showcase?.category && (
-            <>
-              <span className="text-[var(--color-text-secondary)]">{getCategoryLabel(product.showcase.category)}</span>
-              <span>/</span>
-            </>
-          )}
-          <span className="text-[var(--color-text-secondary)] line-clamp-1">{product.name}</span>
-        </nav>
-      </div>
+      {/* ===== Produit : média sticky (gauche) + panneau info (droite) ===== */}
+      <div className="md:max-w-7xl md:mx-auto md:px-4 md:py-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:gap-12 md:items-start">
+          {/* Bloc média sticky (pleine largeur, sans marge sur mobile) */}
+          <ProductMediaViewer
+            images={heroImages}
+            defaultImage={variantImage ?? product.main_image_url ?? heroImages[0]?.url}
+            videoUrl={heroVideo}
+            galleryVideos={galleryVideos}
+            dimensions={selectedVariant?.attributes?.dimensions ?? variants[0]?.attributes?.dimensions ?? null}
+            images360={product.showcase?.images_360}
+            threeSixtyEnabled={product.showcase?.three_sixty_enabled}
+            lightSwitch={product.showcase?.light_switch}
+            productName={product.name}
+            mediaRef={mediaRef}
+          />
 
-      {/* ===== Produit : galerie + panneau info ===== */}
-      <div className="max-w-7xl mx-auto px-4 py-5 md:py-8 grid grid-cols-1 lg:grid-cols-2 lg:gap-12">
-        {/* Galerie */}
-        <div>
-          <div className="relative aspect-[4/5] md:aspect-square rounded-2xl overflow-hidden bg-[var(--color-bg-tertiary)]">
-            {product.main_image_url ? (
-              <img
-                src={imgProxyUrl(product.main_image_url, 900)}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-[var(--color-text-tertiary)] gap-2">
-                <span className="text-4xl">✨</span>
-                <span className="text-sm">Photo à venir</span>
-              </div>
-            )}
-          </div>
-          {/* Vignettes (si galerie disponible) */}
-          {galleryImages.length > 0 && (
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {galleryImages.map((g, i) => (
-                <div key={i} className="aspect-square rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)]">
-                  <img src={imgProxyUrl(g.url, 200)} alt={g.alt || product.name} className="w-full h-full object-cover" />
-                </div>
-              ))}
+          {/* Panneau info */}
+          <div className="px-4 py-6 md:px-0 md:py-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              {categoryLabel && <Badge variant="category">{categoryLabel}</Badge>}
+              {isOnlinePayable(product) && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-accent-amber)]">
+                  <Zap className="w-3.5 h-3.5" /> Express
+                </span>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Panneau info */}
-        <div className="mt-6 lg:mt-0">
-          {categoryLabel && <Badge variant="category">{categoryLabel}</Badge>}
-
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mt-3">
-            {product.name}
-          </h1>
-
-          {/* Prix */}
-          <div className="mt-3">
-            {currentPrice != null ? (
-              <div>
-                <span className="text-xs text-[var(--color-text-tertiary)]">À partir de</span>
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
-                  {formatFCFA(currentPrice)}
-                </p>
+            {/* Nom + prix côte à côte */}
+            <div className="mt-3 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] leading-tight">
+                  {product.name}
+                </h1>
+                {/* Étoiles + note (juste sous le nom, visible sur mobile) */}
+                <RatingStars popularity={product.showcase?.popularity} />
               </div>
-            ) : (
-              <p className="text-lg font-semibold text-[var(--color-text-secondary)]">Sur devis</p>
-            )}
-          </div>
 
-          {/* Description courte (sous le prix) */}
-          {product.showcase?.short_description && (
-            <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-              {product.showcase.short_description}
-            </p>
-          )}
-
-          {/* Sélecteur de variante (dimensions) */}
-          {variants.length > 0 && (
-            <div className="mt-4">
-              <VariantSelector
-                variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price }))}
-                selectedSku={selectedSku}
-                onSelect={(v) => setSelectedSku(v.sku)}
-              />
-            </div>
-          )}
-
-          {/* Couleur + Option (tables uniquement) — accordion inline */}
-          {isTable && (
-            <div className="mt-4 space-y-2.5">
-              {/* Couleur */}
-              <div className="rounded-2xl border border-[var(--color-border-strong)] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => { setColorOpen((o) => !o); setOptionOpen(false); }}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface-card)]"
-                >
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Couleur</span>
-                  <span className="flex items-center gap-2">
-                    {selectedColor && (
-                      <span
-                        className="w-5 h-5 rounded-full border border-[var(--color-border-strong)] shrink-0"
-                        style={{ backgroundColor: selectedColor.hex }}
-                      />
+              {/* Prix (côte à côte avec le nom) */}
+              <div className="shrink-0 text-right">
+                {currentPrice != null ? (
+                  <div>
+                    <span className="text-xs text-[var(--color-text-tertiary)]">
+                      {selectedVariant ? selectedVariant.name : "À partir de"}
+                    </span>
+                    <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
+                      {formatPrice(totalPrice ?? currentPrice)}
+                    </p>
+                    {optionsTotal > 0 && (
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                        dont options : +{formatPrice(optionsTotal)}
+                      </p>
                     )}
-                    <span className="text-sm text-[var(--color-text-secondary)]">
-                      {selectedColor ? selectedColor.label : "Choisir"}
-                    </span>
-                    <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", colorOpen && "rotate-180")} />
-                  </span>
-                </button>
-                {colorOpen && (
-                  <div className="border-t border-[var(--color-border-default)] px-4 py-3">
-                    <div className="grid grid-cols-5 gap-2">
-                      {tableColors.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => { setSelectedColor(c); setColorOpen(false); }}
-                          className={cn(
-                            "flex flex-col items-center gap-1.5 rounded-xl p-2 transition-colors",
-                            selectedColor?.id === c.id ? "bg-[var(--color-bg-tertiary)]" : "hover:bg-[var(--color-bg-tertiary)]"
-                          )}
-                        >
-                          {/* TODO: remplacer par une vraie image miniature (img) quand dispo */}
-                          <span className="w-8 h-8 rounded-lg border border-[var(--color-border-strong)]" style={{ backgroundColor: c.hex }} />
-                          <span className="text-[10px] text-[var(--color-text-secondary)] leading-none text-center">{c.label}</span>
-                        </button>
-                      ))}
-                    </div>
                   </div>
-                )}
-              </div>
-
-              {/* Option */}
-              <div className="rounded-2xl border border-[var(--color-border-strong)] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => { setOptionOpen((o) => !o); setColorOpen(false); }}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface-card)]"
-                >
-                  <span className="text-sm font-medium text-[var(--color-text-primary)]">Option</span>
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm text-[var(--color-text-secondary)]">
-                      {selectedOption ? selectedOption.label : "Choisir"}
-                    </span>
-                    <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", optionOpen && "rotate-180")} />
-                  </span>
-                </button>
-                {optionOpen && (
-                  <div className="border-t border-[var(--color-border-default)] p-2">
-                    {tableOptions.map((o) => (
-                      <button
-                        key={o.id}
-                        type="button"
-                        onClick={() => { setSelectedOption(o); setOptionOpen(false); }}
-                        className={cn(
-                          "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-[var(--color-text-primary)] transition-colors",
-                          selectedOption?.id === o.id ? "bg-[var(--color-bg-tertiary)] font-medium" : "hover:bg-[var(--color-bg-tertiary)]"
-                        )}
-                      >
-                        {o.label}
-                        {selectedOption?.id === o.id && <Check className="w-4 h-4 text-[var(--color-accent-amber)]" />}
-                      </button>
-                    ))}
-                  </div>
+                ) : (
+                  <p className="text-lg font-semibold text-[var(--color-text-secondary)]">Sur devis</p>
                 )}
               </div>
             </div>
-          )}
 
-          {/* Quantité + CTA */}
-          <div className="mt-5 flex flex-col gap-2.5">
-            {variants.length > 0 ? (
-              currentPrice != null ? (
-                <>
-                  {/* Sélecteur de quantité (bloc arrondi) */}
-                  <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
-                    <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
-                    <div className="flex items-center gap-1">
+            {/* Description courte */}
+            {product.showcase?.short_description && (
+              <p className="mt-3 text-sm text-[var(--color-text-secondary)] leading-relaxed">
+                {product.showcase.short_description}
+              </p>
+            )}
+
+            {/* Sélecteur de variante (dimensions) */}
+            {variants.length > 0 && (
+              <div className="mt-4">
+                <VariantSelector
+                  variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price, dimensions: v.attributes?.dimensions }))}
+                  selectedSku={selectedSku}
+                  onSelect={(v) => setSelectedSku(v.sku)}
+                />
+              </div>
+            )}
+
+            {/* Paramètres produit (single/multi-sélect avec miniatures + coûts) */}
+            {parameters.length > 0 && (
+              <div className="mt-4 space-y-2.5">
+                {parameters.map((param) => {
+                  const selected = selectedOptions[param.id] || [];
+                  const open = openParam === param.id;
+                  const summary = selected.length
+                    ? selected
+                        .map((id) => param.options.find((o) => o.id === id)?.label)
+                        .filter(Boolean)
+                        .join(", ")
+                    : "Choisir";
+                  return (
+                    <div key={param.id} className="rounded-2xl border border-[var(--color-border-strong)] overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                        disabled={quantity <= 1}
-                        aria-label="Diminuer la quantité"
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        onClick={() => setOpenParam(open ? null : param.id)}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-[var(--color-surface-card)]"
                       >
-                        <Minus className="w-4 h-4" />
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                          {param.name}
+                          {selected.length > 0 && (
+                            <span className="ml-1.5 text-xs font-semibold text-[var(--color-accent-amber)]">
+                              {selected.length}
+                            </span>
+                          )}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm text-[var(--color-text-secondary)] max-w-[160px] truncate">
+                            {summary}
+                          </span>
+                          <ChevronDown className={cn("w-4 h-4 text-[var(--color-text-tertiary)] transition-transform", open && "rotate-180")} />
+                        </span>
                       </button>
-                      <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
-                      <button
-                        type="button"
-                        onClick={() => setQuantity((q) => q + 1)}
-                        aria-label="Augmenter la quantité"
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
+                      {open && (
+                        <div className="border-t border-[var(--color-border-default)] px-4 py-3">
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                            {param.options.map((opt) => {
+                              const isSelected = selected.includes(opt.id);
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => toggleOption(param, opt.id)}
+                                  className={cn(
+                                    "relative flex flex-col items-center gap-1.5 rounded-xl p-2 border transition-all",
+                                    isSelected
+                                      ? "border-[var(--color-text-primary)] bg-[var(--color-bg-tertiary)]"
+                                      : "border-transparent hover:bg-[var(--color-bg-tertiary)]"
+                                  )}
+                                >
+                                  {isSelected && (
+                                    <span className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[var(--color-text-primary)] flex items-center justify-center">
+                                      <Check className="w-3 h-3 text-[var(--color-bg-primary)]" />
+                                    </span>
+                                  )}
+                                  {opt.image ? (
+                                    <img src={imgProxyUrl(opt.image, 120, 160)} alt={opt.label} className="w-10 h-10 rounded-lg object-cover" />
+                                  ) : opt.color ? (
+                                    <span className="w-10 h-10 rounded-lg border border-[var(--color-border-strong)]" style={{ backgroundColor: opt.color }} />
+                                  ) : (
+                                    <span className="w-10 h-10 rounded-lg bg-[var(--color-bg-secondary)] flex items-center justify-center text-lg">✨</span>
+                                  )}
+                                  <span className="text-[11px] text-[var(--color-text-secondary)] leading-none text-center">{opt.label}</span>
+                                  {opt.price != null && opt.price > 0 && (
+                                    <span className="text-[10px] font-semibold text-[var(--color-accent-amber)] leading-none">+{formatPrice(opt.price)}</span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                  <Button variant="primary" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
-                    {selectedSku ? `Ajouter au panier — ${formatFCFA(currentPrice)}` : "Sélectionnez une taille"}
-                  </Button>
-                </>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Quantité + CTA */}
+            <div className="mt-5 flex flex-col gap-2.5">
+              {variants.length > 0 ? (
+                currentPrice != null ? (
+                  <>
+                    {/* Sélecteur de quantité (bloc arrondi) */}
+                    <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          disabled={quantity <= 1}
+                          aria-label="Diminuer la quantité"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => q + 1)}
+                          aria-label="Augmenter la quantité"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <Button variant="success" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
+                      {selectedSku ? (
+                        <span className="flex w-full items-center justify-between gap-3">
+                          <span>Ajouter au panier</span>
+                          <span className="font-mono text-base">{formatPrice(lineTotal ?? 0)}</span>
+                        </span>
+                      ) : (
+                        "Sélectionnez une taille"
+                      )}
+                    </Button>
+                  </>
+                ) : (
+                  <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
+                    <Button variant="whatsapp" size="lg" className="w-full">
+                      {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
+                    </Button>
+                  </a>
+                )
               ) : (
                 <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                  <Button variant="whatsapp" size="lg" className="w-full">
-                    {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
-                  </Button>
+                  <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
                 </a>
-              )
-            ) : (
-              <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
-              </a>
-            )}
-            {/* Réassurance compacte : 3 cartes sur une ligne */}
-            <div className="grid grid-cols-3 gap-2">
-              {product.showcase?.delivery_time && (
+              )}
+              {/* Réassurance compacte : 3 cartes sur une ligne */}
+              <div className="grid grid-cols-3 gap-2">
+                {product.showcase?.delivery_time && (
+                  <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                    <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Délai</p>
+                      <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">{product.showcase.delivery_time}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
-                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Délai</p>
-                    <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">{product.showcase.delivery_time}</p>
+                    <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Fabrication</p>
+                    <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">local</p>
                   </div>
                 </div>
-              )}
-              <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
-                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Fabrication</p>
-                  <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">local</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Garantie</p>
-                  <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">2 ans</p>
+                <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Garantie</p>
+                    <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">2 ans</p>
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* ===== Points forts : slider minimaliste ===== */}
+      {/* ===== Points forts : cartes modernes sur fond crème ===== */}
       {highlights.length > 0 && (
-        <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
-            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
-              Points forts
-            </h2>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-2">
-              {highlights.map((h, i) => {
-                const Icon = highlightIcon(h);
-                return (
-                  <div
-                    key={i}
-                    className="snap-start shrink-0 w-[150px] sm:w-[170px] rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 flex flex-col items-center gap-2.5 text-center"
-                  >
-                    <span className="w-9 h-9 rounded-full bg-[var(--color-bg-secondary)] text-[var(--color-accent-amber)] flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
-                    </span>
-                    <span className="text-xs font-medium text-[var(--color-text-primary)] leading-snug">{h}</span>
-                  </div>
-                );
-              })}
+        <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
+          <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+            <div className="text-center mb-5 md:mb-6">
+              <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
+                Points forts
+              </h2>
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
+                Ce qui distingue ce produit — cliquez sur une carte pour en savoir plus.
+              </p>
             </div>
+            <HighlightCarousel highlights={highlights} />
           </div>
         </section>
       )}
@@ -434,7 +501,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* Pilules : 6 boutons (2×3) → bottom sheet */}
           <div className="grid grid-cols-2 gap-2 mb-6">
-            {productFaqPills.map((pill) => (
+          {faqPills.map((pill) => (
               <button
                 key={pill.id}
                 type="button"
@@ -449,7 +516,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* Accordion FAQ */}
           <div className="space-y-2.5 mb-6">
-            {productFaq.map((faq, i) => (
+            {faqItems.map((faq, i) => (
               <details
                 key={i}
                 className="group rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]"
@@ -465,47 +532,50 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* CTA conseiller */}
           <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-            <Button variant="secondary" size="lg" className="w-full">💬 Parler à un conseiller</Button>
+            <Button variant="whatsapp" size="lg" className="w-full">💬 Parler à un conseiller</Button>
           </a>
         </div>
       </section>
 
-      {/* ===== Caractéristiques (compact) ===== */}
+      {/* ===== Caractéristiques : tableau moderne sur fond crème ===== */}
       {hasVariantsTable && (
-        <section className="border-t border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
-            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
-              Caractéristiques
-            </h2>
+        <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
+          <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+            <div className="text-center mb-5 md:mb-6">
+              <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
+                Caractéristiques
+              </h2>
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
+                Les spécifications selon la taille.
+              </p>
+            </div>
 
-            {/* Tableau compact des variantes */}
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)] border-b border-[var(--color-border-default)]">
-                    <th className="py-2 pr-3 font-medium">Taille</th>
-                    <th className="py-2 pr-3 font-medium">Dimensions</th>
-                    <th className="py-2 pr-3 font-medium">Matériaux</th>
-                    <th className="py-2 font-medium text-right">Prix</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variants.map((v) => (
-                    <tr key={v.id} className="border-b border-[var(--color-border-default)] last:border-0">
-                      <td className="py-2 pr-3 font-medium text-[13px] text-[var(--color-text-primary)]">{v.name}</td>
-                      <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
-                        {v.attributes?.dimensions || "—"}
-                      </td>
-                      <td className="py-2 pr-3 text-[13px] text-[var(--color-text-secondary)]">
-                        {v.attributes?.materials || "—"}
-                      </td>
-                      <td className="py-2 text-right font-medium text-[13px] text-[var(--color-text-primary)] whitespace-nowrap">
-                        {v.price != null ? formatFCFA(v.price) : "Sur devis"}
-                      </td>
+            {/* Tableau moderne : conteneur arrondi, en-tête fondé, lignes hover */}
+            <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[var(--color-bg-secondary)] text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                      <th className="px-4 py-3 font-semibold">Taille</th>
+                      <th className="px-4 py-3 font-semibold">Dimensions</th>
+                      <th className="px-4 py-3 font-semibold">Matériaux</th>
+                      <th className="px-4 py-3 font-semibold text-right">Prix</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border-default)]">
+                    {variants.map((v) => (
+                      <tr key={v.id} className="transition-colors hover:bg-[var(--color-bg-secondary)]">
+                        <td className="px-4 py-3 font-semibold text-[var(--color-text-primary)]">{v.name}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
+                          {v.price != null ? formatPrice(v.price) : "Sur devis"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </section>
@@ -520,7 +590,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
               {relatedProducts.map((rp) => (
-                <ProductCard key={rp.id} product={rp} />
+                <ProductCard key={rp.id} product={rp} sizes="(max-width: 767px) 50vw, 25vw" />
               ))}
             </div>
           </div>
@@ -562,6 +632,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </>
         )}
       </AnimatePresence>
+
+      {/* Barre produit sticky (remplace la TopNav quand l'image principale est sortie du viewport) */}
+      <StickyProductBar
+        name={product.name}
+        priceLabel={priceLabel}
+        image={variantImage ?? product.main_image_url}
+        visible={stickyBarVisible}
+      />
 
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>

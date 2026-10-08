@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { getMinPrice } from "@/lib/utils";
 import { resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
@@ -91,17 +92,14 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
   ];
 
   return (
-    <section className="max-w-7xl mx-auto px-4 py-16 md:py-24">
+    <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
-            Besoin d&apos;un conseil ?
-          </h2>
-          <p className="text-sm text-[var(--color-text-secondary)] mt-2">
-            Répondez à 3 questions pour trouver le produit qu&apos;il vous faut
-          </p>
-        </div>
+        <SectionHeader
+          eyebrow="Trouvez le bon produit"
+          title="Besoin d&apos;un conseil ?"
+          subtitle="Répondez à 3 questions pour trouver le produit qu&apos;il vous faut"
+        />
 
         {/* Progress */}
         {!isResult && (

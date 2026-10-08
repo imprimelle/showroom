@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ProductListClient } from "./ProductListClient";
-import type { ShowcaseProduct } from "@/lib/products";
+import { NewProductButton } from "@/components/admin/NewProductButton";
+import { resolveVariants, type ShowcaseProduct } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +22,9 @@ export default async function AdminProductsPage() {
             {products?.filter((p: any) => p.is_published).length || 0}/{products?.length || 0} publiés
           </p>
         </div>
+        <NewProductButton />
       </div>
-      <ProductListClient products={(products || []) as ShowcaseProduct[]} />
+      <ProductListClient products={(products || []).map((p: any) => ({ ...p, variants: resolveVariants(p) })) as ShowcaseProduct[]} />
     </div>
   );
 }

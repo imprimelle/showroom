@@ -1,19 +1,22 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedProducts } from "@/lib/products";
+import { getShowcaseSettings } from "@/lib/settings";
 import { getCategory, resolveFamily } from "@/lib/categories";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Comparator } from "@/components/decision/Comparator";
+import { CategorySearch } from "@/components/search/CategorySearch";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
-import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
+import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch } from "@/lib/utils";
+import { quoteMessage } from "@/lib/whatsapp";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sub?: string }>;
+  searchParams: Promise<{ sub?: string; q?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -28,20 +31,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CategoryPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { sub } = await searchParams;
+  const { sub, q } = await searchParams;
   const cat = getCategory(slug);
   if (!cat) notFound();
 
   const all = await getPublishedProducts().catch(() => []);
+  const settings = await getShowcaseSettings();
+  const catTitle = settings.categories?.[cat.id]?.title || cat.name;
   const familyProducts = all.filter(
     (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === cat.id
   );
-  const products = sub
+  let products = sub
     ? familyProducts.filter((p) => p.showcase?.category === sub)
     : familyProducts;
 
+  // Filtre par recherche (name + description courte, insensible aux accents)
+  if (q) {
+    const query = normalizeForSearch(q);
+    products = products.filter(
+      (p) =>
+        normalizeForSearch(p.name).includes(query) ||
+        normalizeForSearch(p.showcase?.short_description || "").includes(query)
+    );
+  }
+
   const firstImage = familyProducts.find((p) => p.main_image_url)?.main_image_url;
-  const bannerImage = firstImage ? imgProxyUrl(firstImage, 1200) : cat.image;
+  const bannerImage = firstImage ? imgProxyUrl(firstImage, 1200, 675) : cat.image;
 
   return (
     <div>
@@ -56,7 +71,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 md:px-12 md:pb-10">
           <div className="max-w-7xl mx-auto">
             <h1 className="font-display text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
-              <span>{cat.icon}</span> {cat.name}
+              <span>{cat.icon}</span> {catTitle}
             </h1>
             <p className="text-white/80 text-sm mt-1">
               {products.length} produit{products.length > 1 ? "s" : ""}
@@ -73,8 +88,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <span className="mx-2">/</span>
           <Link href="/collection" className="hover:text-[var(--color-text-primary)]">Catalogue</Link>
           <span className="mx-2">/</span>
-          <span className="text-[var(--color-text-primary)]">{cat.name}</span>
+          <span className="text-[var(--color-text-primary)]">{catTitle}</span>
         </nav>
+
+        {/* Recherche dans l'univers (suggestions + filtre) */}
+        <CategorySearch family={cat.id} familyName={catTitle} initialQuery={q} />
 
       {/* Sous-catégories chips */}
       {cat.children.length > 0 && (
@@ -136,14 +154,14 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       {/* CTA devis contextualisé */}
       <div className="mt-12 rounded-3xl bg-[var(--color-bg-secondary)] px-6 py-10 text-center">
         <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
-          Un projet {cat.name} sur mesure ?
+          Un projet {catTitle} sur mesure ?
         </h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
           Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.
         </p>
         <div className="mt-6 flex items-center justify-center">
           <a
-            href={getWhatsAppUrl(DEFAULT_WHATSAPP, `Bonjour, je souhaite un devis pour : ${cat.name}`)}
+            href={getWhatsAppUrl(DEFAULT_WHATSAPP, quoteMessage(catTitle))}
             target="_blank"
             rel="noopener noreferrer"
           >

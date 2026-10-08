@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -9,7 +8,6 @@ export default function AdminLoginPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,15 +21,25 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ pin }),
       });
 
+      // Lire le corps de façon tolérante (peut être vide sur certaines erreurs proxy)
+      let data: { error?: string } | null = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "PIN incorrect");
+        setError(data?.error || `Connexion refusée (${res.status})`);
         return;
       }
 
-      router.push("/admin");
+      // Redirection plein écran (reload) : garantit que le navigateur envoie
+      // le cookie HttpOnly fraîchement posé lors de la requête suivante,
+      // contrairement à router.push() qui peut rebondir vers /admin/login.
+      window.location.href = "/admin";
     } catch {
-      setError("Erreur de connexion");
+      setError("Erreur réseau. Vérifiez votre connexion et réessayez.");
     } finally {
       setLoading(false);
     }

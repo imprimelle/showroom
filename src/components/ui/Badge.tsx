@@ -1,7 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 
-type BadgeVariant = "category" | "new" | "contacted" | "confirmed" | "in_progress" | "delivered" | "cancelled" | "cart";
+type BadgeVariant = "category" | "new" | "contacted" | "confirmed" | "in_progress" | "delivered" | "cancelled" | "cart" | "success" | "danger" | "neutral";
 
 const variantStyles: Record<BadgeVariant, string> = {
   category: "bg-[var(--color-accent-amber)]/15 text-[var(--color-accent-amber)]",
@@ -12,6 +12,9 @@ const variantStyles: Record<BadgeVariant, string> = {
   delivered: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
   cancelled: "bg-[var(--color-error-soft)] text-[var(--color-error)]",
   cart: "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]",
+  success: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+  danger: "bg-[var(--color-error-soft)] text-[var(--color-error)]",
+  neutral: "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]",
 };
 
 const statusLabels: Record<string, string> = {

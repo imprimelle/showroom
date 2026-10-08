@@ -2,7 +2,7 @@
 import { cn } from "@/lib/utils";
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "whatsapp" | "danger" | "text";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "whatsapp" | "success" | "danger" | "text";
 type ButtonSize = "sm" | "md" | "lg" | "xl" | "icon";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -11,10 +11,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] hover:bg-[#2A2A2A] dark:hover:bg-[#333]",
+  primary: "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] hover:bg-[#111827]",
   secondary: "bg-transparent text-[var(--color-text-primary)] border border-[var(--color-border-strong)] hover:bg-[var(--color-bg-tertiary)]",
   ghost: "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]",
   whatsapp: "bg-[#25D366] text-white hover:bg-[#1EA952]",
+  success: "bg-[var(--color-success)] text-white hover:bg-[#15803D]",
   danger: "bg-[var(--color-error)] text-white hover:bg-[#B91C1C]",
   text: "bg-transparent text-[var(--color-accent-blue)] hover:underline p-0 min-h-0",
 };

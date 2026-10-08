@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CartItem } from '@/types';
+import { track } from '@/lib/analytics';
 
 interface CartStore {
   items: CartItem[];
   addItem: (item: CartItem) => void;
-  removeItem: (productId: string, variantSku: string) => void;
-  updateQuantity: (productId: string, variantSku: string, quantity: number) => void;
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, quantity: number) => void;
   clearCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
@@ -18,41 +19,36 @@ export const useCartStore = create<CartStore>()(
       items: [],
 
       addItem: (item: CartItem) => {
-        const existing = get().items.find(
-          (i) => i.product_id === item.product_id && i.variant_sku === item.variant_sku
-        );
+        const existing = get().items.find((i) => i.key === item.key);
         if (existing) {
           set({
             items: get().items.map((i) =>
-              i.product_id === item.product_id && i.variant_sku === item.variant_sku
-                ? { ...i, quantity: i.quantity + item.quantity }
-                : i
+              i.key === item.key ? { ...i, quantity: i.quantity + item.quantity } : i
             ),
           });
         } else {
           set({ items: [...get().items, item] });
         }
-      },
-
-      removeItem: (productId: string, variantSku: string) => {
-        set({
-          items: get().items.filter(
-            (i) => !(i.product_id === productId && i.variant_sku === variantSku)
-          ),
+        track('add_to_cart', {
+          product_id: item.product_id,
+          product_name: item.product_name,
+          price: item.unit_price_fcfa,
+          quantity: item.quantity,
+          variant: item.variant_label,
         });
       },
 
-      updateQuantity: (productId: string, variantSku: string, quantity: number) => {
+      removeItem: (key: string) => {
+        set({ items: get().items.filter((i) => i.key !== key) });
+      },
+
+      updateQuantity: (key: string, quantity: number) => {
         if (quantity <= 0) {
-          get().removeItem(productId, variantSku);
+          get().removeItem(key);
           return;
         }
         set({
-          items: get().items.map((i) =>
-            i.product_id === productId && i.variant_sku === variantSku
-              ? { ...i, quantity }
-              : i
-          ),
+          items: get().items.map((i) => (i.key === key ? { ...i, quantity } : i)),
         });
       },
 
@@ -68,6 +64,16 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'showroom-cart',
+      version: 1,
+      // Migration des anciens paniers (sans `key` ni `options`).
+      migrate: (persisted: any) => ({
+        ...persisted,
+        items: (persisted?.items || []).map((i: any) => ({
+          ...i,
+          key: i.key || `${i.product_id}:${i.variant_sku}`,
+          options: i.options || [],
+        })),
+      }),
     }
   )
 );

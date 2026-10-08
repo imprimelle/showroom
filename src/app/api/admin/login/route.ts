@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || process.env.ADMIN_PIN || "showroom-admin-secret-change-me"
-);
+import { JWT_SECRET } from "@/lib/admin/secret";
 
 // Simple in-memory rate limiting for login
 const loginAttempts = new Map<string, { count: number; blockedUntil: number }>();
@@ -14,6 +11,7 @@ export async function POST(request: NextRequest) {
   // Rate limit check
   const attempt = loginAttempts.get(ip);
   if (attempt && attempt.blockedUntil > Date.now()) {
+    console.warn(`[admin/login] blocked ip=${ip} until=${new Date(attempt.blockedUntil).toISOString()}`);
     return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
   }
 
@@ -27,14 +25,17 @@ export async function POST(request: NextRequest) {
       if (current.count >= 5) {
         current.blockedUntil = Date.now() + 60 * 60 * 1000; // Block 1h
         loginAttempts.set(ip, current);
+        console.warn(`[admin/login] ip=${ip} BLOCKED (5 wrong attempts)`);
         return NextResponse.json({ error: "Compte bloqué. Réessayez dans 1 heure." }, { status: 429 });
       }
       loginAttempts.set(ip, current);
+      console.warn(`[admin/login] invalid pin ip=${ip} attempts=${current.count}`);
       return NextResponse.json({ error: "PIN incorrect" }, { status: 401 });
     }
 
     // Clear attempts on success
     loginAttempts.delete(ip);
+    console.log(`[admin/login] success ip=${ip}`);
 
     // Create JWT
     const token = await new SignJWT({ role: "admin" })
@@ -53,7 +54,8 @@ export async function POST(request: NextRequest) {
     });
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error(`[admin/login] internal error ip=${ip}`, err);
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 });
   }
 }

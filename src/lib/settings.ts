@@ -1,9 +1,11 @@
 import { supabase } from "./supabase/client";
 import type { ShowcaseSettings } from "@/types";
+import { setCategories, resolveCategories } from "./categories";
 
 /**
  * Charge les réglages du site (showcase_settings, ligne id=1).
  * À utiliser uniquement dans des Server Components.
+ * Hydrate aussi le catalogue de catégories (module `categories.ts`).
  */
 export async function getShowcaseSettings(): Promise<ShowcaseSettings> {
   try {
@@ -12,7 +14,9 @@ export async function getShowcaseSettings(): Promise<ShowcaseSettings> {
       .select("data")
       .eq("id", 1)
       .single();
-    return (data?.data as ShowcaseSettings) || {};
+    const settings = (data?.data as ShowcaseSettings) || {};
+    setCategories(resolveCategories(settings.catalog));
+    return settings;
   } catch {
     return {};
   }

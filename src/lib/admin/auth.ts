@@ -1,9 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { JWT_SECRET } from "./secret";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.ADMIN_JWT_SECRET || process.env.ADMIN_PIN || "showroom-admin-secret-change-me"
-);
 const COOKIE_NAME = "admin_token";
 const TOKEN_DURATION = "24h";
 

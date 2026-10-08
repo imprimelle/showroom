@@ -14,12 +14,32 @@ export interface Category {
 }
 
 /**
- * Source unique de vérité pour la catégorisation (hiérarchie 2 niveaux) :
- * 2 univers (niveau 1) + sous-catégories (niveau 2).
- * Importée par la home, le catalogue, la page produit et l'admin.
- * Ne jamais re-déclarer ces valeurs ailleurs.
+ * Catégories par défaut (hiérarchie 2 niveaux). Servent de repli quand
+ * `showcase_settings.data.catalog` est vide (état initial).
  */
-export const CATEGORIES: Category[] = [
+export const DEFAULT_CATEGORIES: Category[] = [
+  {
+    id: "mobilier-decorations",
+    name: "Mobilier & Décorations",
+    icon: "🛋️",
+    color: "from-emerald-500/80",
+    image: "/images/categories/mobilier-decorations.svg",
+    children: [
+      { id: "table-lumineuse", name: "Table lumineuse", icon: "🪑" },
+    ],
+  },
+  {
+    id: "tableaux-decoratifs",
+    name: "Tableaux décoratifs",
+    icon: "🖼️",
+    color: "from-fuchsia-500/80",
+    children: [
+      { id: "tableau-decoratif", name: "Tableau décoratif", icon: "🖼️" },
+      { id: "portrait-lumineux", name: "Portrait lumineux", icon: "🧑‍🎨" },
+      { id: "tableau-infini", name: "Tableaux Infinie", icon: "🪞" },
+      { id: "logo-football-neon", name: "Logo Football néon", icon: "⚽" },
+    ],
+  },
   {
     id: "enseignes-signaletique",
     name: "Enseignes & Signalétique",
@@ -35,20 +55,35 @@ export const CATEGORIES: Category[] = [
       { id: "enseigne-neon", name: "Enseigne néon", icon: "✨" },
     ],
   },
-  {
-    id: "mobilier-decorations",
-    name: "Mobilier & Décorations",
-    icon: "🛋️",
-    color: "from-emerald-500/80",
-    image: "/images/categories/mobilier-decorations.svg",
-    children: [
-      { id: "table-lumineuse", name: "Table lumineuse", icon: "🪑" },
-      { id: "tableau-decoratif", name: "Tableau décoratif", icon: "🖼️" },
-    ],
-  },
 ];
 
+function deepCopy(list: Category[]): Category[] {
+  return list.map((c) => ({ ...c, children: [...c.children] }));
+}
+
+/**
+ * Source unique de vérité pour la catégorisation, mutable : hydratée depuis
+ * `showcase_settings.data.catalog` (sinon repli sur les valeurs par défaut).
+ * Mutée en place (jamais réassignée) pour que tous les importeurs voient
+ * les changements sans dépendre des live-bindings ES.
+ */
+export const CATEGORIES: Category[] = deepCopy(DEFAULT_CATEGORIES);
 export const ALL_SUBCATEGORIES: SubCategory[] = CATEGORIES.flatMap((c) => c.children);
+
+/** Remplace le catalogue courant (côté serveur et client via hydration). */
+export function setCategories(list: Category[] | null | undefined): void {
+  const resolved = resolveCategories(list);
+  const copy = deepCopy(resolved);
+  CATEGORIES.length = 0;
+  CATEGORIES.push(...copy);
+  ALL_SUBCATEGORIES.length = 0;
+  ALL_SUBCATEGORIES.push(...copy.flatMap((c) => c.children));
+}
+
+/** Renvoie le catalogue effectif : `catalog` si non vide, sinon les valeurs par défaut. */
+export function resolveCategories(custom?: Category[] | null): Category[] {
+  return custom && custom.length > 0 ? custom : DEFAULT_CATEGORIES;
+}
 
 /** Famille (niveau 1) par slug. */
 export function getCategory(id?: string | null): Category | undefined {

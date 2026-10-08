@@ -6,17 +6,15 @@ import { Search } from "lucide-react";
 import { CATEGORIES, getCategory, getFamilyOfSubCategory } from "@/lib/categories";
 import { USAGES } from "@/lib/usages";
 import { cn } from "@/lib/utils";
-import { SortSelect } from "./SortSelect";
 
 interface CollectionToolbarProps {
   currentFamily?: string;
   currentCategory?: string;
   currentUsage?: string;
   currentQuery?: string;
-  currentSort?: string;
 }
 
-export function CollectionToolbar({ currentFamily, currentCategory, currentUsage, currentQuery, currentSort }: CollectionToolbarProps) {
+export function CollectionToolbar({ currentFamily, currentCategory, currentUsage, currentQuery }: CollectionToolbarProps) {
   const router = useRouter();
   const [q, setQ] = useState(currentQuery || "");
 
@@ -92,19 +90,16 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentUsage
         ))}
       </div>
 
-      {/* Search + sort */}
-      <div className="flex gap-2 items-center">
-        <form onSubmit={submitSearch} className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un produit..."
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)]"
-          />
-        </form>
-        <SortSelect current={currentSort || "popularity"} />
-      </div>
+      {/* Recherche (centrale) */}
+      <form onSubmit={submitSearch} className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Rechercher un produit..."
+          className="w-full h-10 pl-9 pr-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)]"
+        />
+      </form>
     </div>
   );
 }

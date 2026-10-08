@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { getPublishedProducts } from "@/lib/products";
 import { resolveFamily } from "@/lib/categories";
-import { getMinPrice } from "@/lib/utils";
+import { normalizeForSearch } from "@/lib/utils";
 import { getUsage } from "@/lib/usages";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
@@ -62,21 +62,14 @@ export default async function CollectionPage({ searchParams }: Props) {
     }
   }
 
-  // Filter by search query (name + short description)
+  // Filter by search query (name + short description, insensible aux accents)
   if (params.q) {
-    const q = params.q.toLowerCase();
+    const q = normalizeForSearch(params.q);
     products = products.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        (p.showcase?.short_description || "").toLowerCase().includes(q)
+        normalizeForSearch(p.name).includes(q) ||
+        normalizeForSearch(p.showcase?.short_description || "").includes(q)
     );
-  }
-
-  // Sort
-  if (params.sort === "price-asc") {
-    products.sort((a, b) => (getMinPrice(a.variants) ?? Infinity) - (getMinPrice(b.variants) ?? Infinity));
-  } else if (params.sort === "price-desc") {
-    products.sort((a, b) => (getMinPrice(b.variants) ?? -Infinity) - (getMinPrice(a.variants) ?? -Infinity));
   }
 
   return (
@@ -97,7 +90,6 @@ export default async function CollectionPage({ searchParams }: Props) {
         currentCategory={params.category}
         currentUsage={params.usage}
         currentQuery={params.q}
-        currentSort={params.sort}
       />
 
       {/* Grid */}

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-
-const JWT_SECRET = new TextEncoder().encode(process.env.ADMIN_PIN || "fallback-secret-change-me");
+import { JWT_SECRET } from "@/lib/admin/secret";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Inject the canonical path so the root layout can emit a correct
+  // <link rel="canonical" href="https://imprimelle.com{pathname}" /> for every page.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-canonical-path", pathname);
 
   // Protect admin pages
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
@@ -16,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
     try {
       await jwtVerify(token, JWT_SECRET);
-      return NextResponse.next();
+      return NextResponse.next({ request: { headers: requestHeaders } });
     } catch {
       const response = NextResponse.redirect(new URL("/admin/login", request.url));
       response.cookies.delete("admin_token");
@@ -33,15 +37,15 @@ export async function middleware(request: NextRequest) {
 
     try {
       await jwtVerify(token, JWT_SECRET);
-      return NextResponse.next();
+      return NextResponse.next({ request: { headers: requestHeaders } });
     } catch {
       return NextResponse.json({ error: "Session expirée" }, { status: 401 });
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

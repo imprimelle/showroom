@@ -4,9 +4,10 @@ import { ShoppingCart, Minus, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
-import { formatFCFA } from "@/lib/utils";
+import { useFormatPrice } from "@/stores/currency";
 
 export default function CartPage() {
+  const formatPrice = useFormatPrice();
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
   const total = getTotal();
 
@@ -32,10 +33,10 @@ export default function CartPage() {
 
       <div className="space-y-3">
         {items.map((item) => (
-          <div key={`${item.product_id}-${item.variant_sku}`} className="flex gap-3 p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
+          <div key={item.key} className="flex gap-3 p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
             <Link href={`/collection/${item.product_slug}`} className="w-20 h-20 rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)] shrink-0">
               {item.image_url ? (
-                <img src={imgProxyUrl(item.image_url, 120)} alt={item.product_name} className="w-full h-full object-cover" />
+                <img src={imgProxyUrl(item.image_url, 120, 160)} alt={item.product_name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)]">
                   <ShoppingCart className="w-6 h-6" />
@@ -47,19 +48,24 @@ export default function CartPage() {
                 {item.product_name}
               </Link>
               <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">{item.variant_label}</p>
+              {item.options && item.options.length > 0 && (
+                <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5">
+                  {item.options.map((o) => o.label).join(" · ")}
+                </p>
+              )}
               <div className="flex items-center justify-between mt-2">
                 <div className="flex items-center gap-1">
-                  <button onClick={() => updateQuantity(item.product_id, item.variant_sku, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]">
+                  <button onClick={() => updateQuantity(item.key, item.quantity - 1)} className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]">
                     <Minus className="w-3 h-3" />
                   </button>
                   <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.product_id, item.variant_sku, item.quantity + 1)} className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]">
+                  <button onClick={() => updateQuantity(item.key, item.quantity + 1)} className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]">
                     <Plus className="w-3 h-3" />
                   </button>
                 </div>
                 <div className="flex items-center gap-3">
-                  <p className="text-sm font-bold font-mono">{formatFCFA(item.unit_price_fcfa * item.quantity)}</p>
-                  <button onClick={() => removeItem(item.product_id, item.variant_sku)} className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)]">
+                  <p className="text-sm font-bold font-mono">{formatPrice(item.unit_price_fcfa * item.quantity)}</p>
+                  <button onClick={() => removeItem(item.key)} className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)]">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -72,7 +78,7 @@ export default function CartPage() {
       <div className="mt-6 p-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] space-y-2">
         <div className="flex justify-between text-sm text-[var(--color-text-secondary)]">
           <span>Sous-total ({items.reduce((s, i) => s + i.quantity, 0)} article{items.length > 1 ? "s" : ""})</span>
-          <span className="font-mono">{formatFCFA(total)}</span>
+          <span className="font-mono">{formatPrice(total)}</span>
         </div>
         <div className="flex justify-between text-sm">
           <span className="text-[var(--color-success)]">Livraison</span>
@@ -80,7 +86,7 @@ export default function CartPage() {
         </div>
         <div className="flex justify-between text-lg font-bold text-[var(--color-text-primary)] pt-2 border-t border-[var(--color-border-default)]">
           <span>Total</span>
-          <span className="font-mono">{formatFCFA(total)}</span>
+          <span className="font-mono">{formatPrice(total)}</span>
         </div>
       </div>
 

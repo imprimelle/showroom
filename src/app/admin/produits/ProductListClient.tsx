@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { formatFCFA, cn, getMinPrice } from "@/lib/utils";
+import { imgProxyUrl } from "@/lib/images";
 import { CATEGORIES, getCategoryLabel, getFamilyLabel, resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
@@ -79,7 +80,14 @@ export function ProductListClient({ products }: ProductListClientProps) {
           const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
           return (
             <div key={product.id} className="flex items-center gap-3 p-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
-              <div className={cn("w-3 h-3 rounded-full shrink-0", product.is_published ? "bg-[var(--color-success)]" : "bg-[var(--color-text-tertiary)]")} />
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-default)]">
+                {product.main_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imgProxyUrl(product.main_image_url, 120, 160)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="w-full h-full flex items-center justify-center text-sm">✨</span>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <Link href={`/admin/produits/${product.id}`} className="text-sm font-medium text-[var(--color-text-primary)] hover:text-[var(--color-accent-blue)] truncate block">
                   {product.name}

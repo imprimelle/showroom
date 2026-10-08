@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   X,
   ShoppingCart,
   House,
@@ -14,8 +15,10 @@ import {
   FileText,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
-import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
+import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, formatPhoneDisplay } from "@/lib/utils";
+import { generalInquiryMessage } from "@/lib/whatsapp";
 import { CATEGORIES } from "@/lib/categories";
+import { SearchSuggest } from "@/components/search/SearchSuggest";
 
 const links = [
   { href: "/", label: "Accueil", icon: House },
@@ -55,12 +58,13 @@ function BurgerSearchIcon({ className }: { className?: string }) {
   );
 }
 
-export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
+export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: string; phone?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const itemCount = useCartStore((s) => s.getItemCount());
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
   const [scrolled, setScrolled] = useState(false);
@@ -80,15 +84,20 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  const closeMenu = () => {
+    setMenuOpen(false);
+    setSearchOpen(false);
+    setSearchQ("");
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQ.trim();
-    setMenuOpen(false);
-    setSearchQ("");
+    closeMenu();
     router.push(q ? `/collection?q=${encodeURIComponent(q)}` : "/collection");
   };
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/checkout")) return null;
 
   const transparent = isHero && !scrolled;
   const fg = transparent ? "text-white" : "text-[var(--color-text-primary)]";
@@ -105,13 +114,28 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
             : "bg-[var(--color-bg-primary)] border-b border-[var(--color-border-default)]"
         )}
       >
+        {/* === Barre fine orange d'annonce (toujours solide, jamais fondue dans le héro) === */}
+        <div className="bg-[var(--color-accent-orange)] text-white">
+          <div className="max-w-7xl mx-auto px-4 h-7 md:h-8 flex items-center justify-between text-[11px] md:text-xs">
+            <span className="font-semibold">Fièrement Ivoiriens 🇨🇮</span>
+            {phone && (
+              <a
+                href={`tel:+${phone}`}
+                className="font-semibold tabular-nums tracking-wide hover:underline"
+              >
+                {formatPhoneDisplay(phone)}
+              </a>
+            )}
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 h-16 md:h-[72px] flex items-center justify-between">
           {/* Logo — à gauche */}
           <Link
             href="/"
             className={cn("font-display font-bold text-lg tracking-tight", fg)}
           >
-            Imprimelle<span className="text-[var(--color-accent-amber)]">CI</span>
+            Imprim<span className="text-[var(--color-accent-amber)]">elle</span>
           </Link>
 
           {/* Panier + Burger — à droite (burger à l'extrême droite) */}
@@ -155,19 +179,32 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
       >
         {/* Header — barre de recherche produit épurée */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border-default)] shrink-0">
+          {searchOpen && (
+            <button
+              onClick={() => {
+                setSearchOpen(false);
+                setSearchQ("");
+              }}
+              className="p-2 -ml-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] shrink-0"
+              aria-label="Retour au menu"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <form onSubmit={handleSearch} className="flex-1">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
               <input
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
+                onFocus={() => setSearchOpen(true)}
                 placeholder="Rechercher un produit..."
                 className="w-full h-12 pl-11 pr-4 rounded-full border border-[var(--color-border-default)] bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)]"
               />
             </div>
           </form>
           <button
-            onClick={() => setMenuOpen(false)}
+            onClick={closeMenu}
             className="p-2.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] shrink-0"
             aria-label="Fermer le menu"
           >
@@ -177,8 +214,12 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
 
         {/* Contenu scrollable */}
         <div className="flex-1 overflow-y-auto">
-          {/* Navigation */}
-          <nav className="px-2 py-3 space-y-0.5">
+          {searchOpen ? (
+            <SearchSuggest query={searchQ} variant="drawer" onNavigate={closeMenu} />
+          ) : (
+            <>
+            {/* Navigation */}
+            <nav className="px-2 py-3 space-y-0.5">
             {links.map((link) => {
               const isActive = link.href === "/"
                 ? pathname === "/"
@@ -227,7 +268,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
           {/* Contact */}
           <div className="px-4 space-y-2">
             <a
-              href={getWhatsAppUrl(whatsapp, "Bonjour, je suis intéressé par vos produits")}
+              href={getWhatsAppUrl(whatsapp, generalInquiryMessage())}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#25D366] hover:bg-[var(--color-bg-tertiary)] transition-colors"
@@ -259,6 +300,8 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
               ))}
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* Footer — logo à gauche, panier à droite */}
@@ -268,7 +311,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
             onClick={() => setMenuOpen(false)}
             className="font-display font-bold text-lg text-[var(--color-text-primary)]"
           >
-            Imprimelle<span className="text-[var(--color-accent-amber)]">CI</span>
+            Imprim<span className="text-[var(--color-accent-amber)]">elle</span>
           </Link>
           <Link
             href="/panier"

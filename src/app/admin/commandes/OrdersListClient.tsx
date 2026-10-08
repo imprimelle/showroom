@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { formatFCFA, cn } from "@/lib/utils";
+import { PAYMENT_METHOD_LABELS, paymentStatusLabel } from "@/lib/payment";
 import type { ShowcaseOrder } from "@/types";
 
 const statusFilters = ["all", "new", "contacted", "confirmed", "in_progress", "delivered", "cancelled"] as const;
@@ -39,6 +40,12 @@ export function OrdersListClient({ orders }: { orders: ShowcaseOrder[] }) {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-mono text-[var(--color-text-tertiary)]">{order.id.slice(0, 8).toUpperCase()}</span>
                 <Badge variant={order.status as any}>{statusLabels[order.status]}</Badge>
+                {order.payment_method && (
+                  <span className="text-[10px] font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide">
+                    {PAYMENT_METHOD_LABELS[order.payment_method] || order.payment_method}
+                    {order.payment_status && order.payment_method !== "cod" ? ` · ${paymentStatusLabel(order.payment_status)}` : ""}
+                  </span>
+                )}
               </div>
               <span className="text-xs text-[var(--color-text-tertiary)]">
                 {new Date(order.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

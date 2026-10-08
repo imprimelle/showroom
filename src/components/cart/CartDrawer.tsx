@@ -6,7 +6,7 @@ import { X, ShoppingCart, Minus, Plus, Trash2 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
-import { formatFCFA } from "@/lib/utils";
+import { useFormatPrice } from "@/stores/currency";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -14,6 +14,7 @@ interface CartDrawerProps {
 }
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
+  const formatPrice = useFormatPrice();
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
   const router = useRouter();
   const total = getTotal();
@@ -87,10 +88,10 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={`${item.product_id}-${item.variant_sku}`} className="flex gap-3 p-2 rounded-xl">
+                  <div key={item.key} className="flex gap-3 p-2 rounded-xl">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)] shrink-0">
                       {item.image_url ? (
-                        <img src={imgProxyUrl(item.image_url, 80)} alt={item.product_name} className="w-full h-full object-cover" />
+                        <img src={imgProxyUrl(item.image_url, 80, 107)} alt={item.product_name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)]">
                           <ShoppingCart className="w-5 h-5" />
@@ -100,29 +101,34 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{item.product_name}</p>
                       <p className="text-xs text-[var(--color-text-secondary)]">{item.variant_label}</p>
+                      {item.options && item.options.length > 0 && (
+                        <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5 line-clamp-2">
+                          {item.options.map((o) => o.label).join(" · ")}
+                        </p>
+                      )}
                       <div className="flex items-center justify-between mt-1">
                         <div className="flex items-center gap-1">
                           <button
-                            onClick={() => updateQuantity(item.product_id, item.variant_sku, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.key, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
                           >
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.product_id, item.variant_sku, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.key, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
                           >
                             <Plus className="w-3 h-3" />
                           </button>
                         </div>
                         <p className="text-sm font-bold font-mono text-[var(--color-text-primary)]">
-                          {formatFCFA(item.unit_price_fcfa * item.quantity)}
+                          {formatPrice(item.unit_price_fcfa * item.quantity)}
                         </p>
                       </div>
                     </div>
                     <button
-                      onClick={() => removeItem(item.product_id, item.variant_sku)}
+                      onClick={() => removeItem(item.key)}
                       className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] self-start"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -137,7 +143,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <div className="border-t border-[var(--color-border-default)] px-4 py-4 space-y-3">
                 <div className="flex justify-between text-sm text-[var(--color-text-secondary)]">
                   <span>Sous-total</span>
-                  <span className="font-mono">{formatFCFA(total)}</span>
+                  <span className="font-mono">{formatPrice(total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-[var(--color-success)]">Livraison</span>
@@ -145,7 +151,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </div>
                 <div className="flex justify-between text-lg font-bold text-[var(--color-text-primary)] pt-2 border-t border-[var(--color-border-default)]">
                   <span>Total</span>
-                  <span className="font-mono">{formatFCFA(total)}</span>
+                  <span className="font-mono">{formatPrice(total)}</span>
                 </div>
                 <Button variant="primary" size="lg" className="w-full" onClick={handleCheckout}>
                   Commander

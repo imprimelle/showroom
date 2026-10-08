@@ -1,4 +1,33 @@
+import type { Category } from "@/lib/categories";
+
+export interface ProductParameterOption {
+  id: string;
+  label: string;
+  /** URL de la miniature (image) — prioritaire sur `color`. */
+  image?: string | null;
+  /** Swatch couleur (hex) — utilisé si `image` est vide (ex. paramètre « Couleur »). */
+  color?: string;
+  /** Coût additionnel en FCFA (null = 0). */
+  price: number | null;
+}
+
+export interface ProductParameter {
+  id: string;
+  name: string;
+  type: "single" | "multi";
+  options: ProductParameterOption[];
+}
+
+/** Option sélectionnée dans le panier (référence + coût + libellé d'affichage). */
+export interface CartItemOption {
+  param_id: string;
+  option_id: string;
+  label: string;
+  price: number;
+}
+
 export interface CartItem {
+  key: string;
   product_id: string;
   product_name: string;
   product_slug: string;
@@ -7,6 +36,11 @@ export interface CartItem {
   quantity: number;
   unit_price_fcfa: number;
   image_url: string | null;
+  options?: CartItemOption[];
+  /** Produit éligible au paiement en ligne (flag produit). */
+  online_enabled?: boolean;
+  /** Produit éligible au cash à la livraison (flag produit). */
+  cash_on_delivery?: boolean;
 }
 
 export interface OrderPayload {
@@ -25,12 +59,19 @@ export interface OrderPayload {
     quantity: number;
     unit_price_fcfa: number;
     subtotal_fcfa: number;
+    options?: CartItemOption[];
   }[];
   total_amount: number;
   notes?: string;
 }
 
 export type OrderStatus = 'new' | 'contacted' | 'confirmed' | 'in_progress' | 'delivered' | 'cancelled';
+
+/** Méthodes de paiement en ligne via FedaPay (catalogue global, grisées si non live). */
+export type OnlinePaymentMethod = 'orange' | 'mtn' | 'wave' | 'card';
+
+/** Méthode de paiement d'une commande : en ligne | cash | nous parler avant de payer. */
+export type PaymentMethod = OnlinePaymentMethod | 'cod' | 'talk_first';
 
 export interface ShowcaseOrder {
   id: string;
@@ -43,14 +84,74 @@ export interface ShowcaseOrder {
   total_amount: number;
   notes: string | null;
   status: OrderStatus;
+  payment_method: PaymentMethod | null;
+  payment_status: string | null;
+  payment_reference: string | null;
+  shipping_country: string | null;
+  shipping_fee_fcfa: number | null;
+  total_with_shipping: number | null;
   created_at: string;
   updated_at: string;
 }
 
+export interface MediaItem {
+  type: 'image' | 'video';
+  url: string;
+  alt?: string;
+}
+
+/** Point fort d'une fiche produit : titre + icône + texte révélé au clic. */
+export interface Highlight {
+  /** Titre court affiché sur la carte. */
+  title: string;
+  /** Clé d'icône (catalogue `HIGHLIGHT_ICONS`). Vide = déduite du titre. */
+  icon: string;
+  /** Texte complémentaire révélé au clic (carrousel). */
+  text: string;
+}
+
+/** Pilule FAQ (bottom sheet de la fiche produit) — réglable globalement. */
+export interface FaqPill {
+  id: string;
+  label: string;
+  content: string;
+}
+
 export interface ShowcaseSettings {
-  contact?: { whatsapp?: string; email?: string; address?: string };
+  contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
   social?: { facebook?: string; instagram?: string; tiktok?: string };
-  analytics?: { fb_pixel_id?: string; umami_website_id?: string; umami_script_url?: string };
-  hero?: { video_url?: string; title?: string; subtitle?: string; cta_text?: string };
+  analytics?: {
+    fb_pixel_id?: string;
+    umami_website_id?: string;
+    umami_script_url?: string;
+    posthog_key?: string;
+    posthog_host?: string;
+  };
+  hero?: {
+    video_url?: string;
+    title?: string;
+    subtitle?: string;
+    cta_text?: string;
+    cta_href?: string;
+    slides?: MediaItem[];
+  };
+  categories?: Record<string, { title?: string; media?: MediaItem }>;
+  home?: {
+    cta_title?: string;
+    cta_desc?: string;
+    reassurance?: { title: string; desc: string }[];
+    steps?: { title: string; desc: string }[];
+    featured?: string[];
+  };
+  /** Catalogue global des paramètres produit (options avec miniatures + coûts). */
+  product_parameters?: ProductParameter[];
+  /** Catalogue des catégories/sous-catégories (dynamique, repli sur DEFAULT_CATEGORIES). */
+  catalog?: Category[];
+  /** Zones de livraison / frais de port (Réglages → Livraison). */
+  shipping?: { zones?: { id: string; label: string; countries: string[]; fee_fcfa: number }[] };
+  /** Catalogue des méthodes de paiement en ligne + statut « live sur FedaPay » (Réglages → Paiement). */
+  payment_methods?: { id: OnlinePaymentMethod; label: string; live: boolean }[];
+  /** Pilules FAQ (bottom sheet) affichées sur toutes les fiches produit (Réglages → FAQ produit). */
+  faq_pills?: FaqPill[];
 }
