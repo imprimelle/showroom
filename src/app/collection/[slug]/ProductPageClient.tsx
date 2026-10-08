@@ -408,62 +408,64 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </div>
             )}
 
-            {/* Quantité + CTA */}
-            <div className="mt-5 flex flex-col gap-2.5">
-              {variants.length > 0 ? (
-                currentPrice != null ? (
-                  <>
-                    {/* Sélecteur de quantité (bloc arrondi) */}
-                    <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                          disabled={quantity <= 1}
-                          aria-label="Diminuer la quantité"
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => q + 1)}
-                          aria-label="Augmenter la quantité"
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
+            {/* ===== CTA principal : quantité + bouton + réassurance ===== */}
+            <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
+              <div className="p-4">
+                {variants.length > 0 ? (
+                  currentPrice != null ? (
+                    <div className="space-y-3">
+                      {/* Sélecteur de quantité (bloc arrondi) */}
+                      <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
+                        <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                            disabled={quantity <= 1}
+                            aria-label="Diminuer la quantité"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity((q) => q + 1)}
+                            aria-label="Augmenter la quantité"
+                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
+                      <Button variant="success" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
+                        {selectedSku ? (
+                          <span className="flex w-full items-center justify-between gap-3">
+                            <span>Ajouter au panier</span>
+                            <span className="font-mono text-base">{formatPrice(lineTotal ?? 0)}</span>
+                          </span>
+                        ) : (
+                          "Sélectionnez une taille"
+                        )}
+                      </Button>
                     </div>
-                    <Button variant="success" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
-                      {selectedSku ? (
-                        <span className="flex w-full items-center justify-between gap-3">
-                          <span>Ajouter au panier</span>
-                          <span className="font-mono text-base">{formatPrice(lineTotal ?? 0)}</span>
-                        </span>
-                      ) : (
-                        "Sélectionnez une taille"
-                      )}
-                    </Button>
-                  </>
+                  ) : (
+                    <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
+                      <Button variant="whatsapp" size="lg" className="w-full">
+                        {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
+                      </Button>
+                    </a>
+                  )
                 ) : (
                   <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                    <Button variant="whatsapp" size="lg" className="w-full">
-                      {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
-                    </Button>
+                    <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
                   </a>
-                )
-              ) : (
-                <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                  <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
-                </a>
-              )}
-              {/* Réassurance compacte : 3 cartes sur une ligne */}
-              <div className="grid grid-cols-3 gap-2">
+                )}
+              </div>
+              {/* Réassurance : bandeau séparé sous le bouton */}
+              <div className="grid grid-cols-3 gap-2 border-t border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] px-3 py-3">
                 {product.showcase?.delivery_time && (
-                  <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
                     <div className="min-w-0">
                       <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Délai</p>
@@ -471,14 +473,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Fabrication</p>
                     <p className="text-[12px] sm:text-[13px] font-medium text-[var(--color-text-primary)] leading-tight truncate">local</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-2.5 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-[var(--color-border-default)] min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--color-accent-amber)] shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[10px] sm:text-[11px] text-[var(--color-text-tertiary)] leading-none truncate">Garantie</p>

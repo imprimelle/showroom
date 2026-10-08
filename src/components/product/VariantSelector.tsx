@@ -24,7 +24,7 @@ export function VariantSelector({ variants, selectedSku, onSelect }: VariantSele
   }
 
   return (
-    <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+    <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pt-2 pb-1">
       {variants.map((variant) => {
         const isSelected = selectedSku === variant.sku;
         return (
