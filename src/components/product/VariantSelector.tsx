@@ -1,4 +1,5 @@
 "use client";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
 
@@ -23,40 +24,50 @@ export function VariantSelector({ variants, selectedSku, onSelect }: VariantSele
   }
 
   return (
-    <div>
-      <h3 className="text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-        Choisissez vos dimensions
-      </h3>
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
-        {variants.map((variant) => {
-          const isSelected = selectedSku === variant.sku;
-          return (
-            <button
-              key={variant.id}
-              onClick={() => onSelect(variant)}
+    <div className="flex gap-2.5 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+      {variants.map((variant) => {
+        const isSelected = selectedSku === variant.sku;
+        return (
+          <button
+            key={variant.id}
+            type="button"
+            onClick={() => onSelect(variant)}
+            aria-pressed={isSelected}
+            className={cn(
+              "relative shrink-0 min-w-[112px] rounded-2xl border px-3.5 py-3 text-left transition-all duration-150 active:scale-[0.97]",
+              "focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] focus-visible:outline-offset-2",
+              isSelected
+                ? "border-[var(--color-text-primary)] bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-md"
+                : "border-[var(--color-border-strong)] bg-[var(--color-surface-card)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-tertiary)]"
+            )}
+          >
+            {isSelected && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent-amber)] text-[var(--color-text-primary)] shadow-sm">
+                <Check className="h-3 w-3" strokeWidth={3.5} />
+              </span>
+            )}
+            <span className="block text-sm font-semibold leading-tight">{variant.name}</span>
+            {variant.dimensions && (
+              <span
+                className={cn(
+                  "mt-0.5 block text-[11px] leading-tight",
+                  isSelected ? "opacity-75" : "text-[var(--color-text-tertiary)]"
+                )}
+              >
+                {variant.dimensions}
+              </span>
+            )}
+            <span
               className={cn(
-                "shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 flex flex-col items-center",
-                "focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)] focus-visible:outline-offset-2",
-                isSelected
-                  ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                  : "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-transparent hover:border-[var(--color-border-strong)]"
+                "mt-1.5 block font-mono text-xs leading-none",
+                isSelected ? "text-[var(--color-accent-amber)]" : "text-[var(--color-text-primary)]"
               )}
             >
-              <span className="flex items-baseline">
-                <span>{variant.name}</span>
-                <span className={cn("ml-1.5 font-mono text-xs opacity-70", isSelected && "opacity-100")}>
-                  {variant.price != null ? formatPrice(variant.price) : "Sur devis"}
-                </span>
-              </span>
-              {variant.dimensions && (
-                <span className="text-[11px] font-normal opacity-75 leading-tight mt-0.5">
-                  {variant.dimensions}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+              {variant.price != null ? formatPrice(variant.price) : "Sur devis"}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

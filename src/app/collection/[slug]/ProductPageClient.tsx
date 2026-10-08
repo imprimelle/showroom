@@ -32,6 +32,7 @@ import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
 import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { HighlightCarousel } from "@/components/product/HighlightCarousel";
+import { StepHeader } from "@/components/product/StepHeader";
 import type { ProductParameter, CartItemOption, FaqPill } from "@/types";
 
 interface ProductPageClientProps {
@@ -302,21 +303,35 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </p>
             )}
 
-            {/* Sélecteur de variante (dimensions) */}
+            {/* Étape 1 — Format */}
             {variants.length > 0 && (
-              <div className="mt-4">
-                <VariantSelector
-                  variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price, dimensions: v.attributes?.dimensions }))}
-                  selectedSku={selectedSku}
-                  onSelect={(v) => setSelectedSku(v.sku)}
+              <div className="mt-5">
+                <StepHeader
+                  step={1}
+                  title="Choisissez votre format"
+                  subtitle="Sélectionnez la taille qui vous convient"
                 />
+                <div className="mt-3">
+                  <VariantSelector
+                    variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price, dimensions: v.attributes?.dimensions }))}
+                    selectedSku={selectedSku}
+                    onSelect={(v) => setSelectedSku(v.sku)}
+                  />
+                </div>
               </div>
             )}
 
-            {/* Paramètres produit (single/multi-sélect avec miniatures + coûts) */}
+            {/* Étape 2 — Options (single/multi-sélect avec miniatures + coûts) */}
             {parameters.length > 0 && (
-              <div className="mt-4 space-y-2.5">
-                {parameters.map((param) => {
+              <div className="mt-5">
+                <StepHeader
+                  step={2}
+                  title="Ajouter des options"
+                  subtitle="Personnalisez votre produit"
+                  optional
+                />
+                <div className="mt-3 space-y-2.5">
+                  {parameters.map((param) => {
                   const selected = selectedOptions[param.id] || [];
                   const open = openParam === param.id;
                   const summary = selected.length
@@ -388,7 +403,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                       )}
                     </div>
                   );
-                })}
+                  })}
+                </div>
               </div>
             )}
 
