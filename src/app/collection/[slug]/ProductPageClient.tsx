@@ -9,11 +9,13 @@ import {
   MapPin,
   Minus,
   Plus,
+  ShoppingCart,
   Check,
   ChevronRight,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductMediaViewer } from "@/components/product/ProductMediaViewer";
@@ -26,7 +28,7 @@ import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
 import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
 import { useFormatPrice } from "@/stores/currency";
 import { imgProxyUrl } from "@/lib/images";
-import { getCategoryLabel } from "@/lib/categories";
+import { getCategory, getSubCategory, getCategoryLabel, resolveFamily } from "@/lib/categories";
 import { track } from "@/lib/analytics";
 import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
 import { normalizeHighlights } from "@/lib/highlights";
@@ -188,6 +190,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     options: selectedOptionsList,
   });
 
+  const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
+  const family = familyId ? getCategory(familyId) : undefined;
+  const subCategory = getSubCategory(product.showcase?.category);
   const categoryLabel = product.showcase?.category
     ? getCategoryLabel(product.showcase.category)
     : null;
@@ -256,7 +261,26 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           {/* Panneau info */}
           <div className="px-4 py-6 md:px-0 md:py-0">
             <div className="flex items-center gap-2 flex-wrap">
-              {categoryLabel && <Badge variant="category">{categoryLabel}</Badge>}
+              {family && (
+                <Link
+                  href={`/collection/categorie/${family.id}`}
+                  aria-label={`Voir la catégorie ${family.name}`}
+                  className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                >
+                  {family.name.trim().split(/\s+/)[0]}.../
+                </Link>
+              )}
+              {subCategory ? (
+                <Link
+                  href={`/collection/categorie/${family?.id}?sub=${subCategory.id}`}
+                  aria-label={`Voir ${subCategory.name}`}
+                  className="inline-flex transition-opacity hover:opacity-80"
+                >
+                  <Badge variant="category">{subCategory.name}</Badge>
+                </Link>
+              ) : (
+                categoryLabel && <Badge variant="category">{categoryLabel}</Badge>
+              )}
               {isOnlinePayable(product) && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-accent-amber)]">
                   <Zap className="w-3.5 h-3.5" /> Express
@@ -326,7 +350,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               <div className="mt-5">
                 <StepHeader
                   step={2}
-                  title="Ajouter des options"
+                  title="Ajoutez des options"
                   subtitle="Personnalisez votre produit"
                   optional
                 />
@@ -438,11 +462,23 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                           </button>
                         </div>
                       </div>
-                      <Button variant="success" size="lg" className="w-full" onClick={handleAddToCart} disabled={!selectedSku}>
+                      <Button
+                        variant="success"
+                        size="lg"
+                        className="w-full shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        onClick={handleAddToCart}
+                        disabled={!selectedSku}
+                      >
                         {selectedSku ? (
                           <span className="flex w-full items-center justify-between gap-3">
-                            <span>Ajouter au panier</span>
-                            <span className="font-mono text-base">{formatPrice(lineTotal ?? 0)}</span>
+                            <span className="flex items-center gap-2.5">
+                              <ShoppingCart className="w-5 h-5 shrink-0" />
+                              <span className="text-base font-semibold">Ajouter au panier</span>
+                            </span>
+                            <span className="flex flex-col items-end leading-tight">
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-white/75">Total</span>
+                              <span className="font-mono text-lg font-bold">{formatPrice(lineTotal ?? 0)}</span>
+                            </span>
                           </span>
                         ) : (
                           "Sélectionnez une taille"
