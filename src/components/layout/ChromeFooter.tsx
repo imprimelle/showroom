@@ -20,7 +20,7 @@ export function ChromeFooter({
   whatsapp?: string;
 }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/checkout")) return null;
+  if (pathname.startsWith("/checkout") || pathname === "/notre-histoire") return null;
   return (
     <>
       <Footer social={social} contact={contact} />

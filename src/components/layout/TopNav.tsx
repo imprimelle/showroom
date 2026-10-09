@@ -68,10 +68,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
   const [searchQ, setSearchQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const isHero =
-    pathname === "/" ||
-    pathname.startsWith("/collection/categorie/") ||
-    pathname === "/notre-histoire";
+  const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
   const [scrolled, setScrolled] = useState(false);
 
   // Sur les pages avec bannière (home + univers), la barre devient solide après un léger scroll
@@ -102,7 +99,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
     router.push(q ? `/collection?q=${encodeURIComponent(q)}` : "/collection");
   };
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/checkout")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/checkout") || pathname === "/notre-histoire") return null;
 
   const transparent = isHero && !scrolled;
   const fg = transparent ? "text-white" : "text-[var(--color-text-primary)]";

@@ -3,32 +3,51 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { PenTool, ClipboardCheck, Users } from "lucide-react";
+import { PenTool, ClipboardCheck } from "lucide-react";
 import { ACTE_1 } from "./content";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Section 2 — Acte 1 : « Deux regards, une seule ambition » (le volet humain).
- * Deux volets interactifs côte à côte (Ingénierie/Design vs Rigueur/Gestion),
- * avec balayage lumineux (Light Sweep) au survol et révélation au scroll.
+ * Section 2 — Le duo : deux volets qui glissent depuis les côtés au scroll,
+ * balayage lumineux au survol.
  */
 export function DualFocusSection() {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.from(".acte1-reveal", {
+      gsap.from(".duo-head > *", {
         opacity: 0,
-        y: 40,
-        duration: 0.9,
+        y: 30,
+        duration: 0.8,
         ease: "power2.out",
-        stagger: 0.12,
-        scrollTrigger: { trigger: root.current, start: "top 72%" },
+        stagger: 0.1,
+        scrollTrigger: { trigger: root.current, start: "top 70%" },
+      });
+      gsap.from("[data-duo='eng']", {
+        opacity: 0,
+        x: -80,
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: { trigger: root.current, start: "top 55%" },
+      });
+      gsap.from("[data-duo='gest']", {
+        opacity: 0,
+        x: 80,
+        duration: 0.9,
+        ease: "power3.out",
+        scrollTrigger: { trigger: root.current, start: "top 55%" },
+      });
+      gsap.from(".duo-footer", {
+        opacity: 0,
+        y: 24,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: { trigger: ".duo-footer", start: "top 88%" },
       });
 
-      // Balayage lumineux au survol de chaque volet
-      root.current?.querySelectorAll<HTMLElement>("[data-dual]").forEach((card) => {
+      root.current?.querySelectorAll<HTMLElement>("[data-duo]").forEach((card) => {
         const sweep = card.querySelector<HTMLElement>(".histoire-sweep");
         if (!sweep) return;
         card.addEventListener("mouseenter", () => {
@@ -44,83 +63,57 @@ export function DualFocusSection() {
   }, []);
 
   const panels = [
-    {
-      icon: PenTool,
-      accent: "var(--neon-amber)",
-      label: ACTE_1.engineering.label,
-      text: ACTE_1.engineering.text,
-    },
-    {
-      icon: ClipboardCheck,
-      accent: "var(--neon-cyan)",
-      label: ACTE_1.gestion.label,
-      text: ACTE_1.gestion.text,
-    },
+    { icon: PenTool, accent: "var(--neon-amber)", key: "eng", ...ACTE_1.engineering },
+    { icon: ClipboardCheck, accent: "var(--neon-cyan)", key: "gest", ...ACTE_1.gestion },
   ];
 
   return (
     <section
       id="acte-1"
       ref={root}
-      aria-labelledby="acte-1-title"
-      className="relative max-w-6xl mx-auto px-6 py-20 md:py-28"
+      className="relative min-h-screen flex flex-col justify-center px-6 py-24"
     >
-      <header className="acte1-reveal max-w-3xl mb-12">
-        <p className="text-xs uppercase tracking-[0.3em] text-[rgba(255,165,0,0.7)]">
-          {ACTE_1.kicker}
-        </p>
-        <h2
-          id="acte-1-title"
-          className="mt-3 font-display text-2xl md:text-4xl font-bold leading-tight"
-        >
+      <div className="duo-head max-w-2xl mb-14">
+        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">{ACTE_1.kicker}</p>
+        <h2 className="mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
           {ACTE_1.title}
         </h2>
-        <p className="mt-5 text-base md:text-lg text-white/75 leading-relaxed">
-          {ACTE_1.intro}
-        </p>
-      </header>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="grid md:grid-cols-2 gap-5 max-w-6xl">
         {panels.map((p) => {
           const Icon = p.icon;
           return (
             <article
-              key={p.label}
-              data-dual
-              className="acte1-reveal group relative overflow-hidden rounded-2xl border border-white/10 bg-[var(--histoire-ink)] p-8 md:p-10"
-              style={{ boxShadow: `0 0 0 1px ${p.accent}22, 0 24px 60px -30px ${p.accent}55` }}
+              key={p.key}
+              data-duo={p.key}
+              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[var(--histoire-ink)] p-9 md:p-12 min-h-[260px] flex flex-col justify-between"
+              style={{ boxShadow: `0 0 0 1px ${p.accent}1f, 0 30px 70px -40px ${p.accent}66` }}
             >
-              {/* Halo coloré */}
               <div
                 aria-hidden
-                className="absolute -top-20 -right-20 w-64 h-64 rounded-full opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-40"
+                className="absolute -top-24 -right-24 w-72 h-72 rounded-full opacity-20 blur-3xl transition-opacity duration-500 group-hover:opacity-45"
                 style={{ background: p.accent }}
               />
-              {/* Balayage lumineux */}
               <span aria-hidden className="histoire-sweep" />
 
               <span
-                className="relative inline-flex items-center justify-center w-14 h-14 rounded-2xl border"
+                className="relative inline-flex items-center justify-center w-12 h-12 rounded-2xl border"
                 style={{ color: p.accent, borderColor: `${p.accent}55`, background: `${p.accent}14` }}
               >
-                <Icon className="w-7 h-7" />
+                <Icon className="w-6 h-6" />
               </span>
 
-              <h3 className="relative mt-6 font-display text-xl md:text-2xl font-bold">
-                {p.label}
-              </h3>
-              <p className="relative mt-3 text-white/75 leading-relaxed">{p.text}</p>
+              <div className="relative mt-10">
+                <h3 className="font-display text-2xl md:text-3xl font-bold">{p.label}</h3>
+                <p className="mt-3 text-white/65 text-base md:text-lg leading-relaxed">{p.line}</p>
+              </div>
             </article>
           );
         })}
       </div>
 
-      <div className="acte1-reveal mt-10 flex items-start gap-4 rounded-2xl border border-white/10 bg-[rgba(255,255,255,0.03)] p-6 md:p-8">
-        <span className="inline-flex items-center justify-center w-11 h-11 rounded-full bg-[rgba(255,165,0,0.15)] text-[var(--neon-amber)] shrink-0">
-          <Users className="w-5 h-5" />
-        </span>
-        <p className="text-white/80 leading-relaxed">{ACTE_1.team}</p>
-      </div>
+      <p className="duo-footer mt-10 max-w-2xl text-white/55 text-base md:text-lg">{ACTE_1.footer}</p>
     </section>
   );
 }

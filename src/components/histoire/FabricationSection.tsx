@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ACTE_2 } from "./content";
@@ -8,7 +8,6 @@ import { WireframeTable } from "./WireframeTable";
 import { MirrorInfinity } from "./MirrorInfinity";
 import { DayNightToggle } from "./DayNightToggle";
 import { CncCutting } from "./CncCutting";
-import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,28 +19,56 @@ const STEP_VISUALS: Record<string, ReactNode> = {
 };
 
 /**
- * Section 3 — Acte 2 : « Du dessin 3D à l'assemblage lumineux ».
- * Le défilement (ScrollTrigger) révèle séquentiellement les 4 étapes de
- * fabrication ; chaque étape associe texte + visuel interactif.
+ * Section 3 — La fabrication : défilement horizontal « pinned » sur desktop
+ * (le scroll fait défiler les 4 étapes latéralement), empilement vertical sur
+ * mobile avec révélation au scroll.
  */
 export function FabricationSection() {
   const root = useRef<HTMLElement>(null);
-  const [active, setActive] = useState(0);
+  const pinRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      ACTE_2.steps.forEach((step, i) => {
-        gsap.from(`[data-step="${step.id}"]`, {
-          opacity: 0,
-          y: 48,
-          duration: 0.85,
-          ease: "power2.out",
+      gsap.from(".fab-head > *", {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: "power2.out",
+        stagger: 0.1,
+        scrollTrigger: { trigger: root.current, start: "top 70%" },
+      });
+
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        const track = trackRef.current;
+        const pin = pinRef.current;
+        if (!track || !pin) return;
+        const getAmount = () => track.scrollWidth - window.innerWidth;
+        gsap.to(track, {
+          x: () => -getAmount(),
+          ease: "none",
           scrollTrigger: {
-            trigger: `[data-step="${step.id}"]`,
-            start: "top 68%",
-            onEnter: () => setActive(i),
-            onEnterBack: () => setActive(i),
+            trigger: pin,
+            start: "top top",
+            end: () => "+=" + getAmount(),
+            pin: true,
+            scrub: 1,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
           },
+        });
+      });
+
+      mm.add("(max-width: 1023px)", () => {
+        gsap.from(".fab-panel", {
+          opacity: 0,
+          y: 50,
+          duration: 0.8,
+          ease: "power2.out",
+          stagger: 0.15,
+          scrollTrigger: { trigger: trackRef.current, start: "top 78%" },
         });
       });
     }, root);
@@ -49,79 +76,37 @@ export function FabricationSection() {
   }, []);
 
   return (
-    <section
-      id="acte-2"
-      ref={root}
-      aria-labelledby="acte-2-title"
-      className="relative border-t border-white/5"
-    >
-      <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-        <header className="max-w-3xl mb-16">
-          <p className="text-xs uppercase tracking-[0.3em] text-[rgba(255,165,0,0.7)]">
-            {ACTE_2.kicker}
-          </p>
-          <h2
-            id="acte-2-title"
-            className="mt-3 font-display text-2xl md:text-4xl font-bold leading-tight"
-          >
-            {ACTE_2.title}
-          </h2>
-        </header>
+    <section id="acte-2" ref={root} className="relative">
+      <div className="fab-head max-w-2xl px-6 pt-24 pb-10">
+        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">{ACTE_2.kicker}</p>
+        <h2 className="mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
+          {ACTE_2.title}
+        </h2>
+      </div>
 
-        {/* Barre de progression des étapes */}
-        <div className="hidden md:flex items-center gap-2 mb-16">
-          {ACTE_2.steps.map((s, i) => (
-            <div key={s.id} className="flex items-center gap-2 flex-1 last:flex-none">
-              <span
-                className={cn(
-                  "w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition-colors duration-300",
-                  i <= active
-                    ? "border-[var(--neon-amber)] text-[var(--neon-amber)] bg-[rgba(255,165,0,0.12)]"
-                    : "border-white/15 text-white/40"
-                )}
-              >
-                {i + 1}
-              </span>
-              {i < ACTE_2.steps.length - 1 && (
-                <span
-                  className={cn(
-                    "flex-1 h-px transition-colors duration-500",
-                    i < active ? "bg-[var(--neon-amber)]" : "bg-white/10"
-                  )}
-                />
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-20 md:space-y-28">
+      <div ref={pinRef} className="lg:h-screen lg:overflow-hidden">
+        <div ref={trackRef} className="flex flex-col lg:flex-row lg:h-full">
           {ACTE_2.steps.map((step, i) => (
-            <article
+            <div
               key={step.id}
-              data-step={step.id}
-              className="grid lg:grid-cols-2 gap-8 lg:gap-14 items-center"
+              className="fab-panel relative lg:w-screen lg:h-full lg:shrink-0 flex items-center px-6 py-16 lg:py-0"
             >
-              <div className={cn("order-2 lg:order-1", i % 2 === 1 && "lg:order-2")}>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="font-display text-5xl md:text-6xl font-black text-white/10">
+              <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full max-w-6xl mx-auto">
+                <div className="max-w-xl">
+                  <span className="font-display font-black leading-none text-[clamp(4rem,9vw,7.5rem)] text-white/10">
                     {String(i + 1).padStart(2, "0")}
                   </span>
+                  <h3 className="mt-5 font-display font-bold text-[clamp(1.75rem,4vw,3rem)] leading-tight">
+                    {step.title}
+                  </h3>
+                  <p className="mt-3 text-white/60 text-lg">{step.line}</p>
                 </div>
-                <h3 className="font-display text-xl md:text-2xl font-bold">{step.title}</h3>
-                <p className="mt-4 text-white/75 leading-relaxed">{step.text}</p>
-              </div>
 
-              <div
-                className={cn(
-                  "order-1 lg:order-2 lg:sticky lg:top-32",
-                  i % 2 === 1 && "lg:order-1"
-                )}
-              >
-                <div className="relative aspect-square rounded-2xl border border-white/10 bg-[var(--histoire-ink)] overflow-hidden">
+                <div className="relative aspect-square lg:aspect-[4/3] rounded-3xl border border-white/10 bg-[var(--histoire-ink)] overflow-hidden">
                   {STEP_VISUALS[step.id]}
                 </div>
               </div>
-            </article>
+            </div>
           ))}
         </div>
       </div>

@@ -1,165 +1,76 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Power, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { INTRO, HISTOIRE_TITLE } from "./content";
-import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /**
- * Section 1 — « L'Interrupteur » (mode sombre absolu).
- * Un clic sur l'interrupteur néon ou un premier scroll déclenche la séquence
- * d'allumage GSAP : grésillement visuel, micro-vibration mobile, révélation du
- * texte d'intro, transition du fond vers un noir nuancé.
+ * Section 1 — Intro plein écran : titre cinétique qui s'assemble mot à mot,
+ * ligne concise, halo parallaxe au scroll, indication de défilement.
  */
 export function IntroSection() {
-  const [lit, setLit] = useState(false);
-  const litRef = useRef(false);
-  const sectionRef = useRef<HTMLElement>(null);
-  const offRef = useRef<HTMLParagraphElement>(null);
-  const onRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const root = useRef<HTMLElement>(null);
+  const glowRef = useRef<HTMLDivElement>(null);
 
-  const reducedMotion = () =>
-    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({ delay: 0.15 });
+      tl.from(".intro-eyebrow", { opacity: 0, y: 16, duration: 0.7, ease: "power2.out" })
+        .from(".intro-word", { opacity: 0, y: 70, duration: 0.95, stagger: 0.1, ease: "power4.out" }, "-=0.35")
+        .from(".intro-line", { opacity: 0, y: 24, duration: 0.7, ease: "power2.out" }, "-=0.5")
+        .from(".intro-scroll", { opacity: 0, duration: 0.6 }, "-=0.2");
 
-  const ignite = useCallback(() => {
-    if (litRef.current) return;
-    litRef.current = true;
-    setLit(true);
-
-    try {
-      if (navigator.vibrate) navigator.vibrate(50);
-    } catch {
-      /* vibration non supportée (desktop) */
-    }
-
-    if (reducedMotion()) {
-      gsap.set(offRef.current, { opacity: 0 });
-      gsap.set(onRef.current, { opacity: 1, y: 0 });
-      return;
-    }
-
-    const tl = gsap.timeline();
-    // Grésillement du bouton (flicker rapide) puis stabilisation.
-    tl.fromTo(
-      titleRef.current,
-      { opacity: 0, y: 24 },
-      { opacity: 1, y: 0, duration: 0.9, ease: "power2.out" }
-    )
-      .to(offRef.current, { opacity: 0, y: -18, duration: 0.5, ease: "power2.in" }, 0.1)
-      .fromTo(
-        onRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 1.1, ease: "power2.out" },
-        0.45
-      );
+      // Parallaxe du halo d'ambiance
+      gsap.to(glowRef.current, {
+        yPercent: 35,
+        opacity: 0.4,
+        ease: "none",
+        scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
+      });
+    }, root);
+    return () => ctx.revert();
   }, []);
 
-  // Premier scroll (wheel / touch) = allumage si pas déjà déclenché.
-  useEffect(() => {
-    const onGesture = () => ignite();
-    window.addEventListener("wheel", onGesture, { passive: true });
-    window.addEventListener("touchmove", onGesture, { passive: true });
-    return () => {
-      window.removeEventListener("wheel", onGesture);
-      window.removeEventListener("touchmove", onGesture);
-    };
-  }, [ignite]);
+  const words = HISTOIRE_TITLE.split(" ");
 
   return (
     <section
-      ref={sectionRef}
-      aria-label="L'interrupteur"
+      id="intro"
+      ref={root}
       className="relative min-h-[100svh] flex flex-col items-center justify-center px-6 text-center overflow-hidden"
     >
-      {/* Halo d'ambiance qui s'intensifie à l'allumage */}
       <div
+        ref={glowRef}
         aria-hidden
-        className={cn(
-          "absolute inset-0 transition-opacity duration-[1400ms] pointer-events-none",
-          lit ? "opacity-100" : "opacity-0"
-        )}
-        style={{
-          background:
-            "radial-gradient(900px 520px at 50% 42%, rgba(255,165,0,0.14), transparent 65%)",
-        }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(900px 520px at 50% 45%, rgba(255,165,0,0.15), transparent 65%)" }}
       />
 
-      <div className="relative z-10 max-w-3xl mx-auto">
-        {/* Interrupteur néon */}
-        <button
-          type="button"
-          onClick={ignite}
-          aria-label={lit ? "Lumière allumée" : "Allumer la lumière"}
-          aria-pressed={lit}
-          className={cn(
-            "group relative inline-flex items-center justify-center w-24 h-24 rounded-full border transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--neon-amber)]",
-            lit
-              ? "border-[var(--neon-amber)] bg-[rgba(255,165,0,0.12)] shadow-[0_0_40px_6px_rgba(255,165,0,0.5)]"
-              : "border-[rgba(255,165,0,0.4)] bg-transparent histoire-switch-idle"
-          )}
-        >
-          <Power
-            className={cn(
-              "w-9 h-9 transition-all duration-500",
-              lit
-                ? "text-[var(--neon-amber)] drop-shadow-[0_0_8px_rgba(255,165,0,0.9)]"
-                : "text-[rgba(255,165,0,0.55)]"
-            )}
-          />
-          <span className="absolute inset-0 rounded-full border border-transparent group-hover:border-[rgba(255,165,0,0.3)] transition-colors" />
-        </button>
+      <p className="intro-eyebrow relative text-[11px] md:text-xs uppercase tracking-[0.4em] text-[rgba(255,165,0,0.75)]">
+        {INTRO.eyebrow}
+      </p>
 
-        <p className="mt-8 text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">
-          L&apos;histoire d&apos;Imprimelle
-        </p>
+      <h1 className="relative mt-6 font-display font-black leading-[0.95] tracking-tight text-[clamp(2.75rem,11vw,8.5rem)]">
+        {words.map((w, i) => (
+          <span key={i} className="intro-word inline-block histoire-neon-text">
+            {w}
+            {i < words.length - 1 ? "\u00A0" : ""}
+          </span>
+        ))}
+      </h1>
 
-        <h1
-          ref={titleRef}
-          className={cn(
-            "mt-4 font-display text-3xl md:text-5xl font-bold leading-tight",
-            lit && "histoire-neon-text"
-          )}
-        >
-          {HISTOIRE_TITLE}
-        </h1>
+      <p className="intro-line relative mt-8 max-w-md text-base md:text-lg text-white/70 leading-relaxed">
+        {INTRO.line}
+      </p>
 
-        {/* État éteint */}
-        <p
-          ref={offRef}
-          className="mt-6 text-base md:text-lg text-white/60 leading-relaxed"
-        >
-          {INTRO.off}
-        </p>
-
-        {/* État allumé (révélé à l'allumage) */}
-        <div ref={onRef} className="opacity-0">
-          <p className="mt-6 font-display text-xl md:text-2xl font-semibold histoire-neon-text">
-            {INTRO.onLead}
-          </p>
-          <p className="mt-4 text-base md:text-lg text-white/85 leading-relaxed">
-            {INTRO.onBody}
-          </p>
-        </div>
+      <div className="intro-scroll absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40">
+        <span className="text-[11px] uppercase tracking-[0.3em]">{INTRO.scrollHint}</span>
+        <ChevronDown className="w-5 h-5 animate-bounce" />
       </div>
-
-      {/* Indication de scroll */}
-      {lit && (
-        <button
-          type="button"
-          onClick={() =>
-            document.getElementById("acte-1")?.scrollIntoView({ behavior: "smooth" })
-          }
-          aria-label="Faire défiler"
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/40 hover:text-white/80 transition-colors animate-bounce"
-        >
-          <ChevronDown className="w-6 h-6" />
-        </button>
-      )}
     </section>
   );
 }
