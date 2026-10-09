@@ -17,6 +17,8 @@ interface MediaFieldProps {
    * `null`/`undefined` = upload direct sans recadrage.
    */
   cropSpec?: CropSpec | null;
+  /** Types de fichiers acceptés par le sélecteur (défaut : images + vidéos). */
+  accept?: string;
 }
 
 /**
@@ -25,7 +27,7 @@ interface MediaFieldProps {
  * Si `cropSpec` est fourni, les images sont recadrées aux dimensions standardisées
  * avant l'envoi (voir ImageCropper).
  */
-export function MediaField({ value, onChange, label, hint, cropSpec }: MediaFieldProps) {
+export function MediaField({ value, onChange, label, hint, cropSpec, accept = "image/*,video/*" }: MediaFieldProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [pendingCrop, setPendingCrop] = useState<File | null>(null);
@@ -113,7 +115,7 @@ export function MediaField({ value, onChange, label, hint, cropSpec }: MediaFiel
             <input
               ref={inputRef}
               type="file"
-              accept="image/*,video/*"
+              accept={accept}
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];

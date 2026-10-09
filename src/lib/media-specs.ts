@@ -29,6 +29,9 @@ export const MEDIA_SPECS = {
   /** Frame de la vue 360° (showcase.images_360). */
   frame360:
     "Recommandé : 1200 × 1600 px (ratio 3:4) — 32 images ou plus, ordre = sens de rotation",
+  /** Vidéo d'inspiration « Idées décos » (showcase_settings.idea_deco). */
+  ideaDecoVideo:
+    "Recommandé : MP4 vertical 1080 × 1920 (ratio 9:16) — ≤ 50 Mo, mobile first",
 } as const;
 
 export type MediaSpecKey = keyof typeof MEDIA_SPECS;
@@ -54,6 +57,7 @@ export const CROP_SPECS: Record<MediaSpecKey, CropSpec | null> = {
   universeMedia: { ratio: 3 / 4, width: 1200, height: 1600 },
   heroVideo: null, // vidéo — pas de recadrage image
   frame360: null, // frames 360° — upload batch libre (pas de recadrage individuel)
+  ideaDecoVideo: null, // vidéo — pas de recadrage image
 };
 
 /** Libellé humain d'un ratio (ex. 3/4 → "3:4"). */

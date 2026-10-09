@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Film } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -11,10 +11,10 @@ import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "ideadeco";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -25,11 +25,12 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "livraison", label: "Livraison", icon: Truck },
   { id: "paiement", label: "Paiement", icon: Wallet },
   { id: "faq", label: "FAQ produit", icon: HelpCircle },
+  { id: "ideadeco", label: "Idées décos", icon: Film },
 ];
 
 export function SettingsClient({ initialData, products }: {
   initialData: ShowcaseSettings;
-  products: { id: string; name: string; main_image_url: string | null }[];
+  products: { id: string; name: string; slug: string; main_image_url: string | null }[];
 }) {
   const [data, setData] = useState<ShowcaseSettings>(initialData);
   const [saving, setSaving] = useState(false);
@@ -202,6 +203,18 @@ export function SettingsClient({ initialData, products }: {
     setFaqPills(next);
   };
 
+  // === Vidéos « Idées décos » par univers (slug de famille → liste) ===
+  const ideaDeco = data.idea_deco || {};
+  const ideaDecoFor = (famId: string): IdeaDecoVideo[] => ideaDeco[famId] || [];
+  const setIdeaDecoFor = (famId: string, videos: IdeaDecoVideo[]) =>
+    setData({ ...data, idea_deco: { ...ideaDeco, [famId]: videos } });
+  const addIdeaVideo = (famId: string) =>
+    setIdeaDecoFor(famId, [...ideaDecoFor(famId), { url: "", poster: null, product_slugs: [] }]);
+  const updateIdeaVideo = (famId: string, i: number, patch: Partial<IdeaDecoVideo>) =>
+    setIdeaDecoFor(famId, ideaDecoFor(famId).map((v, idx) => (idx === i ? { ...v, ...patch } : v)));
+  const removeIdeaVideo = (famId: string, i: number) =>
+    setIdeaDecoFor(famId, ideaDecoFor(famId).filter((_, idx) => idx !== i));
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -240,6 +253,18 @@ export function SettingsClient({ initialData, products }: {
         faq_pills: (faqPills || [])
           .filter((p) => p.label.trim())
           .map((p) => ({ id: p.id, label: p.label.trim(), content: p.content.trim() })),
+        idea_deco: Object.fromEntries(
+          Object.entries(ideaDeco).map(([famId, list]) => [
+            famId,
+            list
+              .filter((v) => v.url?.trim())
+              .map((v) => ({
+                url: v.url.trim(),
+                poster: v.poster?.trim() || null,
+                product_slugs: (v.product_slugs || []).filter(Boolean),
+              })),
+          ])
+        ),
       };
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
@@ -732,6 +757,106 @@ export function SettingsClient({ initialData, products }: {
               </div>
             ))}
             {faqPills.length === 0 && <p className="text-sm text-[var(--color-text-tertiary)]">Aucune pilule — le site utilisera la FAQ par défaut.</p>}
+          </div>
+        </section>
+      )}
+
+      {tab === "ideadeco" && (
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Vidéos « Idées décos »</h2>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+            Ajoutez des vidéos verticales (9:16) par univers. Elles s&apos;affichent en slider en bas
+            des fiches produit de l&apos;univers correspondant. Chaque vidéo peut être liée à un produit
+            (cible du bouton « Shop »).
+          </p>
+
+          <div className="space-y-5">
+            {CATEGORIES.map((fam) => {
+              const list = ideaDecoFor(fam.id);
+              return (
+                <div key={fam.id} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-[var(--color-text-primary)]">
+                      <span className="mr-1.5">{fam.icon}</span>
+                      {fam.name}
+                    </span>
+                    <button type="button" onClick={() => addIdeaVideo(fam.id)} className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+                      <Plus className="w-3.5 h-3.5" /> Vidéo
+                    </button>
+                  </div>
+
+                  {list.length === 0 && <p className="text-xs text-[var(--color-text-tertiary)]">Aucune vidéo pour cet univers.</p>}
+
+                  <div className="space-y-3">
+                    {list.map((v, i) => (
+                      <div key={i} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-surface-card)]">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-[var(--color-text-tertiary)]">Vidéo {i + 1}</span>
+                          <button type="button" onClick={() => removeIdeaVideo(fam.id, i)} aria-label="Supprimer la vidéo" className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <MediaField
+                          value={v.url ? { type: "video", url: v.url } : null}
+                          onChange={(m) => updateIdeaVideo(fam.id, i, { url: m?.url || "" })}
+                          label="Vidéo (9:16)"
+                          hint={MEDIA_SPECS.ideaDecoVideo}
+                          accept="video/*"
+                        />
+
+                        <div className="mt-3">
+                          <MediaField
+                            value={v.poster ? { type: "image", url: v.poster } : null}
+                            onChange={(m) => updateIdeaVideo(fam.id, i, { poster: m?.url || null })}
+                            label="Image d'affiche (optionnelle)"
+                          />
+                        </div>
+
+                        <div className="mt-3">
+                          <span className="block text-xs text-[var(--color-text-secondary)] mb-1">Produits liés (bouton « Produits »)</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {products.map((p) => {
+                              const slugs = v.product_slugs || [];
+                              const selected = slugs.includes(p.slug);
+                              return (
+                                <button
+                                  key={p.id}
+                                  type="button"
+                                  onClick={() => {
+                                    const next = selected ? slugs.filter((s) => s !== p.slug) : [...slugs, p.slug];
+                                    updateIdeaVideo(fam.id, i, { product_slugs: next });
+                                  }}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg border p-1.5 text-left transition-colors",
+                                    selected
+                                      ? "border-[var(--color-accent-blue)] bg-[var(--color-bg-secondary)]"
+                                      : "border-[var(--color-border-default)] bg-[var(--color-surface-card)] hover:bg-[var(--color-bg-tertiary)]"
+                                  )}
+                                >
+                                  <span className="w-9 h-9 shrink-0 rounded-md overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-bg-tertiary)]">
+                                    {p.main_image_url ? (
+                                      <img src={imgProxyUrl(p.main_image_url, 60, 80)} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)] text-xs">✨</span>
+                                    )}
+                                  </span>
+                                  <span className="flex-1 min-w-0 text-xs text-[var(--color-text-primary)] truncate">{p.name}</span>
+                                  <span className={cn("w-4 h-4 shrink-0 rounded border flex items-center justify-center", selected ? "bg-[var(--color-accent-blue)] border-[var(--color-accent-blue)]" : "border-[var(--color-border-strong)]")}>
+                                    {selected && <Check className="w-3 h-3 text-white" />}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-[var(--color-text-tertiary)] mt-1">Sélectionnez un ou plusieurs produits (tout univers confondu).</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}

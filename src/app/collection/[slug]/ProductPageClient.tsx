@@ -33,8 +33,9 @@ import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
 import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { HighlightCarousel } from "@/components/product/HighlightCarousel";
+import { IdeaDecoSlider } from "@/components/product/IdeaDecoSlider";
 import { StepHeader } from "@/components/product/StepHeader";
-import type { ProductParameter, CartItemOption, FaqPill } from "@/types";
+import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide } from "@/types";
 
 interface ProductPageClientProps {
   product: ShowcaseProduct;
@@ -42,6 +43,7 @@ interface ProductPageClientProps {
   whatsapp?: string;
   parameters?: ProductParameter[];
   faqPills?: FaqPill[];
+  ideaDecoVideos?: IdeaDecoSlide[];
 }
 
 /** Étoile pleine / demi / vide (lucide `Star`). */
@@ -111,7 +113,7 @@ function CartPlusIcon({ className }: { className?: string }) {
   );
 }
 
-export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS }: ProductPageClientProps) {
+export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [] }: ProductPageClientProps) {
   const formatPrice = useFormatPrice();
   const [selectedSku, setSelectedSku] = useState<string | null>(product.variants?.[0]?.sku ?? null);
   const [cartOpen, setCartOpen] = useState(false);
@@ -668,6 +670,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </div>
         </section>
       )}
+
+      {/* ===== Idées décos (vidéos d'inspiration par univers) ===== */}
+      <IdeaDecoSlider videos={ideaDecoVideos} />
+
 
       {/* Bottom sheet FAQ */}
       <AnimatePresence>

@@ -49,7 +49,7 @@ export default async function AdminSettingsPage() {
   return (
     <SettingsClient
       initialData={settings}
-      products={products.map((p) => ({ id: p.id, name: p.name, main_image_url: p.main_image_url }))}
+      products={products.map((p) => ({ id: p.id, name: p.name, slug: p.slug, main_image_url: p.main_image_url }))}
     />
   );
 }

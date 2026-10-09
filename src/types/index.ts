@@ -117,6 +117,31 @@ export interface FaqPill {
   content: string;
 }
 
+/** Vidéo d'inspiration « Idées décos » (slider 9:16 en bas de fiche produit). */
+export interface IdeaDecoVideo {
+  /** URL de la vidéo (MP4, format vertical 9:16). */
+  url: string;
+  /** Image d'affiche (poster) optionnelle, affichée avant lecture. */
+  poster?: string | null;
+  /** Slugs des produits présentés dans la vidéo (cibles du bouton « Produits »). */
+  product_slugs?: string[];
+}
+
+/** Produit résolu à afficher dans le bottom-sheet « Produits » d'une carte vidéo. */
+export interface IdeaDecoProductRef {
+  slug: string;
+  name: string;
+  image_url: string | null;
+  price: number | null;
+}
+
+/** Vidéo « Idées décos » résolue pour le rendu front (produits dé-référencés). */
+export interface IdeaDecoSlide {
+  url: string;
+  poster: string | null;
+  products: IdeaDecoProductRef[];
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -154,4 +179,6 @@ export interface ShowcaseSettings {
   payment_methods?: { id: OnlinePaymentMethod; label: string; live: boolean }[];
   /** Pilules FAQ (bottom sheet) affichées sur toutes les fiches produit (Réglages → FAQ produit). */
   faq_pills?: FaqPill[];
+  /** Vidéos d'inspiration « Idées décos » par univers (slug de famille → liste de vidéos). */
+  idea_deco?: Record<string, IdeaDecoVideo[]>;
 }
