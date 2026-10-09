@@ -1,6 +1,6 @@
 // ============================================================================
-// « Notre Histoire » — Source unique des textes (concis) + données carte.
-// Les textes sont rendus en HTML brut côté serveur (SEO).
+// « Notre Histoire » — Source unique des textes (concis, storytelling réinjecté)
+// + données carte. Textes rendus en HTML brut côté serveur (SEO).
 // ============================================================================
 
 export const HISTOIRE_TITLE = "De l'esquisse à l'éclat";
@@ -8,7 +8,9 @@ export const HISTOIRE_TITLE = "De l'esquisse à l'éclat";
 // --- Section 1 · Intro ------------------------------------------------------
 export const INTRO = {
   eyebrow: "Imprimelle · Manufacture ivoirienne",
-  line: "Nous domptons la lumière pour transformer vos intérieurs et vos façades.",
+  line: "Au départ, tout commence dans l'obscurité d'un atelier.",
+  ignite: "Puis, la lumière fut.",
+  sub: "Nous domptons la lumière pour transformer vos intérieurs et vos façades.",
   scrollHint: "Faites défiler",
 };
 
@@ -16,15 +18,16 @@ export const INTRO = {
 export const ACTE_1 = {
   kicker: "01 — Le duo",
   title: "Deux regards, une ambition",
+  intro: "Une aventure de couple, une complémentarité sans faille.",
   engineering: {
     label: "Ingénierie & design",
-    line: "La passion de la technologie et de la fabrication locale.",
+    line: "La passion de l'ingénierie, du design et de la fabrication locale.",
   },
   gestion: {
     label: "Rigueur & esthétique",
-    line: "Un œil affûté, une gestion qui sublime chaque commande.",
+    line: "Un œil affûté, une gestion qui transforme chaque commande en expérience d'exception.",
   },
-  footer: "Made in Côte d'Ivoire, porté par une équipe d'artisans ivoiriens passionnés.",
+  footer: "Made in Côte d'Ivoire, porté par une équipe de jeunes artisans ivoiriens passionnés.",
 };
 
 // --- Section 3 · Acte 2 — La fabrication ------------------------------------
@@ -38,10 +41,10 @@ export const ACTE_2 = {
   kicker: "02 — La fabrication",
   title: "De la 3D à l'allumage",
   steps: [
-    { id: "conception", title: "Conception 3D", line: "Modélisé au millimètre." },
-    { id: "decoupe", title: "Découpe CNC", line: "Bois, Alucobond, acrylique." },
-    { id: "miroir", title: "Miroir infini", line: "Néon LED, profondeur optique." },
-    { id: "allumage", title: "Allumage", line: "Jour ou nuit, toujours magique." },
+    { id: "conception", title: "Conception 3D", line: "Chaque table, chaque enseigne, modélisée au millimètre." },
+    { id: "decoupe", title: "Découpe CNC", line: "Le bois, l'Alucobond et l'acrylique, façonnés avec une netteté chirurgicale." },
+    { id: "miroir", title: "Miroir infini", line: "Néons LED haute durabilité et réflexions en profondeur, pour résister au temps." },
+    { id: "allumage", title: "Allumage", line: "À Cocody, Zone 4 ou Marcory, la première mise sous tension est toujours magique." },
   ] as FabStep[],
 };
 
@@ -49,14 +52,16 @@ export const ACTE_2 = {
 export const ACTE_3 = {
   kicker: "03 — La vision",
   title: "Rayonner depuis Abidjan",
-  line: "De la Côte d'Ivoire au Cameroun, du Sénégal à la Guinée.",
+  line: "De la Côte d'Ivoire au Cameroun, du Sénégal à la Guinée, nous expédions nos créations.",
   belief: "Une Afrique industrielle, moderne et créative.",
 };
 
 // --- Section 5 · Conclusion -------------------------------------------------
 export const CONCLUSION = {
   title: "Allumez votre projet",
-  line: "Façonné à Abidjan. Conçu pour illuminer l'Afrique.",
+  line: "Vous n'achetez pas un meuble ou une enseigne — vous faites le choix du savoir-faire local.",
+  welcome: "Bienvenue chez Imprimelle.",
+  tagline: "Façonné à Abidjan. Conçu pour illuminer l'Afrique.",
   catalog: "Voir le catalogue",
   project: "Démarrer mon projet",
 };

@@ -78,6 +78,7 @@ export function DualFocusSection() {
         <h2 className="mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
           {ACTE_1.title}
         </h2>
+        <p className="mt-4 text-white/65 text-base md:text-lg">{ACTE_1.intro}</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-5 max-w-6xl">

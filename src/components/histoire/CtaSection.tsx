@@ -46,7 +46,9 @@ export function CtaSection({ whatsapp }: { whatsapp: string }) {
       <h2 className="cta-reveal relative mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2.5rem,8vw,6rem)] histoire-neon-text">
         {CONCLUSION.title}
       </h2>
-      <p className="cta-reveal relative mt-6 text-base md:text-lg text-white/70">{CONCLUSION.line}</p>
+      <p className="cta-reveal relative mt-6 max-w-xl text-base md:text-lg text-white/70">{CONCLUSION.line}</p>
+      <p className="cta-reveal relative mt-6 font-display text-lg md:text-xl text-white/85">{CONCLUSION.welcome}</p>
+      <p className="cta-reveal relative mt-2 text-sm md:text-base tracking-wide text-white/60">{CONCLUSION.tagline}</p>
 
       <div className="cta-reveal relative mt-12 flex flex-col sm:flex-row items-center gap-4">
         <Link
