@@ -34,8 +34,9 @@ import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { HighlightCarousel } from "@/components/product/HighlightCarousel";
 import { IdeaDecoSlider } from "@/components/product/IdeaDecoSlider";
+import { ReviewSection } from "@/components/product/ReviewSection";
 import { StepHeader } from "@/components/product/StepHeader";
-import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide } from "@/types";
+import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide, ShowcaseReview, ReviewAggregate } from "@/types";
 
 interface ProductPageClientProps {
   product: ShowcaseProduct;
@@ -44,6 +45,8 @@ interface ProductPageClientProps {
   parameters?: ProductParameter[];
   faqPills?: FaqPill[];
   ideaDecoVideos?: IdeaDecoSlide[];
+  reviews?: ShowcaseReview[];
+  aggregate?: ReviewAggregate;
 }
 
 /** Étoile pleine / demi / vide (lucide `Star`). */
@@ -64,29 +67,42 @@ function StarIcon({ fill }: { fill: number }) {
   return <Star className="w-4 h-4 text-[var(--color-border-strong)]" />;
 }
 
-/** Note produit dérivée de `popularity` (0–100 → note 4,0–5,0). */
-function RatingStars({ popularity }: { popularity?: number }) {
-  const rating =
-    popularity != null
+/** Note produit cliquable : agrégat d'avis (sinon repli sur `popularity`). Clic → scroll vers #avis. */
+function RatingStars({
+  average,
+  count,
+  popularity,
+}: {
+  average?: number;
+  count?: number;
+  popularity?: number;
+}) {
+  const hasReviews = (count ?? 0) > 0;
+  const rating = hasReviews
+    ? average ?? 0
+    : popularity != null
       ? Math.min(5, Math.max(0, 4 + popularity / 100))
       : 4.5;
   const fullStars = Math.floor(rating);
   const hasHalf = rating - fullStars >= 0.5;
+  const label = `${rating.toFixed(1).replace(".", ",")}${hasReviews ? ` (${count} avis)` : ""}`;
   return (
-    <div className="mt-2 flex items-center gap-1.5">
-      <div
-        className="flex items-center gap-0.5"
-        aria-label={`Note ${rating.toFixed(1).replace(".", ",")} sur 5`}
-      >
+    <button
+      type="button"
+      onClick={() => document.getElementById("avis")?.scrollIntoView({ behavior: "smooth" })}
+      className="mt-2 flex items-center gap-1.5 group"
+      aria-label="Voir les avis clients"
+    >
+      <span className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, i) => {
           const fill = i < fullStars ? 1 : i === fullStars && hasHalf ? 0.5 : 0;
           return <StarIcon key={i} fill={fill} />;
         })}
-      </div>
-      <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-        {rating.toFixed(1).replace(".", ",")}
       </span>
-    </div>
+      <span className="text-xs font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-accent-amber)] transition-colors">
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -113,7 +129,7 @@ function CartPlusIcon({ className }: { className?: string }) {
   );
 }
 
-export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [] }: ProductPageClientProps) {
+export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] } }: ProductPageClientProps) {
   const formatPrice = useFormatPrice();
   const [selectedSku, setSelectedSku] = useState<string | null>(product.variants?.[0]?.sku ?? null);
   const [cartOpen, setCartOpen] = useState(false);
@@ -319,7 +335,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   {product.name}
                 </h1>
                 {/* Étoiles + note (juste sous le nom, visible sur mobile) */}
-                <RatingStars popularity={product.showcase?.popularity} />
+                <RatingStars average={aggregate.average} count={aggregate.count} popularity={product.showcase?.popularity} />
               </div>
 
               {/* Prix (côte à côte avec le nom) */}
@@ -673,6 +689,13 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
       {/* ===== Idées décos (vidéos d'inspiration par univers) ===== */}
       <IdeaDecoSlider videos={ideaDecoVideos} />
+
+      {/* ===== Avis clients (note globale + fil + formulaire) ===== */}
+      <ReviewSection
+        productSlug={product.slug}
+        productName={product.name}
+        reviews={reviews}
+      />
 
 
       {/* Bottom sheet FAQ */}

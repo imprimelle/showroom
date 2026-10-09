@@ -5,6 +5,7 @@ import { getShowcaseSettings } from "@/lib/settings";
 import { normalizePhone, getMinPrice } from "@/lib/utils";
 import { resolveFaqPills } from "@/lib/faq";
 import { resolveActiveParameters } from "@/lib/parameters";
+import { getProductReviews, buildReviewJsonLd } from "@/lib/reviews";
 import { ProductPageClient } from "./ProductPageClient";
 import { ProductPageSkeleton } from "@/components/ui/Skeleton";
 import { Suspense } from "react";
@@ -39,10 +40,13 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   // Related products: same family first, then fallback to any published
-  const [all, settings] = await Promise.all([
+  const [all, settings, reviewData] = await Promise.all([
     getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
     getShowcaseSettings(),
+    getProductReviews(slug),
   ]);
+
+  const { reviews, aggregate } = reviewData;
 
   const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
   const sameFamily = all.filter(
@@ -76,16 +80,29 @@ export default async function ProductPage({ params }: Props) {
       .filter((x): x is NonNullable<typeof x> => Boolean(x)),
   }));
 
+  const jsonLd = buildReviewJsonLd({
+    name: product.name,
+    description: product.showcase?.short_description,
+    image: product.main_image_url,
+    aggregate,
+    reviews,
+  });
+
   return (
-    <Suspense fallback={<ProductPageSkeleton />}>
-      <ProductPageClient
-        product={product}
-        relatedProducts={relatedProducts}
-        whatsapp={whatsapp}
-        parameters={parameters}
-        faqPills={faqPills}
-        ideaDecoVideos={ideaDecoVideos}
-      />
-    </Suspense>
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      <Suspense fallback={<ProductPageSkeleton />}>
+        <ProductPageClient
+          product={product}
+          relatedProducts={relatedProducts}
+          whatsapp={whatsapp}
+          parameters={parameters}
+          faqPills={faqPills}
+          ideaDecoVideos={ideaDecoVideos}
+          reviews={reviews}
+          aggregate={aggregate}
+        />
+      </Suspense>
+    </>
   );
 }

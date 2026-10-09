@@ -142,6 +142,30 @@ export interface IdeaDecoSlide {
   products: IdeaDecoProductRef[];
 }
 
+/** Avis client (table showcase_reviews). */
+export interface ShowcaseReview {
+  id: string;
+  product_slug: string;
+  product_name: string;
+  author_name: string;
+  rating: number;
+  title?: string | null;
+  content: string;
+  verified: boolean;
+  order_number?: string | null;
+  created_at: string;
+}
+
+/** Agrégat d'avis d'un produit (note moyenne + répartition). */
+export interface ReviewAggregate {
+  /** Note moyenne (0 si aucun avis), arrondie à 1 décimale. */
+  average: number;
+  /** Nombre total d'avis. */
+  count: number;
+  /** Répartition par note (5 → 1). */
+  distribution: { rating: number; count: number }[];
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
