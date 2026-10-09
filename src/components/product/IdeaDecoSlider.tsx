@@ -9,38 +9,61 @@ import type { IdeaDecoSlide } from "@/types";
 
 /**
  * Slider « Idées décos » affiché en bas de fiche produit (après « Vous aimerez aussi »).
- * Cartes vidéo verticales 9:16 en défilement horizontal (snap), avec overlays interactifs :
- * — bouton « Produits » (bas-gauche) → bottom-sheet listant les produits de la vidéo ;
- * — bouton mute/audio (bas-droite) ;
- * — bouton lecture/plein écran (sous le mute).
- * Seule la carte visible (active) est lue automatiquement (muette, en boucle).
+ * Cartes vidéo verticales 9:16 (compactes) en défilement horizontal, avec overlays :
+ * — bouton « Produits » (bas-gauche) → bottom-sheet des produits liés ;
+ * — bouton mute/audio + bouton lecture/pause (bas-droite), **indépendants** ;
+ * — tap sur la vidéo → mode plein écran personnalisé (titre + croix + swipe vertical).
  */
 export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
   const [activeSheet, setActiveSheet] = useState<number | null>(null);
+  const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
+  const fullscreenTrackRef = useRef<HTMLDivElement>(null);
+
+  // Verrouille le scroll du body en plein écran.
+  useEffect(() => {
+    document.body.style.overflow = fullscreenIndex != null ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [fullscreenIndex]);
+
+  // Positionne la piste verticale sur la vidéo tapée à l'ouverture.
+  useEffect(() => {
+    if (fullscreenIndex == null) return;
+    const track = fullscreenTrackRef.current;
+    if (track) track.scrollTop = fullscreenIndex * track.clientHeight;
+  }, [fullscreenIndex]);
 
   if (!videos || videos.length === 0) return null;
   const openProducts = activeSheet != null ? videos[activeSheet]?.products || [] : [];
 
   return (
-    <section className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-primary)]">
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
-        {/* En-tête de section */}
-        <div className="mb-5 md:mb-6">
-          <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
-            Idées décos
-          </p>
-          <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
-            Trouvez l&apos;inspiration
-          </h2>
-        </div>
+    <>
+      <section className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-primary)]">
+        <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+          {/* En-tête de section */}
+          <div className="mb-5 md:mb-6">
+            <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
+              Idées décos
+            </p>
+            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
+              Trouvez l&apos;inspiration
+            </h2>
+          </div>
 
-        {/* Piste défilante (laisse entrevoir la carte suivante) */}
-        <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 md:mx-0 md:px-0">
-          {videos.map((v, i) => (
-            <IdeaDecoCard key={`${v.url}-${i}`} video={v} onShowProducts={() => setActiveSheet(i)} />
-          ))}
+          {/* Piste défilante (cartes compactes) */}
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+            {videos.map((v, i) => (
+              <IdeaDecoCard
+                key={`${v.url}-${i}`}
+                video={v}
+                onShowProducts={() => setActiveSheet(i)}
+                onOpenFullscreen={() => setFullscreenIndex(i)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* Bottom-sheet des produits (même pattern que le panier) */}
       <AnimatePresence>
@@ -89,7 +112,39 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
           </>
         )}
       </AnimatePresence>
-    </section>
+
+      {/* Mode plein écran : titre + croix en haut, défilement vertical (swipe up) */}
+      <AnimatePresence>
+        {fullscreenIndex != null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black"
+          >
+            {/* Barre supérieure */}
+            <div className="absolute top-0 inset-x-0 z-10 flex items-center justify-between px-4 pt-4 pb-8 bg-gradient-to-b from-black/70 to-transparent">
+              <h2 className="font-display text-lg font-semibold text-white">Trouvez l&apos;inspiration</h2>
+              <button
+                type="button"
+                onClick={() => setFullscreenIndex(null)}
+                aria-label="Fermer le plein écran"
+                className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center text-white hover:bg-white/25 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Piste verticale (une vidéo par écran, swipe haut = vidéo suivante) */}
+            <div ref={fullscreenTrackRef} className="h-full overflow-y-auto snap-y snap-mandatory">
+              {videos.map((v, i) => (
+                <FullscreenVideo key={`fs-${v.url}-${i}`} video={v} />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -133,25 +188,24 @@ function ProductRow({
 function IdeaDecoCard({
   video,
   onShowProducts,
+  onOpenFullscreen,
 }: {
   video: IdeaDecoSlide;
   onShowProducts: () => void;
+  onOpenFullscreen: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(false);
 
-  // Lecture auto uniquement quand la carte est visible (au centre du slider).
+  // Lecture auto uniquement quand la carte est visible.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          v.play().catch(() => {});
-        } else {
-          v.pause();
-        }
+        if (entry.isIntersecting) v.play().catch(() => {});
+        else v.pause();
       },
       { threshold: 0.6 }
     );
@@ -159,25 +213,17 @@ function IdeaDecoCard({
     return () => io.disconnect();
   }, []);
 
-  // Synchronise l'état lecture + remet en muet à la sortie du plein écran.
+  // Synchronise l'état lecture.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
-    const onFs = () => {
-      if (!document.fullscreenElement) {
-        v.muted = true;
-        setMuted(true);
-      }
-    };
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
-    document.addEventListener("fullscreenchange", onFs);
     return () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
-      document.removeEventListener("fullscreenchange", onFs);
     };
   }, []);
 
@@ -188,24 +234,15 @@ function IdeaDecoCard({
     setMuted(v.muted);
   };
 
-  const toggleFullscreen = () => {
+  const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
-    if (document.fullscreenElement === v) {
-      if (v.paused) v.play().catch(() => {});
-      else v.pause();
-    } else if (v.requestFullscreen) {
-      v.requestFullscreen();
-      v.muted = false;
-      setMuted(false);
-      v.play().catch(() => {});
-    } else {
-      v.play().catch(() => {});
-    }
+    if (v.paused) v.play().catch(() => {});
+    else v.pause();
   };
 
   return (
-    <div className="relative snap-start shrink-0 w-[72vw] max-w-[280px] sm:max-w-[300px] aspect-[9/16] rounded-2xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
+    <div className="relative snap-start shrink-0 w-[44vw] max-w-[180px] aspect-[9/16] rounded-xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
       <video
         ref={videoRef}
         src={video.url}
@@ -214,42 +251,125 @@ function IdeaDecoCard({
         muted
         playsInline
         preload="metadata"
-        onClick={toggleFullscreen}
+        onClick={onOpenFullscreen}
         className="w-full h-full object-cover cursor-pointer"
       />
 
       {/* Dégradé bas pour la lisibilité des contrôles */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
 
-      {/* CTA principal : « Produits » (bas-gauche) */}
+      {/* CTA « Produits » (bas-gauche) */}
       {video.products.length > 0 && (
         <button
           type="button"
           onClick={onShowProducts}
-          className="absolute left-3 bottom-3 inline-flex items-center gap-1.5 h-9 px-4 rounded-full bg-white/95 text-[var(--color-text-primary)] text-sm font-semibold shadow-sm hover:bg-white transition-colors"
+          className="absolute left-2 bottom-2 inline-flex items-center gap-1 h-7 px-3 rounded-full bg-white/95 text-[var(--color-text-primary)] text-xs font-semibold shadow-sm hover:bg-white transition-colors"
         >
-          <ShoppingBag className="w-4 h-4" />
+          <ShoppingBag className="w-3.5 h-3.5" />
           Produits
         </button>
       )}
 
-      {/* Contrôles empilés (bas-droite) : mute puis lecture/plein écran */}
-      <div className="absolute right-3 bottom-3 flex flex-col items-center gap-2">
+      {/* Contrôles indépendants (bas-droite) : mute puis lecture/pause */}
+      <div className="absolute right-2 bottom-2 flex flex-col items-center gap-1.5">
         <button
           type="button"
           onClick={toggleMute}
           aria-label={muted ? "Activer le son" : "Couper le son"}
-          className="w-9 h-9 rounded-full bg-white/95 flex items-center justify-center text-[var(--color-text-primary)] shadow-sm hover:bg-white transition-colors"
+          className="w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-[var(--color-text-primary)] shadow-sm hover:bg-white transition-colors"
         >
           {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
         </button>
         <button
           type="button"
-          onClick={toggleFullscreen}
-          aria-label={playing ? "Mettre en pause" : "Lire en plein écran"}
-          className="w-9 h-9 rounded-full bg-white/95 flex items-center justify-center text-[var(--color-text-primary)] shadow-sm hover:bg-white transition-colors"
+          onClick={togglePlay}
+          aria-label={playing ? "Mettre en pause" : "Lecture"}
+          className="w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-[var(--color-text-primary)] shadow-sm hover:bg-white transition-colors"
         >
           {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FullscreenVideo({ video }: { video: IdeaDecoSlide }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(false);
+
+  // Lecture auto quand la vidéo plein écran est visible (après swipe).
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      },
+      { threshold: 0.6 }
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    v.addEventListener("play", onPlay);
+    v.addEventListener("pause", onPause);
+    return () => {
+      v.removeEventListener("play", onPlay);
+      v.removeEventListener("pause", onPause);
+    };
+  }, []);
+
+  const toggleMute = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = !v.muted;
+    setMuted(v.muted);
+  };
+
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) v.play().catch(() => {});
+    else v.pause();
+  };
+
+  return (
+    <div className="relative h-full snap-start">
+      <video
+        ref={videoRef}
+        src={video.url}
+        poster={video.poster || undefined}
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        className="w-full h-full object-cover"
+      />
+
+      {/* Contrôles plein écran (bas-droite) */}
+      <div className="absolute right-4 bottom-12 flex flex-col items-center gap-3">
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={muted ? "Activer le son" : "Couper le son"}
+          className="w-11 h-11 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        >
+          {muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+        </button>
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={playing ? "Mettre en pause" : "Lecture"}
+          className="w-11 h-11 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+        >
+          {playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
         </button>
       </div>
     </div>
