@@ -9,6 +9,8 @@ const reviewSchema = z.object({
   title: z.string().max(120).optional().nullable(),
   content: z.string().min(10).max(2000),
   order_number: z.string().max(40).optional().nullable(),
+  country: z.string().max(60).optional().nullable(),
+  photos: z.array(z.string().url().max(500)).max(4).optional().nullable(),
 });
 
 // Rate limiting simple en mémoire (par IP).
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Données invalides", details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { product_slug, author_name, rating, title, content, order_number } = parsed.data;
+  const { product_slug, author_name, rating, title, content, order_number, country, photos } = parsed.data;
 
   try {
     const admin = createAdminClient();
@@ -74,6 +76,8 @@ export async function POST(request: NextRequest) {
         content: content.trim(),
         verified,
         order_number: verified ? orderRef : null,
+        country: country?.trim() || null,
+        photos: photos?.length ? photos : null,
       })
       .select("*")
       .single();

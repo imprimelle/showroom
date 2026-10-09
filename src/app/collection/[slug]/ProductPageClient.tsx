@@ -690,10 +690,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       {/* ===== Idées décos (vidéos d'inspiration par univers) ===== */}
       <IdeaDecoSlider videos={ideaDecoVideos} />
 
-      {/* ===== Avis clients (note globale + fil + formulaire) ===== */}
+      {/* ===== Avis clients (mur global : note + fil + formulaire) ===== */}
       <ReviewSection
         productSlug={product.slug}
-        productName={product.name}
         reviews={reviews}
       />
 

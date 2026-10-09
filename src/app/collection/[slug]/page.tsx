@@ -5,13 +5,13 @@ import { getShowcaseSettings } from "@/lib/settings";
 import { normalizePhone, getMinPrice } from "@/lib/utils";
 import { resolveFaqPills } from "@/lib/faq";
 import { resolveActiveParameters } from "@/lib/parameters";
-import { getProductReviews, buildReviewJsonLd } from "@/lib/reviews";
+import { getAllReviews, computeAggregate, buildReviewJsonLd } from "@/lib/reviews";
 import { ProductPageClient } from "./ProductPageClient";
 import { ProductPageSkeleton } from "@/components/ui/Skeleton";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import type { ShowcaseProduct } from "@/lib/products";
-import type { IdeaDecoSlide } from "@/types";
+import type { IdeaDecoSlide, ShowcaseReview } from "@/types";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -39,14 +39,16 @@ export default async function ProductPage({ params }: Props) {
 
   if (!product) notFound();
 
-  // Related products: same family first, then fallback to any published
-  const [all, settings, reviewData] = await Promise.all([
+  // Avis : mur GLOBAL (tous produits) pour la section bas de page ;
+  // l'agrégat produit (pour la note + JSON-LD SEO) est recalculé localement.
+  const [all, settings, allReviews] = await Promise.all([
     getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
     getShowcaseSettings(),
-    getProductReviews(slug),
+    getAllReviews().catch(() => [] as ShowcaseReview[]),
   ]);
 
-  const { reviews, aggregate } = reviewData;
+  const productReviews = allReviews.filter((r) => r.product_slug === slug);
+  const aggregate = computeAggregate(productReviews);
 
   const familyId = resolveFamily(product.showcase?.family, product.showcase?.category);
   const sameFamily = all.filter(
@@ -85,7 +87,7 @@ export default async function ProductPage({ params }: Props) {
     description: product.showcase?.short_description,
     image: product.main_image_url,
     aggregate,
-    reviews,
+    reviews: productReviews,
   });
 
   return (
@@ -99,7 +101,7 @@ export default async function ProductPage({ params }: Props) {
           parameters={parameters}
           faqPills={faqPills}
           ideaDecoVideos={ideaDecoVideos}
-          reviews={reviews}
+          reviews={allReviews}
           aggregate={aggregate}
         />
       </Suspense>

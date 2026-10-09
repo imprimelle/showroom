@@ -2,36 +2,38 @@ import { createServerClient } from "./supabase/server";
 import type { ShowcaseReview, ReviewAggregate } from "@/types";
 
 /**
- * Charge les avis d'un produit (table showcase_reviews) + leur agrégat
- * (note moyenne + répartition 5→1). À utiliser dans un Server Component.
+ * Calcule l'agrégat d'avis (note moyenne + répartition 5→1) à partir d'une liste.
+ * Utilisé pour la note produit (avis propres au slug) comme pour la note globale du mur d'avis.
  */
-export async function getProductReviews(
-  slug: string
-): Promise<{ reviews: ShowcaseReview[]; aggregate: ReviewAggregate }> {
-  const empty = { reviews: [] as ShowcaseReview[], aggregate: { average: 0, count: 0, distribution: [] as { rating: number; count: number }[] } };
+export function computeAggregate(reviews: ShowcaseReview[]): ReviewAggregate {
+  const count = reviews.length;
+  const distribution = [5, 4, 3, 2, 1].map((rating) => ({
+    rating,
+    count: reviews.filter((r) => r.rating === rating).length,
+  }));
+  const sum = reviews.reduce((s, r) => s + (r.rating || 0), 0);
+  const average = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+  return { average, count, distribution };
+}
 
+/**
+ * Charge TOUS les avis du site (table showcase_reviews), tous produits confondus,
+ * du plus récent au plus ancien. Le mur d'avis en bas de fiche produit est global
+ * (chaque carte indiquant le produit concerné). À utiliser dans un Server Component.
+ */
+export async function getAllReviews(limit = 200): Promise<ShowcaseReview[]> {
   try {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from("showcase_reviews")
       .select("*")
-      .eq("product_slug", slug)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(limit);
 
-    if (error || !Array.isArray(data)) return empty;
-
-    const reviews = data as ShowcaseReview[];
-    const count = reviews.length;
-    const distribution = [5, 4, 3, 2, 1].map((rating) => ({
-      rating,
-      count: reviews.filter((r) => r.rating === rating).length,
-    }));
-    const sum = reviews.reduce((s, r) => s + (r.rating || 0), 0);
-    const average = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
-
-    return { reviews, aggregate: { average, count, distribution } };
+    if (error || !Array.isArray(data)) return [];
+    return data as ShowcaseReview[];
   } catch {
-    return empty;
+    return [];
   }
 }
 

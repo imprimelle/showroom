@@ -153,6 +153,10 @@ export interface ShowcaseReview {
   content: string;
   verified: boolean;
   order_number?: string | null;
+  /** Pays d'origine du client (affiché sur la carte d'avis). */
+  country?: string | null;
+  /** Photos du client (URLs publiques Supabase Storage), jusqu'à 4. */
+  photos?: string[] | null;
   created_at: string;
 }
 
