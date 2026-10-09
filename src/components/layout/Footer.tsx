@@ -74,6 +74,7 @@ export function Footer({
             {[
               { href: "/collection", label: "Catalogue" },
               { href: "/realisations", label: "Réalisations" },
+              { href: "/notre-histoire", label: "Notre histoire" },
               { href: "/comment-ca-marche", label: "Comment ça marche" },
               { href: "/faq", label: "FAQ" },
             ].map((link) => (

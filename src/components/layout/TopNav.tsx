@@ -13,6 +13,7 @@ import {
   Info,
   HelpCircle,
   FileText,
+  Sparkles,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, formatPhoneDisplay } from "@/lib/utils";
@@ -24,6 +25,7 @@ const links = [
   { href: "/", label: "Accueil", icon: House },
   { href: "/collection", label: "Catalogue", icon: Search },
   { href: "/realisations", label: "Réalisations", icon: Info },
+  { href: "/notre-histoire", label: "Notre histoire", icon: Sparkles },
   { href: "/comment-ca-marche", label: "Comment ça marche", icon: HelpCircle },
   { href: "/faq", label: "FAQ", icon: HelpCircle },
   { href: "/suivi", label: "Suivi", icon: FileText },
@@ -66,7 +68,10 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
   const [searchQ, setSearchQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
+  const isHero =
+    pathname === "/" ||
+    pathname.startsWith("/collection/categorie/") ||
+    pathname === "/notre-histoire";
   const [scrolled, setScrolled] = useState(false);
 
   // Sur les pages avec bannière (home + univers), la barre devient solide après un léger scroll
