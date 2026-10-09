@@ -9,7 +9,6 @@ import {
   MapPin,
   Minus,
   Plus,
-  ShoppingCart,
   Check,
   ChevronRight,
   X,
@@ -86,6 +85,29 @@ function RatingStars({ popularity }: { popularity?: number }) {
         {rating.toFixed(1).replace(".", ",")}
       </span>
     </div>
+  );
+}
+
+/** Icône « panier + » : un panier avec un « + » à l'intérieur (CTA ajout au panier). */
+function CartPlusIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+      <circle cx="8" cy="21" r="1" />
+      <circle cx="19" cy="21" r="1" />
+      <path d="M12 5v7" />
+      <path d="M8.5 8.5h7" />
+    </svg>
   );
 }
 
@@ -265,7 +287,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 <Link
                   href={`/collection/categorie/${family.id}`}
                   aria-label={`Voir la catégorie ${family.name}`}
-                  className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                  className="text-sm font-medium text-[var(--color-accent-amber)] hover:opacity-80 transition-opacity"
                 >
                   {family.name.trim().split(/\s+/)[0]}.../
                 </Link>
@@ -465,20 +487,16 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                       <Button
                         variant="success"
                         size="lg"
-                        className="w-full shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                        className="w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                         onClick={handleAddToCart}
                         disabled={!selectedSku}
                       >
                         {selectedSku ? (
-                          <span className="flex w-full items-center justify-between gap-3">
-                            <span className="flex items-center gap-2.5">
-                              <ShoppingCart className="w-5 h-5 shrink-0" />
-                              <span className="text-base font-semibold">Ajouter au panier</span>
-                            </span>
-                            <span className="flex flex-col items-end leading-tight">
-                              <span className="text-[10px] font-medium uppercase tracking-wide text-white/75">Total</span>
-                              <span className="font-mono text-lg font-bold">{formatPrice(lineTotal ?? 0)}</span>
-                            </span>
+                          <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+                            <CartPlusIcon className="h-5 w-5 shrink-0" />
+                            <span className="font-semibold">Ajouter au panier</span>
+                            <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
+                            <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
                           </span>
                         ) : (
                           "Sélectionnez une taille"
