@@ -79,10 +79,10 @@ function formatNum(n: number): string {
 function DimensionSchema({ raw, productName }: { raw?: string | null; productName?: string }) {
   const { numbers, unit, raw: rawStr } = parseDimensions(raw);
   const u = unit || "cm";
-  // Ordre d'apparition des nombres : Hauteur, Largeur, Profondeur.
-  const height = numbers[0];
-  const width = numbers[1];
-  const depth = numbers[2];
+  // Convention d'affichage a × b × c : a = longueur, b = profondeur, c = hauteur.
+  const length = numbers[0]; // a — longueur
+  const depth = numbers[1];  // b — profondeur
+  const height = numbers[2]; // c — hauteur
   const fmt = (n?: number) => (n != null ? `${formatNum(n)} ${u}` : "—");
 
   // Géométrie isométrique
@@ -125,40 +125,40 @@ function DimensionSchema({ raw, productName }: { raw?: string | null; productNam
         <polygon points={pts(B) + " " + pts(C) + " " + pts(C2) + " " + pts(B2)} fill="#EDE8E2" stroke="#D1CCC4" strokeWidth="1.5" />
         <polygon points={pts(A) + " " + pts(D) + " " + pts(D2) + " " + pts(A2)} fill="#E5DED4" stroke="#D1CCC4" strokeWidth="1.5" />
 
-        {/* Ligne de cote — Hauteur (verticale, à gauche) */}
+        {/* Ligne de cote — Hauteur (c, verticale, à gauche) */}
         <line
           x1={ox - 30} y1={oy} x2={ox - 30} y2={oy + H}
           stroke="#FFA500" strokeWidth="1.5"
           markerStart="url(#dim-arr-h)" markerEnd="url(#dim-arr-h)"
         />
         <text x={ox - 40} y={oy + H / 2} textAnchor="end" fontSize="13" fontWeight="700" fill="#111827">
-          H
+          c
         </text>
         <text x={ox - 40} y={oy + H / 2 + 16} textAnchor="end" fontSize="12" fill="#4B5563">
           {fmt(height)}
         </text>
 
-        {/* Ligne de cote — Largeur (horizontale, sous l'arête avant) */}
+        {/* Ligne de cote — Longueur (a, horizontale, sous l'arête avant) */}
         <line
           x1={ox + DX} y1={oy + DY + H + 34} x2={ox + W + DX} y2={oy + DY + H + 34}
           stroke="#2563EB" strokeWidth="1.5"
           markerStart="url(#dim-arr-l)" markerEnd="url(#dim-arr-l)"
         />
         <text x={(ox + DX + ox + W + DX) / 2} y={oy + DY + H + 24} textAnchor="middle" fontSize="13" fontWeight="700" fill="#111827">
-          L
+          a
         </text>
         <text x={(ox + DX + ox + W + DX) / 2} y={oy + DY + H + 54} textAnchor="middle" fontSize="12" fill="#4B5563">
-          {fmt(width)}
+          {fmt(length)}
         </text>
 
-        {/* Ligne de cote — Profondeur (diagonale, sous l'arête inférieure gauche) */}
+        {/* Ligne de cote — Profondeur (b, diagonale, sous l'arête inférieure gauche) */}
         <line
           x1={ox} y1={oy + H + 46} x2={ox + DX} y2={oy + DY + H + 46}
           stroke="#6B7280" strokeWidth="1.5"
           markerStart="url(#dim-arr-p)" markerEnd="url(#dim-arr-p)"
         />
         <text x={ox + DX / 2 - 6} y={oy + DY + H + 34} textAnchor="middle" fontSize="13" fontWeight="700" fill="#111827">
-          P
+          b
         </text>
         <text x={ox + DX / 2 - 6} y={oy + DY + H + 68} textAnchor="middle" fontSize="12" fill="#4B5563">
           {fmt(depth)}
@@ -169,13 +169,13 @@ function DimensionSchema({ raw, productName }: { raw?: string | null; productNam
       <div className="mt-2 w-full max-w-[360px] space-y-1.5">
         <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center text-[11px] text-[var(--color-text-secondary)]">
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-[#FFA500]" /> Hauteur
+            <span className="inline-block h-2 w-2 rounded-full bg-[#2563EB]" /> a · Longueur
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-[#2563EB]" /> Largeur
+            <span className="inline-block h-2 w-2 rounded-full bg-[#6B7280]" /> b · Profondeur
           </span>
           <span className="inline-flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-[#6B7280]" /> Profondeur
+            <span className="inline-block h-2 w-2 rounded-full bg-[#FFA500]" /> c · Hauteur
           </span>
         </div>
         {rawStr ? (
