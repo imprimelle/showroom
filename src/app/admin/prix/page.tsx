@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPrixPage() {
   const admin = createAdminClient();
   const [{ data: products }, { data: settingsRow }] = await Promise.all([
-    admin.from("products").select("*").order("name"),
+    admin.from("products").select("*").eq("is_published", true).order("name"),
     admin.from("showcase_settings").select("data").eq("id", 1).single(),
   ]);
 
@@ -24,7 +24,6 @@ export default async function AdminPrixPage() {
     <PriceTableClient
       products={resolved}
       parameters={parameters}
-      totalPublished={(products || []).filter((p) => p.is_published).length}
     />
   );
 }

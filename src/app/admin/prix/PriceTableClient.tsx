@@ -19,7 +19,6 @@ import type { ProductParameter } from "@/types";
 interface PriceTableClientProps {
   products: ShowcaseProduct[];
   parameters: ProductParameter[];
-  totalPublished: number;
 }
 
 interface Row {
@@ -33,7 +32,7 @@ type CellStatus = "idle" | "saving" | "saved" | "error";
  * Vue « Prix » façon tableur : une ligne par variante, édition inline des prix.
  * Auto-save au blur (ou Entrée) → PUT /api/admin/products/[id] avec `showcase.variants`.
  */
-export function PriceTableClient({ products, parameters, totalPublished }: PriceTableClientProps) {
+export function PriceTableClient({ products, parameters }: PriceTableClientProps) {
   const [search, setSearch] = useState("");
   const [familyFilter, setFamilyFilter] = useState<string>("all");
 
@@ -106,7 +105,7 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
         <div>
           <h1 className="font-display text-2xl font-bold text-[var(--color-text-primary)]">Prix</h1>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            {products.length} produits · {totalPublished} publiés — modifiez les prix de chaque variante directement dans le tableau.
+            {products.length} produit{products.length > 1 ? "s" : ""} publié{products.length > 1 ? "s" : ""} — modifiez les prix de chaque variante directement dans le tableau.
           </p>
         </div>
         <Link
