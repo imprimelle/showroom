@@ -585,9 +585,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       {/* ===== Questions fréquentes ===== */}
       <section className="border-t border-[var(--color-border-default)]">
         <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
-          <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-4">
-            Questions fréquentes
-          </h2>
+          <div className="mb-5 md:mb-6">
+            <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
+              Plus d&apos;infos
+            </p>
+            <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
+              Questions fréquentes
+            </h2>
+          </div>
 
           {/* Pilules : 6 boutons (2×3) → bottom sheet */}
           <div className="grid grid-cols-2 gap-2 mb-6">
@@ -675,13 +680,23 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       {relatedProducts.length > 0 && (
         <section className="border-t border-[var(--color-border-default)]">
           <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
-            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-6">
-              Vous aimerez aussi
-            </h2>
+            <div className="mb-6">
+              <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
+                Suggestions
+              </p>
+              <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
+                Vous aimerez aussi
+              </h2>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
               {relatedProducts.map((rp) => (
                 <ProductCard key={rp.id} product={rp} sizes="(max-width: 767px) 50vw, 25vw" />
               ))}
+            </div>
+            <div className="mt-8 text-center">
+              <Link href="/collection">
+                <Button variant="secondary" size="lg">Voir le catalogue</Button>
+              </Link>
             </div>
           </div>
         </section>

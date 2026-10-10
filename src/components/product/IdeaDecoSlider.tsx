@@ -46,7 +46,7 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
             <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
               Idées décos
             </p>
-            <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mt-1.5">
+            <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
               Trouvez l&apos;inspiration
             </h2>
           </div>

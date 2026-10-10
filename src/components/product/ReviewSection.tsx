@@ -300,9 +300,10 @@ function ReviewForm({
 }
 
 /**
- * Mur d'avis clients (style Trustpilot) en bas de fiche produit — GLOBAL : il affiche
- * les avis de tous les produits du site, chaque carte indiquant le produit concerné.
- * Kicker orange « Avis » + titre « Ce que nos clients en pensent ».
+ * Mur d'avis clients (style Trustpilot) en bas de fiche produit.
+ * Priorité aux avis du produit courant ; un bouton « Voir plus d'avis » révèle
+ * ensuite les avis des autres produits du site. Kicker orange « Avis »
+ * + titre « Ce que nos clients en pensent ».
  */
 export function ReviewSection({
   productSlug,
@@ -314,7 +315,7 @@ export function ReviewSection({
   const [reviews, setReviews] = useState<ShowcaseReview[]>(initialReviews);
   const [showForm, setShowForm] = useState(false);
   const [justPosted, setJustPosted] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [showOther, setShowOther] = useState(false);
 
   const aggregate = useMemo<ReviewAggregate>(() => {
     const count = reviews.length;
@@ -334,8 +335,19 @@ export function ReviewSection({
     setTimeout(() => setJustPosted(false), 4000);
   };
 
-  const visibleReviews = reviews.slice(0, visibleCount);
-  const hasMore = reviews.length > visibleCount;
+  // Priorité aux avis du produit courant ; « Voir plus » révèle les autres produits.
+  const ownReviews = useMemo(
+    () => reviews.filter((r) => r.product_slug === productSlug),
+    [reviews, productSlug]
+  );
+  const otherReviews = useMemo(
+    () => reviews.filter((r) => r.product_slug !== productSlug),
+    [reviews, productSlug]
+  );
+  // Si le produit n'a aucun avis propre, on affiche directement les autres produits.
+  const showOtherReviews = showOther || ownReviews.length === 0;
+  const visibleReviews = [...ownReviews, ...(showOtherReviews ? otherReviews : [])];
+  const hasMore = otherReviews.length > 0 && !showOtherReviews;
   const maxCount = Math.max(1, ...aggregate.distribution.map((d) => d.count));
 
   return (
@@ -344,7 +356,7 @@ export function ReviewSection({
         {/* Kicker orange + titre noir */}
         <div className="mb-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent-amber)]">Avis</p>
-          <h2 className="mt-1 font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
+          <h2 className="mt-1.5 font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)]">
             Ce que nos clients en pensent
           </h2>
         </div>
@@ -395,7 +407,7 @@ export function ReviewSection({
             )}
           </div>
 
-          {/* Colonne droite : mur d'avis (tous produits) */}
+          {/* Colonne droite : mur d'avis (produit courant en priorité) */}
           <div className="space-y-4">
             {showForm && (
               <ReviewForm
@@ -418,10 +430,10 @@ export function ReviewSection({
                 {hasMore && (
                   <button
                     type="button"
-                    onClick={() => setVisibleCount((c) => c + 6)}
+                    onClick={() => setShowOther(true)}
                     className="w-full rounded-xl border border-[var(--color-border-default)] py-3 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
                   >
-                    Voir plus d&apos;avis ({reviews.length - visibleCount})
+                    Voir plus d&apos;avis ({otherReviews.length})
                   </button>
                 )}
               </>
