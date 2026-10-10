@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { TopNav } from "@/components/layout/TopNav";
@@ -27,6 +27,12 @@ const plusJakarta = Plus_Jakarta_Sans({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
   display: "swap",
 });
 
@@ -73,7 +79,7 @@ export default async function RootLayout({
   const catalog = resolveCategories(settings.catalog);
 
   return (
-    <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
+    <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col">
         <Providers categories={catalog}>
           <TopNav whatsapp={whatsapp} phone={phone} />

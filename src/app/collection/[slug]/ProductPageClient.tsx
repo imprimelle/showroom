@@ -589,7 +589,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
               Plus d&apos;infos
             </p>
-            <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
               Questions fréquentes
             </h2>
           </div>
@@ -684,7 +684,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
                 Suggestions
               </p>
-              <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
+              <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
                 Vous aimerez aussi
               </h2>
             </div>

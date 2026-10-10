@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Volume2, VolumeX, Play, Pause, ShoppingBag, X } from "lucide-react";
@@ -18,6 +18,26 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
   const [activeSheet, setActiveSheet] = useState<number | null>(null);
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
   const fullscreenTrackRef = useRef<HTMLDivElement>(null);
+  // Lecture unique : une seule vidéo du slider joue à la fois (la plus visible).
+  const [activeIndex, setActiveIndex] = useState(0);
+  const ratiosRef = useRef<number[]>([]);
+  const activeIndexRef = useRef(0);
+
+  const handleVisibility = useCallback((index: number, ratio: number) => {
+    ratiosRef.current[index] = ratio;
+    let best = -1;
+    let bestRatio = 0.05; // ignore les cartes à peine visibles
+    ratiosRef.current.forEach((r, i) => {
+      if (r > bestRatio) {
+        bestRatio = r;
+        best = i;
+      }
+    });
+    if (best >= 0 && best !== activeIndexRef.current) {
+      activeIndexRef.current = best;
+      setActiveIndex(best);
+    }
+  }, []);
 
   // Verrouille le scroll du body en plein écran.
   useEffect(() => {
@@ -46,7 +66,7 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
             <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
               Idées décos
             </p>
-            <h2 className="font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)] mt-1.5">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
               Trouvez l&apos;inspiration
             </h2>
           </div>
@@ -57,6 +77,9 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
               <IdeaDecoCard
                 key={`${v.url}-${i}`}
                 video={v}
+                index={i}
+                active={i === activeIndex}
+                onVisibility={handleVisibility}
                 onShowProducts={() => setActiveSheet(i)}
                 onOpenFullscreen={() => setFullscreenIndex(i)}
               />
@@ -187,31 +210,43 @@ function ProductRow({
 
 function IdeaDecoCard({
   video,
+  index,
+  active,
+  onVisibility,
   onShowProducts,
   onOpenFullscreen,
 }: {
   video: IdeaDecoSlide;
+  index: number;
+  active: boolean;
+  onVisibility: (index: number, ratio: number) => void;
   onShowProducts: () => void;
   onOpenFullscreen: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(false);
 
-  // Lecture auto uniquement quand la carte est visible.
+  // Lecture uniquement pour la carte active (une seule vidéo à la fois).
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
+    if (active) v.play().catch(() => {});
+    else v.pause();
+  }, [active]);
+
+  // Rapporte la visibilité de la carte pour élire la plus visible.
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
     const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) v.play().catch(() => {});
-        else v.pause();
-      },
-      { threshold: 0.6 }
+      ([entry]) => onVisibility(index, entry.intersectionRatio),
+      { threshold: [0, 0.25, 0.5, 0.75, 1] }
     );
-    io.observe(v);
+    io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [index, onVisibility]);
 
   // Synchronise l'état lecture.
   useEffect(() => {
@@ -242,7 +277,7 @@ function IdeaDecoCard({
   };
 
   return (
-    <div className="relative snap-start shrink-0 w-[44vw] max-w-[180px] aspect-[9/16] rounded-xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
+    <div ref={cardRef} className="relative snap-start shrink-0 w-[66vw] max-w-[270px] aspect-[9/16] rounded-xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
       <video
         ref={videoRef}
         src={video.url}

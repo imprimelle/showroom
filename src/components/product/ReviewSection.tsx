@@ -356,8 +356,8 @@ export function ReviewSection({
         {/* Kicker orange + titre noir */}
         <div className="mb-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent-amber)]">Avis</p>
-          <h2 className="mt-1.5 font-display text-[2rem] md:text-[2.5rem] font-bold text-[var(--color-text-primary)]">
-            Ce que nos clients en pensent
+          <h2 className="mt-1.5 font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">
+            Vos retours comptent
           </h2>
         </div>
 
