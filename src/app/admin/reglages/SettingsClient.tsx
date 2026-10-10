@@ -35,7 +35,11 @@ export function SettingsClient({ initialData, products }: {
   const [data, setData] = useState<ShowcaseSettings>(initialData);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-  const [tab, setTab] = useState<TabId>("coordonnees");
+  const [tab, setTab] = useState<TabId>(() => {
+    // Deep-link : /admin/reglages#parametres ouvre directement l'onglet « Paramètres produit ».
+    if (typeof window !== "undefined" && window.location.hash === "#parametres") return "parametres";
+    return "coordonnees";
+  });
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 

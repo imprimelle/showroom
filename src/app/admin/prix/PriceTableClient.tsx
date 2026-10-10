@@ -73,13 +73,18 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
     return out;
   }, [products, variantsByProduct, search, familyFilter]);
 
-  const commit = async (productId: string, variantId: string, price: number | null) => {
-    const key = `${productId}:${variantId}`;
+  const commit = async (
+    productId: string,
+    variantId: string,
+    patch: Partial<ProductVariant>,
+    field: "name" | "price"
+  ) => {
+    const key = `${productId}:${variantId}:${field}`;
     setCellStatus((s) => ({ ...s, [key]: "saving" }));
 
-    // Applique le nouveau prix localement puis envoie le tableau complet (merge serveur).
+    // Applique la modification localement puis envoie le tableau complet (merge serveur).
     const nextVariants = (variantsByProduct[productId] ?? []).map((v) =>
-      v.id === variantId ? { ...v, price } : v
+      v.id === variantId ? { ...v, ...patch } : v
     );
     setVariantsByProduct((prev) => ({ ...prev, [productId]: nextVariants }));
 
@@ -105,7 +110,7 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
           </p>
         </div>
         <Link
-          href="/admin/reglages"
+          href="/admin/reglages#parametres"
           className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-medium border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
         >
           <SlidersHorizontal className="w-4 h-4" /> Options de paramètres
@@ -185,10 +190,15 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
                       {noVariants ? (
                         <span className="text-xs text-[var(--color-text-tertiary)] italic">Sur devis uniquement</span>
                       ) : (
-                        <div className="min-w-[140px]">
-                          <span className="block font-medium text-[var(--color-text-primary)]">{variant!.name}</span>
+                        <div className="min-w-[160px]">
+                          <NameCell
+                            productId={product.id}
+                            variant={variant!}
+                            status={cellStatus[`${product.id}:${variant!.id}:name`] ?? "idle"}
+                            onSave={commit}
+                          />
                           {variant!.attributes?.dimensions && (
-                            <span className="block text-xs text-[var(--color-text-tertiary)]">{variant!.attributes.dimensions}</span>
+                            <span className="block text-xs text-[var(--color-text-tertiary)] mt-1">{variant!.attributes.dimensions}</span>
                           )}
                         </div>
                       )}
@@ -202,7 +212,7 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
                         <PriceCell
                           productId={product.id}
                           variant={variant!}
-                          status={cellStatus[`${product.id}:${variant!.id}`] ?? "idle"}
+                          status={cellStatus[`${product.id}:${variant!.id}:price`] ?? "idle"}
                           onSave={commit}
                         />
                       )}
@@ -220,14 +230,15 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
                               .map((o) => `${o.label}${(o.price ?? 0) > 0 ? ` (+${o.price})` : ""}`)
                               .join(" · ");
                             return (
-                              <span
+                              <Link
                                 key={prm.id}
+                                href="/admin/reglages#parametres"
                                 title={tooltip}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)]"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] border border-[var(--color-border-default)] hover:border-[var(--color-accent-blue)] hover:text-[var(--color-text-primary)] transition-colors"
                               >
                                 {prm.name}
                                 {paid > 0 && <span className="text-[var(--color-accent-amber)]">· {paid} payant{paid > 1 ? "s" : ""}</span>}
-                              </span>
+                              </Link>
                             );
                           })}
                         </div>
@@ -259,6 +270,59 @@ export function PriceTableClient({ products, parameters, totalPublished }: Price
   );
 }
 
+/* ===== Cellule de nom de variante éditable inline ===== */
+function NameCell({
+  productId,
+  variant,
+  status,
+  onSave,
+}: {
+  productId: string;
+  variant: ProductVariant;
+  status: CellStatus;
+  onSave: (productId: string, variantId: string, patch: Partial<ProductVariant>, field: "name" | "price") => void;
+}) {
+  const [text, setText] = useState(variant.name);
+  // Resync si le nom remonte du parent (après sauvegarde) — pattern « adjust state during render ».
+  const [lastName, setLastName] = useState(variant.name);
+  if (lastName !== variant.name) {
+    setLastName(variant.name);
+    setText(variant.name);
+  }
+
+  const commitText = () => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      setText(variant.name); // revert si vide (un nom vide supprimerait la variante côté serveur)
+      return;
+    }
+    if (trimmed !== variant.name) onSave(productId, variant.id, { name: trimmed }, "name");
+  };
+
+  return (
+    <div className="relative max-w-[220px]">
+      <input
+        type="text"
+        value={text}
+        placeholder="Nom de la variante"
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commitText}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+        className="w-full h-9 px-2.5 pr-7 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-primary)] text-sm font-medium text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)]"
+      />
+      {status !== "idle" && (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2">
+          {status === "saving" && <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--color-accent-blue)]" />}
+          {status === "saved" && <Check className="w-3.5 h-3.5 text-green-500" />}
+          {status === "error" && <AlertTriangle className="w-3.5 h-3.5 text-red-500" />}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ===== Cellule de prix éditable inline ===== */
 function PriceCell({
   productId,
@@ -269,7 +333,7 @@ function PriceCell({
   productId: string;
   variant: ProductVariant;
   status: CellStatus;
-  onSave: (productId: string, variantId: string, price: number | null) => void;
+  onSave: (productId: string, variantId: string, patch: Partial<ProductVariant>, field: "name" | "price") => void;
 }) {
   const [text, setText] = useState(variant.price == null ? "" : String(variant.price));
   // Resync si le prix remonte du parent (après sauvegarde) — pattern « adjust state during render ».
@@ -282,13 +346,13 @@ function PriceCell({
   const commitText = () => {
     const trimmed = text.trim().replace(/\s/g, "").replace(",", ".");
     if (trimmed === "") {
-      if (variant.price !== null) onSave(productId, variant.id, null);
+      if (variant.price !== null) onSave(productId, variant.id, { price: null }, "price");
       return;
     }
     const num = Number(trimmed);
     if (Number.isFinite(num) && num >= 0) {
       const rounded = Math.round(num);
-      if (rounded !== variant.price) onSave(productId, variant.id, rounded);
+      if (rounded !== variant.price) onSave(productId, variant.id, { price: rounded }, "price");
       else setText(String(rounded));
     } else {
       setText(variant.price == null ? "" : String(variant.price));
@@ -297,7 +361,7 @@ function PriceCell({
 
   return (
     <div className="flex items-center gap-1.5">
-      <div className="relative flex-1 max-w-[150px]">
+      <div className="relative w-[180px] max-w-full">
         <input
           type="text"
           inputMode="numeric"
@@ -308,7 +372,7 @@ function PriceCell({
           onKeyDown={(e) => {
             if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           }}
-          className="w-full h-9 px-2.5 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-primary)] text-sm text-[var(--color-text-primary)] font-mono tabular-nums text-right placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)]"
+          className="w-full h-9 px-2.5 pr-7 rounded-lg border border-[var(--color-border-strong)] bg-[var(--color-bg-primary)] text-sm text-[var(--color-text-primary)] font-mono tabular-nums text-right placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)]"
         />
         {status !== "idle" && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2">
