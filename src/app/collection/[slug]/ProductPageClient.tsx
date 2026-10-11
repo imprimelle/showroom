@@ -154,6 +154,21 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     return () => observer.disconnect();
   }, []);
 
+  // === Barre sticky bas : apparaît quand le bloc CTA (quantité + ajout au panier) sort du viewport ===
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [bottomBarVisible, setBottomBarVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setBottomBarVisible(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   // Masque la TopNav quand la barre produit est visible (cf. globals.css)
   useEffect(() => {
     if (stickyBarVisible) {
@@ -277,6 +292,52 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
     });
     setCartOpen(true);
+  };
+
+  // Bouton CTA principal (ajout au panier / devis WhatsApp), réutilisé en bloc (plein) et en sticky bas (compact).
+  const renderPrimaryCta = (compact: boolean) => {
+    if (variants.length > 0 && currentPrice != null) {
+      return (
+        <Button
+          variant="success"
+          size={compact ? "md" : "lg"}
+          className={cn(
+            compact
+              ? "flex-1 px-4!"
+              : "w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          )}
+          onClick={handleAddToCart}
+          disabled={!selectedSku}
+        >
+          {selectedSku ? (
+            <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+              <CartPlusIcon className="h-5 w-5 shrink-0" />
+              <span className="font-semibold">Ajouter au panier</span>
+              <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
+              <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
+            </span>
+          ) : (
+            "Sélectionnez une taille"
+          )}
+        </Button>
+      );
+    }
+    return (
+      <a
+        href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={compact ? "flex-1" : undefined}
+      >
+        <Button variant="whatsapp" size={compact ? "md" : "lg"} className="w-full">
+          {variants.length > 0
+            ? selectedSku
+              ? "💬 Demander un devis WhatsApp"
+              : "Sélectionnez une taille"
+            : "💬 Demander un devis WhatsApp"}
+        </Button>
+      </a>
+    );
   };
 
   return (
@@ -473,65 +534,38 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             )}
 
             {/* ===== CTA principal : quantité + bouton + réassurance ===== */}
-            <div className="mt-5 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
+            <div ref={ctaRef} className="mt-5 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
               <div className="p-4">
-                {variants.length > 0 ? (
-                  currentPrice != null ? (
-                    <div className="space-y-3">
-                      {/* Sélecteur de quantité (bloc arrondi) */}
-                      <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
-                        <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                            disabled={quantity <= 1}
-                            aria-label="Diminuer la quantité"
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
-                          <button
-                            type="button"
-                            onClick={() => setQuantity((q) => q + 1)}
-                            aria-label="Augmenter la quantité"
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
+                {variants.length > 0 && currentPrice != null ? (
+                  <div className="space-y-3">
+                    {/* Sélecteur de quantité (bloc arrondi) */}
+                    <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          disabled={quantity <= 1}
+                          aria-label="Diminuer la quantité"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-base font-semibold text-[var(--color-text-primary)] min-w-[1.5rem] text-center">{quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => q + 1)}
+                          aria-label="Augmenter la quantité"
+                          className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
                       </div>
-                      <Button
-                        variant="success"
-                        size="lg"
-                        className="w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                        onClick={handleAddToCart}
-                        disabled={!selectedSku}
-                      >
-                        {selectedSku ? (
-                          <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
-                            <CartPlusIcon className="h-5 w-5 shrink-0" />
-                            <span className="font-semibold">Ajouter au panier</span>
-                            <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
-                            <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
-                          </span>
-                        ) : (
-                          "Sélectionnez une taille"
-                        )}
-                      </Button>
                     </div>
-                  ) : (
-                    <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                      <Button variant="whatsapp" size="lg" className="w-full">
-                        {selectedSku ? "💬 Demander un devis WhatsApp" : "Sélectionnez une taille"}
-                      </Button>
-                    </a>
-                  )
+                    {renderPrimaryCta(false)}
+                  </div>
                 ) : (
-                  <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-                    <Button variant="whatsapp" size="lg" className="w-full">💬 Demander un devis WhatsApp</Button>
-                  </a>
+                  renderPrimaryCta(false)
                 )}
               </div>
               {/* Réassurance : bandeau séparé sous le bouton */}
@@ -747,6 +781,43 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </>
         )}
       </AnimatePresence>
+
+      {/* Barre sticky bas : CTA compact (quantité + ajout au panier) */}
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ease-out",
+          bottomBarVisible ? "translate-y-0" : "translate-y-full"
+        )}
+        aria-hidden={!bottomBarVisible}
+      >
+        <div className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-primary)]/95 backdrop-blur safe-bottom">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
+            {variants.length > 0 && currentPrice != null && (
+              <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--color-border-strong)] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
+                  aria-label="Diminuer la quantité"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="min-w-[1.25rem] text-center text-sm font-semibold text-[var(--color-text-primary)]">{quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setQuantity((q) => q + 1)}
+                  aria-label="Augmenter la quantité"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+            {renderPrimaryCta(true)}
+          </div>
+        </div>
+      </div>
 
       {/* Barre produit sticky (remplace la TopNav quand l'image principale est sortie du viewport) */}
       <StickyProductBar

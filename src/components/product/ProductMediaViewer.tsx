@@ -7,7 +7,7 @@ import {
   type Ref,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Rotate3d, Ruler, MoveHorizontal, Maximize2, Play, Power } from "lucide-react";
+import { Ruler, MoveHorizontal, Maximize2, Play, Power } from "lucide-react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { MediaLightbox } from "@/components/product/MediaLightbox";
@@ -570,7 +570,7 @@ export function ProductMediaViewer({
                     view === "360" ? "bg-white text-black" : "bg-white/15 text-white hover:bg-white/25"
                   )}
                 >
-                  <Rotate3d className="h-5 w-5" />
+                  <span className="text-sm font-bold leading-none tracking-tight">360</span>
                 </button>
               )}
 
