@@ -248,7 +248,7 @@ export function GroupageCard({
           <button
             type="button"
             onClick={onJoin}
-            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-accent-amber)] px-4 py-2.5 text-sm font-semibold text-[var(--color-text-primary)] shadow-sm transition-colors hover:bg-[var(--color-accent-amber-hover)]"
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#15803D]"
           >
             <Users className="h-4 w-4" />
             Rejoindre le groupage

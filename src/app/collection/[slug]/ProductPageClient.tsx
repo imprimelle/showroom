@@ -206,15 +206,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       return;
     }
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (groupageSelected) {
-          // Groupage : n'affiche la barre sticky que lorsque le groupe
-          // « quantité + rejoindre + réassurance » est passé au-dessus du viewport.
-          setBottomBarVisible(entry.boundingClientRect.bottom <= 0);
-        } else {
-          setBottomBarVisible(!entry.isIntersecting);
-        }
-      },
+      ([entry]) => setBottomBarVisible(!entry.isIntersecting),
       { threshold: 0 }
     );
     observer.observe(el);
