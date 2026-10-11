@@ -210,7 +210,7 @@ export function GroupageCard({
               <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(balance)}</span> à la livraison ·{" "}
             </>
           )}
-          livré une fois le groupage complet
+          plus que {remaining} personnes pour livrer le groupage
         </p>
 
         {/* Partage (CTA marketing) */}

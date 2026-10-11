@@ -123,12 +123,15 @@ export function GroupageShareSection({
   return (
     <div className="rounded-xl bg-[var(--color-accent-amber)]/10 p-3">
       <p className="text-xs font-semibold text-[var(--color-text-primary)]">
+        Invitez vos amis à rejoindre le groupage
+      </p>
+      <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
         {sharesCount > 0
           ? `🔥 ${sharesCount} personne${sharesCount > 1 ? "s" : ""} ont déjà partagé`
           : "🔥 Soyez le premier à partager"}
       </p>
       <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
-        Partagez pour compléter le groupage et être livré plus vite !
+        Partagez pour accélérer la livraison du groupage
       </p>
       <div className="mt-2.5 flex flex-nowrap items-center gap-1.5">
         <button
