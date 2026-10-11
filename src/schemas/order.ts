@@ -8,6 +8,7 @@ const orderItemSchema = z.object({
   quantity: z.number().int().min(1).max(100),
   unit_price_fcfa: z.number().int().min(0),
   subtotal_fcfa: z.number().int().min(0),
+  groupage: z.boolean().optional(),
   options: z
     .array(
       z.object({

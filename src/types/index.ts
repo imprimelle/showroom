@@ -41,6 +41,27 @@ export interface CartItem {
   online_enabled?: boolean;
   /** Produit éligible au cash à la livraison (flag produit). */
   cash_on_delivery?: boolean;
+  /** Article issu d'un groupage (achat groupé). */
+  groupage?: boolean;
+  /** Montant de la réduction groupage (FCFA), pour afficher l'économie. */
+  groupage_reduction_fcfa?: number;
+  /** Montant de départ (acompte) configuré. null = paiement total. */
+  groupage_deposit_fcfa?: number | null;
+}
+
+/** Groupage (achat groupé) — une vague de places pour un produit. */
+export interface Groupage {
+  id: string;
+  product_id: string;
+  round: number;
+  status: "open" | "full" | "closed";
+  max_places: number;
+  places_taken: number;
+  reduction_fcfa: number;
+  group_price_fcfa: number;
+  deposit_fcfa: number | null;
+  created_at: string;
+  closed_at: string | null;
 }
 
 export interface OrderPayload {
@@ -60,6 +81,8 @@ export interface OrderPayload {
     unit_price_fcfa: number;
     subtotal_fcfa: number;
     options?: CartItemOption[];
+    /** Ligne issue d'un groupage (achat groupé). */
+    groupage?: boolean;
   }[];
   total_amount: number;
   notes?: string;

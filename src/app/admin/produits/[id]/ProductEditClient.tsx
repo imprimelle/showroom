@@ -97,6 +97,27 @@ export function ProductEditClient({ product, availableParameters }: { product: S
   const [onlineEnabled, setOnlineEnabled] = useState<boolean>(
     !!product.showcase?.payment?.online_enabled
   );
+  const [groupageEnabled, setGroupageEnabled] = useState<boolean>(
+    !!product.showcase?.groupage?.enabled
+  );
+  const [groupageVariantId, setGroupageVariantId] = useState<string>(
+    product.showcase?.groupage?.variant_id || ""
+  );
+  const [groupageReductionPercent, setGroupageReductionPercent] = useState<number>(
+    product.showcase?.groupage?.reduction_percent ?? 0
+  );
+  const [groupageMaxPlaces, setGroupageMaxPlaces] = useState<number>(
+    product.showcase?.groupage?.max_places ?? 60
+  );
+  const [groupageForcedRemaining, setGroupageForcedRemaining] = useState<number | null>(
+    product.showcase?.groupage?.forced_remaining ?? null
+  );
+  const [groupageDepositFcfa, setGroupageDepositFcfa] = useState<number | null>(
+    product.showcase?.groupage?.deposit_fcfa ?? null
+  );
+  const [groupageIncludedOptions, setGroupageIncludedOptions] = useState<string[]>(
+    product.showcase?.groupage?.included_option_ids ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<TabId>("general");
@@ -136,6 +157,12 @@ export function ProductEditClient({ product, availableParameters }: { product: S
   const toggleActiveParameter = (paramId: string) => {
     setActiveParameters((prev) =>
       prev.includes(paramId) ? prev.filter((id) => id !== paramId) : [...prev, paramId]
+    );
+  };
+
+  const toggleGroupageIncludedOption = (optionId: string) => {
+    setGroupageIncludedOptions((prev) =>
+      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
     );
   };
 
@@ -212,6 +239,15 @@ export function ProductEditClient({ product, availableParameters }: { product: S
               ),
             },
             payment: { online_enabled: onlineEnabled, cash_on_delivery: cashOnDelivery },
+            groupage: {
+              enabled: groupageEnabled,
+              variant_id: groupageVariantId || null,
+              reduction_percent: groupageReductionPercent,
+              max_places: groupageMaxPlaces,
+              forced_remaining: groupageForcedRemaining,
+              deposit_fcfa: groupageDepositFcfa,
+              included_option_ids: groupageIncludedOptions,
+            },
           },
         }),
       });
@@ -258,6 +294,13 @@ export function ProductEditClient({ product, availableParameters }: { product: S
         activeParameters: product.showcase?.active_parameters || [],
         cashOnDelivery: !!product.showcase?.payment?.cash_on_delivery,
         onlineEnabled: !!product.showcase?.payment?.online_enabled,
+        groupageEnabled: !!product.showcase?.groupage?.enabled,
+        groupageVariantId: product.showcase?.groupage?.variant_id || "",
+        groupageReductionPercent: product.showcase?.groupage?.reduction_percent ?? 0,
+        groupageMaxPlaces: product.showcase?.groupage?.max_places ?? 60,
+        groupageForcedRemaining: product.showcase?.groupage?.forced_remaining ?? null,
+        groupageDepositFcfa: product.showcase?.groupage?.deposit_fcfa ?? null,
+        groupageIncludedOptions: product.showcase?.groupage?.included_option_ids ?? [],
       }),
     [product]
   );
@@ -290,13 +333,22 @@ export function ProductEditClient({ product, availableParameters }: { product: S
       activeParameters,
       cashOnDelivery,
       onlineEnabled,
+      groupageEnabled,
+      groupageVariantId,
+      groupageReductionPercent,
+      groupageMaxPlaces,
+      groupageForcedRemaining,
+      groupageDepositFcfa,
+      groupageIncludedOptions,
     });
     return cur !== initialSnapshot;
   }, [
     name, isPublished, popularity, shortDescription, highlights, family, category,
     delivery, usage, seoTitle, seoDesc, heroVideo, heroAspect, mainImage, gallery,
     images360, threeSixtyEnabled, lightSwitchEnabled, lightSwitchOn, lightSwitchOff,
-    galleryOff, variants, faq, activeParameters, cashOnDelivery, onlineEnabled, initialSnapshot,
+    galleryOff, variants, faq, activeParameters, cashOnDelivery, onlineEnabled,
+    groupageEnabled, groupageVariantId, groupageReductionPercent, groupageMaxPlaces,
+    groupageForcedRemaining, groupageDepositFcfa, groupageIncludedOptions, initialSnapshot,
   ]);
 
   return (
@@ -757,6 +809,126 @@ export function ProductEditClient({ product, availableParameters }: { product: S
               <Plus className="w-3.5 h-3.5" /> Ajouter une variante
             </button>
             {variants.length === 0 && <p className="text-sm text-[var(--color-text-tertiary)] mt-2">Aucune variante — le produit s'affiche « Sur devis uniquement ».</p>}
+          </section>
+
+          {/* Groupage (achat groupé) */}
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Groupage (achat groupé)</h2>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={groupageEnabled}
+                  onChange={(e) => setGroupageEnabled(e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-[var(--color-text-secondary)]">Éligible au groupage</span>
+              </label>
+            </div>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-3">
+              Affiche une carte « Groupage » (jauge de places) en tête de la sélection de format. Le montant de départ est payé immédiatement et le solde à la livraison (paiement total si aucun montant de départ renseigné).
+            </p>
+            {groupageEnabled && (
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Variante à cloner</label>
+                  <select
+                    value={groupageVariantId}
+                    onChange={(e) => setGroupageVariantId(e.target.value)}
+                    className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                  >
+                    <option value="">— Choisir une variante —</option>
+                    {variants.filter((v) => v.name.trim()).map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name}
+                        {v.price != null ? ` — ${v.price} FCFA` : " — Sur devis"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Réduction (%)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={groupageReductionPercent}
+                      onChange={(e) => setGroupageReductionPercent(Math.min(100, Math.max(0, Number(e.target.value) || 0)))}
+                      placeholder="20"
+                      className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Nombre de places</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={groupageMaxPlaces}
+                      onChange={(e) => setGroupageMaxPlaces(Math.max(1, Number(e.target.value) || 60))}
+                      placeholder="60"
+                      className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Forcer les places restantes (optionnel)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={groupageForcedRemaining ?? ""}
+                    onChange={(e) => setGroupageForcedRemaining(e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
+                    placeholder="Vide = calculé automatiquement"
+                    className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Montant de départ (FCFA)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={groupageDepositFcfa ?? ""}
+                    onChange={(e) => setGroupageDepositFcfa(e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
+                    placeholder="Vide = paiement total immédiat"
+                    className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                  />
+                </div>
+                {availableParameters.filter((p) => activeParameters.includes(p.id)).length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Options incluses gratuitement</label>
+                    <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
+                      Les options cochées font partie de l&apos;offre : grisées et gratuites côté client.
+                    </p>
+                    <div className="space-y-2">
+                      {availableParameters.filter((p) => activeParameters.includes(p.id)).map((param) => (
+                        <div key={param.id}>
+                          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">{param.name}</p>
+                          <div className="space-y-0.5">
+                            {param.options.map((opt) => {
+                              const checked = groupageIncludedOptions.includes(opt.id);
+                              return (
+                                <label key={opt.id} className="flex items-center gap-2 py-1 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleGroupageIncludedOption(opt.id)}
+                                    className="w-4 h-4"
+                                  />
+                                  <span className="text-sm text-[var(--color-text-primary)]">
+                                    {opt.label}
+                                    {opt.price != null && opt.price > 0 ? <span className="text-xs text-[var(--color-text-tertiary)]"> ({opt.price} FCFA)</span> : null}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </>
       )}

@@ -103,6 +103,34 @@ export async function PUT(
           cash_on_delivery: typeof pmt.cash_on_delivery === "boolean" ? pmt.cash_on_delivery : false,
         };
       }
+      // Groupage (achat groupé) : éligibilité + variante clonée + % de réduction + places.
+      if (showcase && typeof showcase.groupage === "object" && showcase.groupage !== null) {
+        const gp = showcase.groupage as Record<string, any>;
+        merged.groupage = {
+          enabled: typeof gp.enabled === "boolean" ? gp.enabled : false,
+          variant_id:
+            typeof gp.variant_id === "string" && gp.variant_id ? gp.variant_id : null,
+          reduction_percent:
+            typeof gp.reduction_percent === "number" && gp.reduction_percent >= 0
+              ? Math.min(100, gp.reduction_percent)
+              : 0,
+          max_places:
+            typeof gp.max_places === "number" && gp.max_places > 0
+              ? Math.round(gp.max_places)
+              : 60,
+          forced_remaining:
+            typeof gp.forced_remaining === "number" && gp.forced_remaining >= 0
+              ? Math.round(gp.forced_remaining)
+              : null,
+          deposit_fcfa:
+            typeof gp.deposit_fcfa === "number" && gp.deposit_fcfa >= 0
+              ? Math.round(gp.deposit_fcfa)
+              : null,
+          included_option_ids: Array.isArray(gp.included_option_ids)
+            ? gp.included_option_ids.filter((x: any) => typeof x === "string")
+            : [],
+        };
+      }
       updates.showcase = merged;
 
       // Frames 360° présentes avant mais absentes après → orphelines à supprimer.

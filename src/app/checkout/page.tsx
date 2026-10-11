@@ -11,6 +11,7 @@ import { track } from "@/lib/analytics";
 import { COUNTRIES } from "@/lib/countries";
 import { DEFAULT_SHIPPING_ZONES, shippingFeeForCountry, type ShippingZone } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS, isOnlinePayment, type OnlineMethodDef } from "@/lib/payment";
+import { computeDepositBalance } from "@/lib/groupage";
 import { imgProxyUrl } from "@/lib/images";
 import type { PaymentMethod, OnlinePaymentMethod } from "@/types";
 
@@ -48,9 +49,22 @@ export default function CheckoutPage() {
   const shippingFee = shippingFeeForCountry(country, { zones });
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
+  // === Groupage : détection + répartition montant de départ / solde (affichage) ===
+  const hasGroupage = items.some((i) => i.groupage);
+  const groupageFull = items
+    .filter((i) => i.groupage)
+    .reduce((s, i) => s + i.unit_price_fcfa * i.quantity, 0);
+  const groupageDepositConfigured = items.find((i) => i.groupage)?.groupage_deposit_fcfa ?? null;
+  const { deposit: groupageDeposit, balance: groupageBalance } = computeDepositBalance(
+    groupageFull,
+    groupageDepositConfigured
+  );
+  const depositNow = groupageDeposit + (total - groupageFull) + shippingFee;
+
   // Éligibilités (tous les articles doivent autoriser).
-  const allowsCOD = items.every((i) => i.cash_on_delivery === true);
-  const allowsOnline = items.every((i) => i.online_enabled === true);
+  // Le groupage exige un acompte en ligne → pas de cash à la livraison seul.
+  const allowsCOD = !hasGroupage && items.every((i) => i.cash_on_delivery === true);
+  const allowsOnline = items.every((i) => i.groupage || i.online_enabled === true);
 
   // Charge zones + méthodes de paiement + état FedaPay.
   useEffect(() => {
@@ -156,6 +170,7 @@ export default function CheckoutPage() {
         unit_price_fcfa: item.unit_price_fcfa,
         subtotal_fcfa: item.unit_price_fcfa * item.quantity,
         options: item.options || [],
+        groupage: !!item.groupage,
       })),
       total_amount: total,
       payment_method: selectedMethod,
@@ -379,6 +394,21 @@ export default function CheckoutPage() {
         {/* ===== SECTION PAIEMENT ===== */}
         <section className="mb-8">
           <h2 className="font-display text-lg font-bold text-[var(--color-text-primary)] mb-4">Paiement</h2>
+          {hasGroupage && (
+            <div className="mb-3 rounded-xl border border-[var(--color-accent-amber)] bg-[var(--color-cream)] p-3">
+              <p className="text-sm font-semibold text-[var(--color-text-primary)]">Paiement groupage</p>
+              {groupageBalance > 0 ? (
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  <span className="font-semibold">{formatPrice(depositNow)}</span> maintenant ·{" "}
+                  <span className="font-semibold">{formatPrice(groupageBalance)}</span> à la livraison
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  Paiement total de <span className="font-semibold">{formatPrice(depositNow)}</span>
+                </p>
+              )}
+            </div>
+          )}
           <div className="space-y-3">
             {/* Payez en ligne */}
             {allowsOnline && onlineEnabled && (

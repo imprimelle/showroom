@@ -47,6 +47,10 @@ export function buildOrderMessage(opts: {
   orderId: string;
   totalFcfa: number;
   paymentMethod?: string | null;
+  /** Montant payé maintenant (acompte / montant de départ). */
+  depositFcfa?: number;
+  /** Solde à la livraison. */
+  balanceFcfa?: number;
 }): string {
   const lines: string[] = ["Bonjour 👋, je viens de passer une commande sur votre site.", ""];
 
@@ -66,6 +70,11 @@ export function buildOrderMessage(opts: {
 
   lines.push(`📦 N° de commande : ${opts.orderId}`);
   lines.push(`💰 Total : ${formatFCFA(opts.totalFcfa)}`);
+
+  if (opts.depositFcfa != null && opts.balanceFcfa != null) {
+    lines.push(`💳 Acompte (à payer maintenant) : ${formatFCFA(opts.depositFcfa)}`);
+    lines.push(`🚚 Solde (à la livraison) : ${formatFCFA(opts.balanceFcfa)}`);
+  }
 
   const note = paymentMethodNote(opts.paymentMethod);
   if (note) lines.push("", `💳 ${note}`);
@@ -108,4 +117,30 @@ export function generalInquiryMessage(context?: string | null): string {
   if (context) lines.push(`Contexte : ${context}`);
   lines.push("Merci de me recontacter.");
   return lines.join("\n");
+}
+
+/** Message de partage d'un groupage (bouton « Partager »). */
+export function buildGroupageShareMessage(opts: {
+  productName: string;
+  url?: string | null;
+  reductionFcfa?: number;
+  groupPriceFcfa?: number | null;
+}): string {
+  const lines: string[] = ["🔥 Groupage Imprimelle !", ""];
+  const saving =
+    opts.reductionFcfa != null && opts.reductionFcfa > 0
+      ? ` économisez ${formatFCFA(opts.reductionFcfa)}`
+      : "";
+  lines.push(`Rejoignez le groupage « ${opts.productName} » et${saving} sur ce produit.`);
+  if (opts.groupPriceFcfa != null) {
+    lines.push(`💰 Prix groupé : ${formatFCFA(opts.groupPriceFcfa)}.`);
+  }
+  lines.push("Plus on est nombreux, plus vite c'est livré 🚀");
+  if (opts.url) lines.push(`👉 ${opts.url}`);
+  return lines.join("\n");
+}
+
+/** URL de partage WhatsApp (sans destinataire → l'utilisateur choisit son contact). */
+export function waShareUrl(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
 }

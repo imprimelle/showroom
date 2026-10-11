@@ -12,6 +12,7 @@ import {
   Check,
   ChevronRight,
   X,
+  Users,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -30,6 +31,8 @@ import { imgProxyUrl } from "@/lib/images";
 import { getCategory, getSubCategory, getCategoryLabel, resolveFamily } from "@/lib/categories";
 import { track } from "@/lib/analytics";
 import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
+import { resolveGroupageConfig, resolveGroupageVariant, groupagePrice, groupageReductionAmount } from "@/lib/groupage";
+import { GroupageCard } from "@/components/product/GroupageCard";
 import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { HighlightCarousel } from "@/components/product/HighlightCarousel";
@@ -139,6 +142,43 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [activeFaq, setActiveFaq] = useState<FaqPill | null>(null);
   const addItem = useCartStore((s) => s.addItem);
 
+  // === Groupage (achat groupé) : config produit + statut live (jauge de places) ===
+  const groupageConfig = resolveGroupageConfig(product.showcase);
+  const groupPrice = groupageConfig ? groupagePrice(groupageConfig, product.variants) : null;
+  const clonedVariant = groupageConfig ? resolveGroupageVariant(groupageConfig, product.variants) : null;
+  const originalPrice = clonedVariant?.price ?? null;
+  const groupageReduction = groupageConfig ? groupageReductionAmount(groupageConfig, product.variants) : null;
+  const [groupageSelected, setGroupageSelected] = useState(false);
+  const [groupageOptions, setGroupageOptions] = useState<Record<string, string[]>>({});
+  const [groupageQuantity, setGroupageQuantity] = useState(1);
+  const [shareCount, setShareCount] = useState(0);
+  const [groupageStatus, setGroupageStatus] = useState<{
+    places_taken: number;
+    max_places: number;
+    remaining: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!groupageConfig) return;
+    let active = true;
+    fetch(`/api/groupage?product_id=${product.id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active || !d?.enabled) return;
+        setGroupageStatus({
+          places_taken: d.places_taken ?? 0,
+          max_places: d.max_places ?? groupageConfig.max_places,
+          remaining: d.remaining ?? groupageConfig.max_places,
+        });
+        setShareCount(d.shares_count ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
   // === Barre produit sticky : apparaît quand l'image principale sort du viewport ===
   const mediaRef = useRef<HTMLDivElement>(null);
   const [stickyBarVisible, setStickyBarVisible] = useState(false);
@@ -156,18 +196,30 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
   // === Barre sticky bas : apparaît quand le bloc CTA (quantité + ajout au panier) sort du viewport ===
   const ctaRef = useRef<HTMLDivElement>(null);
+  const joinGroupRef = useRef<HTMLDivElement>(null);
   const [bottomBarVisible, setBottomBarVisible] = useState(false);
 
   useEffect(() => {
-    const el = ctaRef.current;
-    if (!el) return;
+    const el = groupageSelected ? joinGroupRef.current : ctaRef.current;
+    if (!el) {
+      setBottomBarVisible(false);
+      return;
+    }
     const observer = new IntersectionObserver(
-      ([entry]) => setBottomBarVisible(!entry.isIntersecting),
+      ([entry]) => {
+        if (groupageSelected) {
+          // Groupage : n'affiche la barre sticky que lorsque le groupe
+          // « quantité + rejoindre + réassurance » est passé au-dessus du viewport.
+          setBottomBarVisible(entry.boundingClientRect.bottom <= 0);
+        } else {
+          setBottomBarVisible(!entry.isIntersecting);
+        }
+      },
       { threshold: 0 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [groupageSelected]);
 
   // Masque la TopNav quand la barre produit est visible (cf. globals.css)
   useEffect(() => {
@@ -215,6 +267,49 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       };
     });
   };
+  const toggleGroupageOption = (param: ProductParameter, optionId: string) => {
+    setGroupageOptions((prev) => {
+      const current = prev[param.id] || [];
+      if (param.type === "single") {
+        return { ...prev, [param.id]: current.includes(optionId) ? [] : [optionId] };
+      }
+      return {
+        ...prev,
+        [param.id]: current.includes(optionId)
+          ? current.filter((id) => id !== optionId)
+          : [...current, optionId],
+      };
+    });
+  };
+  // Options groupage : incluses (0 FCFA) + ajoutées (plein tarif, aucune réduction).
+  const groupageOptionsList: CartItemOption[] = groupageConfig
+    ? parameters.flatMap((param) => {
+        const includedIds = groupageConfig.included_option_ids;
+        const ids = groupageOptions[param.id] || [];
+        return param.options
+          .filter((o) => includedIds.includes(o.id) || ids.includes(o.id))
+          .map((o) => {
+            const isIncluded = includedIds.includes(o.id);
+            return {
+              param_id: param.id,
+              option_id: o.id,
+              label: `${param.name} : ${o.label}`,
+              price: isIncluded ? 0 : o.price ?? 0,
+            };
+          });
+      })
+    : [];
+  const groupageAdditionalTotal = groupageOptionsList.reduce((s, o) => s + o.price, 0);
+  const groupageTotal = groupPrice != null ? groupPrice + groupageAdditionalTotal : null;
+  // Libellés des options incluses gratuitement dans l'offre groupage (pour le récap sous les images).
+  const includedOptions: string[] = groupageConfig
+    ? parameters.flatMap((param) =>
+        param.options
+          .filter((o) => groupageConfig.included_option_ids.includes(o.id))
+          .map((o) => o.label)
+      )
+    : [];
+
   const selectedOptionsList: CartItemOption[] = parameters.flatMap((param) => {
     const ids = selectedOptions[param.id] || [];
     return ids
@@ -235,7 +330,12 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   // Prix de la ligne = prix unitaire (variante + options) × quantité
   const lineTotal = totalPrice != null ? totalPrice * quantity : null;
   // Libellé prix pour la barre produit sticky (unitaire, options incluses)
-  const priceLabel = currentPrice != null ? formatPrice(totalPrice ?? currentPrice) : "Sur devis";
+  const priceLabel =
+    groupageSelected && groupPrice != null
+      ? formatPrice(groupageTotal ?? groupPrice)
+      : currentPrice != null
+        ? formatPrice(totalPrice ?? currentPrice)
+        : "Sur devis";
 
   const showWhatsAppMsg = productInquiryMessage({
     name: product.name,
@@ -294,8 +394,79 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     setCartOpen(true);
   };
 
+  // Rejoindre le groupage : ajoute une place au panier (prix groupé + options) puis ouvre le panier.
+  const handleJoinGroupage = () => {
+    if (!groupageConfig || groupPrice == null || groupageTotal == null) return;
+    addItem({
+      key: `${product.id}:GROUPAGE:${groupageOptionsList
+        .map((o) => `${o.param_id}.${o.option_id}`)
+        .sort()
+        .join("|")}`,
+      product_id: product.id,
+      product_name: product.name,
+      product_slug: product.slug,
+      variant_label: "Groupage",
+      variant_sku: "GROUPAGE",
+      quantity: groupageQuantity,
+      unit_price_fcfa: groupageTotal,
+      image_url: product.main_image_url,
+      options: groupageOptionsList,
+      groupage: true,
+      groupage_reduction_fcfa: groupageReduction ?? 0,
+      groupage_deposit_fcfa: groupageConfig.deposit_fcfa,
+      online_enabled: true,
+      cash_on_delivery: false,
+    });
+    setCartOpen(true);
+  };
+
+  // Incrémente le compteur de partage (fire-and-forget).
+  const handleGroupageShared = async () => {
+    try {
+      const r = await fetch("/api/groupage/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id: product.id }),
+      });
+      const d = await r.json();
+      if (d?.shares_count != null) setShareCount(d.shares_count);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // Jauge groupage (statut live ou repli sur la config).
+  const gPlacesTaken = groupageStatus?.places_taken ?? 0;
+  const gMax = groupageStatus?.max_places ?? groupageConfig?.max_places ?? 60;
+  const gRemaining = groupageStatus?.remaining ?? groupageConfig?.max_places ?? 60;
+
   // Bouton CTA principal (ajout au panier / devis WhatsApp), réutilisé en bloc (plein) et en sticky bas (compact).
   const renderPrimaryCta = (compact: boolean) => {
+    if (groupageSelected) {
+      return (
+        <Button
+          variant="success"
+          size={compact ? "md" : "lg"}
+          className={cn(
+            compact
+              ? "flex-1 px-4!"
+              : "w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+          )}
+          onClick={handleJoinGroupage}
+        >
+          <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+            <Users className="h-5 w-5 shrink-0" />
+            <span className="font-semibold">Rejoindre le groupage</span>
+            {groupPrice != null && (
+              <>
+                <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
+                <span className="font-mono font-bold">{formatPrice(groupageTotal ?? groupPrice)}</span>
+              </>
+            )}
+          </span>
+        </Button>
+      );
+    }
     if (variants.length > 0 && currentPrice != null) {
       return (
         <Button
@@ -401,7 +572,19 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
               {/* Prix (côte à côte avec le nom) */}
               <div className="shrink-0 text-right">
-                {currentPrice != null ? (
+                {groupageSelected && groupPrice != null ? (
+                  <div>
+                    <span className="text-xs text-[var(--color-text-tertiary)]">Groupage</span>
+                    <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
+                      {formatPrice(groupageTotal ?? groupPrice)}
+                    </p>
+                    {groupageAdditionalTotal > 0 && (
+                      <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
+                        dont options : +{formatPrice(groupageAdditionalTotal)}
+                      </p>
+                    )}
+                  </div>
+                ) : currentPrice != null ? (
                   <div>
                     <span className="text-xs text-[var(--color-text-tertiary)]">
                       {selectedVariant ? selectedVariant.name : "À partir de"}
@@ -440,14 +623,74 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   <VariantSelector
                     variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price, dimensions: v.attributes?.dimensions }))}
                     selectedSku={selectedSku}
-                    onSelect={(v) => setSelectedSku(v.sku)}
+                    onSelect={(v) => {
+                      setGroupageSelected(false);
+                      setSelectedSku(v.sku);
+                    }}
+                    groupage={
+                      groupageConfig && groupPrice != null && originalPrice != null
+                        ? {
+                            selected: groupageSelected,
+                            onSelect: () => {
+                              setGroupageSelected(true);
+                              setSelectedSku(null);
+                            },
+                            dimensions: clonedVariant?.attributes?.dimensions,
+                            price: groupPrice,
+                            originalPrice,
+                            reductionPercent: groupageConfig.reduction_percent,
+                          }
+                        : null
+                    }
                   />
+                  {groupageSelected && includedOptions.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs font-semibold text-[var(--color-text-secondary)]">Inclus :</span>
+                      {includedOptions.map((label) => (
+                        <span
+                          key={label}
+                          className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-amber-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-primary)]"
+                        >
+                          <Check className="h-3 w-3 text-[var(--color-accent-amber)]" />
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {groupageSelected && groupageConfig && groupPrice != null && originalPrice != null && (
+                    <div className="mt-3">
+                      <GroupageCard
+                        productName={product.name}
+                        slug={product.slug}
+                        variantName={clonedVariant?.name ?? null}
+                        originalPrice={originalPrice}
+                        groupPrice={groupPrice}
+                        reductionPercent={groupageConfig.reduction_percent}
+                        reductionFcfa={groupageReduction ?? 0}
+                        placesTaken={gPlacesTaken}
+                        maxPlaces={gMax}
+                        remaining={gRemaining}
+                        depositFcfa={groupageConfig.deposit_fcfa}
+                        deliveryTime={product.showcase?.delivery_time ?? null}
+                        parameters={parameters}
+                        includedOptionIds={groupageConfig.included_option_ids}
+                        selectedOptions={groupageOptions}
+                        onToggleOption={toggleGroupageOption}
+                        quantity={groupageQuantity}
+                        onQuantityChange={setGroupageQuantity}
+                        sharesCount={shareCount}
+                        onShared={handleGroupageShared}
+                        onJoin={handleJoinGroupage}
+                        joinGroupRef={joinGroupRef}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Étape 2 — Options (single/multi-sélect avec miniatures + coûts) */}
-            {parameters.length > 0 && (
+            {parameters.length > 0 && !groupageSelected && (
               <div className="mt-5">
                 <StepHeader
                   step={2}
@@ -534,6 +777,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             )}
 
             {/* ===== CTA principal : quantité + bouton + réassurance ===== */}
+            {!groupageSelected && (
             <div ref={ctaRef} className="mt-5 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
               <div className="p-4">
                 {variants.length > 0 && currentPrice != null ? (
@@ -595,6 +839,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -792,7 +1037,28 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       >
         <div className="border-t border-[var(--color-border-default)] bg-[var(--color-bg-primary)]/95 backdrop-blur safe-bottom">
           <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
-            {variants.length > 0 && currentPrice != null && (
+            {groupageSelected && groupPrice != null ? (
+              <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--color-border-strong)] p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setGroupageQuantity((q) => Math.max(1, q - 1))}
+                  disabled={groupageQuantity <= 1}
+                  aria-label="Diminuer la quantité"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="min-w-[1.25rem] text-center text-sm font-semibold text-[var(--color-text-primary)]">{groupageQuantity}</span>
+                <button
+                  type="button"
+                  onClick={() => setGroupageQuantity((q) => q + 1)}
+                  aria-label="Augmenter la quantité"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            ) : variants.length > 0 && currentPrice != null ? (
               <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-[var(--color-border-strong)] p-0.5">
                 <button
                   type="button"
@@ -813,7 +1079,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-            )}
+            ) : null}
             {renderPrimaryCta(true)}
           </div>
         </div>

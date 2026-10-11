@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ClipboardList, Settings, DollarSign } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Settings, DollarSign, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -9,6 +9,7 @@ const items = [
   { href: "/admin/produits", label: "Produits", icon: Package },
   { href: "/admin/prix", label: "Prix", icon: DollarSign },
   { href: "/admin/commandes", label: "Commandes", icon: ClipboardList },
+  { href: "/admin/groupages", label: "Groupages", icon: Users },
   { href: "/admin/reglages", label: "Réglages", icon: Settings },
 ];
 

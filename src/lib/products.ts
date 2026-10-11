@@ -54,6 +54,23 @@ export interface ShowcaseProduct {
       /** Autorise le paiement cash à la livraison pour ce produit. */
       cash_on_delivery?: boolean;
     };
+    /** Éligibilité au groupage (achat groupé) — onglet admin « Variantes ». */
+    groupage?: {
+      /** Le produit est-il éligible au groupage ? */
+      enabled?: boolean;
+      /** id de la variante clonée (base du prix groupé). */
+      variant_id?: string | null;
+      /** % de réduction appliqué au prix de la variante clonée. */
+      reduction_percent?: number;
+      /** Nombre de places du groupage (défaut 60). */
+      max_places?: number;
+      /** Nombre de places restantes forcé (affichage), null = calculé. */
+      forced_remaining?: number | null;
+      /** Montant de départ (acompte, FCFA). null = paiement total. */
+      deposit_fcfa?: number | null;
+      /** IDs des options de paramètres incluses gratuitement dans l'offre. */
+      included_option_ids?: string[];
+    };
   };
   description?: string;
 }

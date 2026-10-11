@@ -7,6 +7,12 @@ import { createFedaPayTransaction } from "@/lib/fedapay";
 import { isOnlinePayment, DEFAULT_ONLINE_METHODS } from "@/lib/payment";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
 import { buildOrderMessage, productUrl } from "@/lib/whatsapp";
+import {
+  resolveGroupageConfig,
+  groupagePrice,
+  groupageReductionAmount,
+  type GroupageConfig,
+} from "@/lib/groupage";
 import type { ProductParameter } from "@/types";
 
 // In-memory rate limiting
@@ -52,10 +58,10 @@ export async function POST(request: NextRequest) {
     const { customer, items, total_amount, notes, payment_method, shipping_country, shipping_fee_fcfa } =
       parsed.data;
 
-    // Server-side price verification (variante + options de paramètres)
+    // Server-side price verification (variante + options de paramètres + groupage)
     const admin = createAdminClient();
 
-    // Catalogue global des paramètres + zones de livraison + méthodes de paiement
+    // Catalogue global des paramètres + zones de livraison + méthodes de paiement + groupage
     const { data: settingsRow } = await admin
       .from("showcase_settings")
       .select("data")
@@ -71,8 +77,14 @@ export async function POST(request: NextRequest) {
     const liveMethods = new Set(methodDefs.filter((m: any) => m?.live).map((m: any) => m.id));
     const whatsapp = settingsRow?.data?.contact?.whatsapp || DEFAULT_WHATSAPP;
 
+    const hasGroupage = items.some((i) => i.groupage);
+
     // Map product_id → slug (pour les liens produit du message WhatsApp).
     const slugById = new Map<string, string>();
+    // Config + prix groupage validés par produit (pour l'étape de join).
+    const groupageConfig = new Map<string, GroupageConfig>();
+    const groupagePriceMap = new Map<string, number>();
+    const groupageReductionMap = new Map<string, number>();
 
     for (const item of items) {
       const { data: product, error } = await admin
@@ -89,8 +101,61 @@ export async function POST(request: NextRequest) {
 
       const sc = (product as any).showcase;
       const variants = (Array.isArray(sc?.variants) ? sc.variants : (product as any).variants) as
-        | { sku: string; price: number | null }[]
+        | { id?: string; sku: string; price: number | null }[]
         | null;
+
+      // === Article groupage : prix de base (variante clonée − %) + options (plein tarif) ===
+      if (item.groupage) {
+        const config = resolveGroupageConfig(sc);
+        if (!config) {
+          return NextResponse.json(
+            { error: `Le groupage n'est pas disponible pour « ${item.product_name} »` },
+            { status: 400 }
+          );
+        }
+        const gPrice = groupagePrice(config, variants);
+        if (gPrice == null) {
+          return NextResponse.json(
+            { error: `Groupage indisponible pour « ${item.product_name} »` },
+            { status: 400 }
+          );
+        }
+        // Valide les options : incluses = 0 FCFA, ajoutées = prix catalogue (aucune réduction).
+        const activeParams = resolveActiveParameters(sc, catalog);
+        const included = new Set(config.included_option_ids);
+        let optionsTotal = 0;
+        for (const opt of item.options || []) {
+          const param = activeParams.find((p) => p.id === opt.param_id);
+          const option = param?.options.find((o) => o.id === opt.option_id);
+          if (!option) {
+            return NextResponse.json({ error: `Option invalide pour ${item.product_name}` }, { status: 400 });
+          }
+          const expectedPrice = included.has(opt.option_id) ? 0 : option.price ?? 0;
+          if (opt.price !== expectedPrice) {
+            return NextResponse.json({ error: `Prix d'option incorrect pour ${item.product_name}` }, { status: 400 });
+          }
+          optionsTotal += opt.price;
+        }
+        const expectedUnit = gPrice + optionsTotal;
+        if (item.unit_price_fcfa !== expectedUnit) {
+          return NextResponse.json(
+            { error: `Prix groupage incorrect pour ${item.product_name}` },
+            { status: 400 }
+          );
+        }
+        if (item.subtotal_fcfa !== expectedUnit * item.quantity) {
+          return NextResponse.json(
+            { error: `Sous-total incorrect pour ${item.product_name}` },
+            { status: 400 }
+          );
+        }
+        groupageConfig.set(item.product_id, config);
+        groupagePriceMap.set(item.product_id, gPrice);
+        groupageReductionMap.set(item.product_id, groupageReductionAmount(config, variants) ?? 0);
+        continue;
+      }
+
+      // === Article classique : variante + options ===
       const variant = variants?.find((v) => v.sku === item.variant_sku);
 
       if (!variant) {
@@ -141,6 +206,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Cohérence du total (anti-falsification).
+    const sumItems = items.reduce((s, i) => s + i.subtotal_fcfa, 0);
+    if (total_amount !== sumItems) {
+      return NextResponse.json({ error: "Total incohérent" }, { status: 400 });
+    }
+
+    // Le groupage exige un montant de départ payé en ligne — le cash à la livraison seul n'est pas accepté.
+    if (hasGroupage && payment_method === "cod") {
+      return NextResponse.json(
+        { error: "Le groupage nécessite un montant de départ payé en ligne." },
+        { status: 400 }
+      );
+    }
+
     // Vérifie que la méthode en ligne choisie est bien « live » sur FedaPay.
     if (isOnlinePayment(payment_method) && !liveMethods.has(payment_method)) {
       return NextResponse.json(
@@ -157,6 +236,40 @@ export async function POST(request: NextRequest) {
 
     const total_with_shipping = total_amount + shipping_fee_fcfa;
 
+    // === Rejoint les groupages (atomique) + calcule acompte / solde ===
+    let groupageBalance = 0;
+    const groupageIdByProduct = new Map<string, string>();
+    if (hasGroupage) {
+      for (const item of items) {
+        if (!item.groupage) continue;
+        const config = groupageConfig.get(item.product_id)!;
+        const gPrice = groupagePriceMap.get(item.product_id)!;
+        // Solde = prix complet (base + options) − montant de départ (null = tout payé maintenant).
+        const deposit = config.deposit_fcfa ?? item.subtotal_fcfa;
+        groupageBalance += Math.max(0, item.subtotal_fcfa - deposit);
+
+        const { data: g, error: joinErr } = await admin.rpc("join_groupage", {
+          p_product_id: item.product_id,
+          p_reduction_fcfa: groupageReductionMap.get(item.product_id) ?? 0,
+          p_group_price_fcfa: gPrice,
+          p_max_places: config.max_places,
+          p_deposit_fcfa: config.deposit_fcfa,
+        });
+        if (joinErr || !g) {
+          console.error("join_groupage error:", joinErr);
+          return NextResponse.json(
+            { error: "Erreur lors de la participation au groupage. Veuillez réessayer." },
+            { status: 500 }
+          );
+        }
+        groupageIdByProduct.set(item.product_id, g.id);
+      }
+    }
+
+    // Acompte (payé maintenant) = total − solde groupage ; solde = montant de départ non couvert.
+    const balance_fcfa = hasGroupage ? groupageBalance : null;
+    const deposit_fcfa = hasGroupage ? total_with_shipping - groupageBalance : null;
+
     // Insert order
     const orderItems = items.map((item) => ({
       product_id: item.product_id,
@@ -167,9 +280,12 @@ export async function POST(request: NextRequest) {
       unit_price_fcfa: item.unit_price_fcfa,
       subtotal_fcfa: item.subtotal_fcfa,
       options: item.options || [],
+      groupage: item.groupage || false,
+      groupage_id: item.groupage ? groupageIdByProduct.get(item.product_id) || null : null,
     }));
 
     const isOnline = isOnlinePayment(payment_method);
+    const orderGroupageId = groupageIdByProduct.size > 0 ? groupageIdByProduct.values().next().value : null;
 
     const { data: order, error: insertError } = await admin
       .from("showcase_orders")
@@ -189,6 +305,9 @@ export async function POST(request: NextRequest) {
         shipping_country,
         shipping_fee_fcfa,
         total_with_shipping,
+        groupage_id: orderGroupageId,
+        deposit_fcfa,
+        balance_fcfa,
         ip_address: ip,
         user_agent: request.headers.get("user-agent") || null,
       })
@@ -214,7 +333,8 @@ export async function POST(request: NextRequest) {
             order_id: order.id,
             customer_name: customer.name,
             customer_phone: customer.phone,
-            total: total_with_shipping,
+            total: deposit_fcfa ?? total_with_shipping,
+            balance_fcfa,
             payment_method,
             items: items.map((i) => i.product_name).join(", "),
           }),
@@ -231,7 +351,7 @@ export async function POST(request: NextRequest) {
       const message = buildOrderMessage({
         items: items.map((i) => ({
           name: i.product_name,
-          variant: i.variant_label,
+          variant: i.groupage ? "Groupage" : i.variant_label,
           quantity: i.quantity,
           url: productUrl(slugById.get(i.product_id)),
           options: (i.options || []).map((o) => ({ label: o.label, price: o.price })),
@@ -239,6 +359,8 @@ export async function POST(request: NextRequest) {
         orderId: order.id.slice(0, 8).toUpperCase(),
         totalFcfa: total_with_shipping,
         paymentMethod: payment_method,
+        depositFcfa: balance_fcfa != null && balance_fcfa > 0 ? deposit_fcfa ?? undefined : undefined,
+        balanceFcfa: balance_fcfa != null && balance_fcfa > 0 ? balance_fcfa : undefined,
       });
       return NextResponse.json(
         { order_id: order.id, whatsapp_url: getWhatsAppUrl(whatsapp, message) },
@@ -246,17 +368,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Paiement en ligne : créer une transaction FedaPay et renvoyer l'URL de redirection.
+    // Paiement en ligne : créer une transaction FedaPay (montant = acompte si groupage).
     if (isOnline) {
       try {
         const nameParts = customer.name.trim().split(/\s+/);
         const firstname = nameParts[0] || "Client";
         const lastname = nameParts.slice(1).join(" ") || firstname;
 
+        const chargeAmount = deposit_fcfa ?? total_with_shipping;
         const callbackUrl = `${siteUrl()}/api/payments/fedapay/return?order=${order.id}`;
         const tx = await createFedaPayTransaction({
           description: `Commande #${order.id.slice(0, 8).toUpperCase()}`,
-          amount: total_with_shipping,
+          amount: chargeAmount,
           callback_url: callbackUrl,
           customer: {
             firstname,

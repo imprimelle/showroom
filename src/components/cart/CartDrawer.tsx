@@ -2,11 +2,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, ShoppingCart, Minus, Plus, Trash2 } from "lucide-react";
+import { X, ShoppingCart, Minus, Plus, Trash2, Users } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
 import { useFormatPrice } from "@/stores/currency";
+import { GroupageShareButton } from "@/components/product/GroupageShareButton";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
   const router = useRouter();
   const total = getTotal();
+  const groupageItems = items.filter((i) => i.groupage);
 
   // Prevent body scroll when open
   useEffect(() => {
@@ -99,8 +101,20 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{item.product_name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{item.product_name}</p>
+                        {item.groupage && (
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--color-accent-amber)]/15 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-accent-amber)]">
+                            <Users className="w-3 h-3" /> Groupage
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-[var(--color-text-secondary)]">{item.variant_label}</p>
+                      {item.groupage && item.groupage_reduction_fcfa ? (
+                        <p className="text-xs font-semibold text-[var(--color-success)] mt-0.5">
+                          Économisez {formatPrice(item.groupage_reduction_fcfa)}
+                        </p>
+                      ) : null}
                       {item.options && item.options.length > 0 && (
                         <p className="text-xs text-[var(--color-text-tertiary)] mt-0.5 line-clamp-2">
                           {item.options.map((o) => o.label).join(" · ")}
@@ -137,6 +151,32 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 ))
               )}
             </div>
+
+            {/* Section groupage : infos + partage */}
+            {groupageItems.length > 0 && (
+              <div className="px-4 pb-3">
+                <div className="rounded-xl border border-[var(--color-accent-amber)] bg-[var(--color-cream)] p-3">
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[var(--color-accent-amber)]" />
+                    <span className="text-sm font-semibold text-[var(--color-text-primary)]">Groupage</span>
+                  </div>
+                  <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                    Livré une fois toutes les places complètes.
+                  </p>
+                  {groupageItems.map((gi) => (
+                    <div key={gi.key} className="mt-2">
+                      <GroupageShareButton
+                        productName={gi.product_name}
+                        slug={gi.product_slug}
+                        groupPriceFcfa={gi.unit_price_fcfa}
+                        reductionFcfa={gi.groupage_reduction_fcfa}
+                        compact
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             {items.length > 0 && (
