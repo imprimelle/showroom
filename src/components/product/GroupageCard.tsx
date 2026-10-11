@@ -191,17 +191,15 @@ export function GroupageCard({
           </div>
         </div>
 
-        {/* Paiement : montant de départ / solde */}
+        {/* Paiement : montant de départ / solde (sans mention « paiement total » si pas d'acompte) */}
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
-          {depositFcfa != null ? (
+          {depositFcfa != null && (
             <>
               <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(deposit)}</span> maintenant ·{" "}
-              <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(balance)}</span> à la livraison
+              <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(balance)}</span> à la livraison ·{" "}
             </>
-          ) : (
-            "Paiement total immédiat"
-          )}{" "}
-          · livré une fois le groupage complet
+          )}
+          livré une fois le groupage complet
         </p>
 
         {/* Partage (CTA marketing) */}
