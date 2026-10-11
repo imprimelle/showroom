@@ -79,7 +79,18 @@ export function GroupageCard({
       }, 0)
     );
   }, 0);
+  // Valeur catalogue des options incluses gratuitement (comptée dans le prix barré + l'économie).
+  const includedTotal = parameters.reduce((sum, param) => {
+    return (
+      sum +
+      param.options
+        .filter((o) => includedOptionIds.includes(o.id))
+        .reduce((s, o) => s + (o.price ?? 0), 0)
+    );
+  }, 0);
   const total = groupPrice + additionalTotal;
+  // Prix barré « normal » : variante + toutes les options (incluses + ajoutées).
+  const originalTotal = originalPrice + includedTotal + additionalTotal;
   const { deposit, balance } = computeDepositBalance(total, depositFcfa);
   const lineTotal = total * quantity;
 
@@ -101,15 +112,15 @@ export function GroupageCard({
           {variantName && <p className="text-xs text-[var(--color-text-secondary)]">{variantName}</p>}
           <div className="flex items-baseline gap-2">
             <span className="text-sm text-[var(--color-text-tertiary)] line-through">
-              {formatPrice(originalPrice)}
+              {formatPrice(originalTotal)}
             </span>
             <span className="font-mono text-2xl font-bold text-[var(--color-text-primary)]">
               {formatPrice(groupPrice)}
             </span>
           </div>
-          {reductionFcfa > 0 && (
+          {reductionFcfa + includedTotal > 0 && (
             <p className="mt-0.5 text-xs font-semibold text-[var(--color-success)]">
-              Économisez {formatPrice(reductionFcfa)}
+              Économisez {formatPrice(reductionFcfa + includedTotal)}
             </p>
           )}
         </div>
