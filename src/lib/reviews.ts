@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { createServerClient } from "./supabase/server";
 import type { ShowcaseReview, ReviewAggregate } from "@/types";
 
@@ -16,13 +17,8 @@ export function computeAggregate(reviews: ShowcaseReview[]): ReviewAggregate {
   return { average, count, distribution };
 }
 
-/**
- * Charge TOUS les avis du site (table showcase_reviews), tous produits confondus,
- * du plus récent au plus ancien. Le mur d'avis en bas de fiche produit est global
- * (chaque carte indiquant le produit concerné). À utiliser dans un Server Component.
- */
-export async function getAllReviews(limit = 200): Promise<ShowcaseReview[]> {
-  try {
+const getAllReviewsCached = unstable_cache(
+  async (limit: number): Promise<ShowcaseReview[]> => {
     const supabase = createServerClient();
     const { data, error } = await supabase
       .from("showcase_reviews")
@@ -32,6 +28,19 @@ export async function getAllReviews(limit = 200): Promise<ShowcaseReview[]> {
 
     if (error || !Array.isArray(data)) return [];
     return data as ShowcaseReview[];
+  },
+  ['showcase-reviews'],
+  { revalidate: 120, tags: ['reviews'] }
+);
+
+/**
+ * Charge TOUS les avis du site (table showcase_reviews), tous produits confondus,
+ * du plus récent au plus ancien. Le mur d'avis en bas de fiche produit est global
+ * (chaque carte indiquant le produit concerné). À utiliser dans un Server Component.
+ */
+export async function getAllReviews(limit = 200): Promise<ShowcaseReview[]> {
+  try {
+    return await getAllReviewsCached(limit);
   } catch {
     return [];
   }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
       console.error("Review insert error:", error);
       return NextResponse.json({ error: "Erreur lors de l'enregistrement de l'avis" }, { status: 500 });
     }
+
+    revalidateTag("reviews", "max");
 
     return NextResponse.json({ review }, { status: 201 });
   } catch (err) {

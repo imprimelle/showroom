@@ -2,7 +2,13 @@
 import { useEffect } from "react";
 import { useConsentStore } from "@/stores/consent";
 
-type Fbq = ((...args: unknown[]) => void) & { queue: unknown[]; loaded?: boolean };
+type Fbq = ((...args: unknown[]) => void) & {
+  queue: unknown[];
+  loaded?: boolean;
+  version?: string;
+  callMethod?: (...args: unknown[]) => void;
+  push?: (...args: unknown[]) => void;
+};
 
 declare global {
   interface Window {
@@ -31,29 +37,13 @@ function loadPostHog(key: string, host: string) {
 
   const assetsHost = host.replace(".i.posthog.com", "-assets.i.posthog.com");
 
-  // Stub minimal qui met en file les appels avant le chargement d'array.js
   if (!w.posthog) {
     const ph: PostHogStub = { q: [] };
     const methods = [
-      "capture",
-      "identify",
-      "alias",
-      "reset",
-      "set",
-      "set_once",
-      "register",
-      "register_once",
-      "unregister",
-      "opt_in_capturing",
-      "opt_out_capturing",
-      "has_opted_out_capturing",
-      "isFeatureEnabled",
-      "onFeatureFlags",
-      "getFeatureFlag",
-      "reloadFeatureFlags",
-      "group",
-      "onSessionId",
-      "init",
+      "capture", "identify", "alias", "reset", "set", "set_once", "register",
+      "register_once", "unregister", "opt_in_capturing", "opt_out_capturing",
+      "has_opted_out_capturing", "isFeatureEnabled", "onFeatureFlags",
+      "getFeatureFlag", "reloadFeatureFlags", "group", "onSessionId", "init",
     ];
     for (const m of methods) {
       ph[m] = (...args: unknown[]) => {
@@ -69,7 +59,6 @@ function loadPostHog(key: string, host: string) {
   s.src = `${assetsHost}/static/array.js`;
   document.head.appendChild(s);
 
-  // La file est relue par array.js ; l'appel init est mis en file immédiatement.
   w.posthog?.init?.(key, { api_host: host });
 }
 
@@ -78,6 +67,10 @@ function loadPostHog(key: string, host: string) {
  * - Meta Pixel  → consentement « marketing »
  * - Umami       → consentement « analytics »
  * - PostHog     → consentement « analytics »
+ *
+ * Meta Pixel : stub officiel (pattern `callMethod`) — les événements envoyés
+ * AVANT le chargement de fbevents.js sont mis en file puis rejoués une fois
+ * le script chargé (sans quoi les événements resteraient bloqués en file).
  */
 export function AnalyticsScripts({
   pixelId,
@@ -98,13 +91,15 @@ export function AnalyticsScripts({
   useEffect(() => {
     // Meta Pixel — marketing
     if (marketing && pixelId && !window.fbq?.loaded) {
-      const queue: unknown[] = [];
       const fbq = ((...args: unknown[]) => {
-        queue.push(args);
+        fbq.callMethod ? fbq.callMethod.apply(fbq, args) : fbq.queue.push(args);
       }) as Fbq;
-      fbq.queue = queue;
+      fbq.push = fbq;
       fbq.loaded = true;
+      fbq.version = "2.0";
+      fbq.queue = [];
       window.fbq = fbq;
+
       fbq("init", pixelId);
       fbq("track", "PageView");
 
@@ -130,5 +125,18 @@ export function AnalyticsScripts({
     }
   }, [pixelId, umamiWebsiteId, umamiScriptUrl, posthogKey, posthogHost, analytics, marketing]);
 
-  return null;
+  // Fallback <noscript> Meta (visiteurs sans JavaScript) — gated sur consentement marketing.
+  if (!marketing || !pixelId) return null;
+
+  return (
+    <noscript>
+      <img
+        height="1"
+        width="1"
+        style={{ display: "none" }}
+        src={`https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1`}
+        alt=""
+      />
+    </noscript>
+  );
 }

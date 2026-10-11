@@ -18,6 +18,7 @@ import {
 import { useCartStore } from "@/stores/cart";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, formatPhoneDisplay } from "@/lib/utils";
 import { generalInquiryMessage } from "@/lib/whatsapp";
+import { track } from "@/lib/analytics";
 import { CATEGORIES } from "@/lib/categories";
 import { SearchSuggest } from "@/components/search/SearchSuggest";
 
@@ -95,6 +96,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQ.trim();
+    if (q) track("search", { search_string: q });
     closeMenu();
     router.push(q ? `/collection?q=${encodeURIComponent(q)}` : "/collection");
   };

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { supabase } from './supabase/client';
 import type { Highlight } from '@/types';
 
@@ -81,24 +82,40 @@ export function resolveVariants(product: any): ProductVariant[] {
   return Array.isArray(product?.variants) ? product.variants : [];
 }
 
-export async function getPublishedProducts(): Promise<ShowcaseProduct[]> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_published', true)
-    .order('showcase->popularity', { ascending: false });
+const getPublishedProductsCached = unstable_cache(
+  async (): Promise<ShowcaseProduct[]> => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_published', true)
+      .order('showcase->popularity', { ascending: false });
 
-  if (error) throw error;
-  return (data || []).map((p: any) => ({ ...p, variants: resolveVariants(p) }));
+    if (error) throw error;
+    return (data || []).map((p: any) => ({ ...p, variants: resolveVariants(p) }));
+  },
+  ['products-published'],
+  { revalidate: 300, tags: ['products'] }
+);
+
+export async function getPublishedProducts(): Promise<ShowcaseProduct[]> {
+  return getPublishedProductsCached();
 }
 
-export async function getProductBySlug(slug: string): Promise<ShowcaseProduct | null> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+const getProductBySlugCached = unstable_cache(
+  async (slug: string): Promise<ShowcaseProduct | null> => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('slug', slug)
+      .single();
 
-  if (error) return null;
-  return { ...data, variants: resolveVariants(data) };
+    if (error) return null;
+    return { ...data, variants: resolveVariants(data) };
+  },
+  ['product-by-slug'],
+  { revalidate: 300, tags: ['products'] }
+);
+
+export async function getProductBySlug(slug: string): Promise<ShowcaseProduct | null> {
+  return getProductBySlugCached(slug);
 }

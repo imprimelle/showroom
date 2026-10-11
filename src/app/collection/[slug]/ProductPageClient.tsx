@@ -582,6 +582,50 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         </section>
       )}
 
+      {/* ===== Comparer les formats : tableau moderne sur fond crème ===== */}
+      {hasVariantsTable && (
+        <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
+          <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+            <div className="text-center mb-5 md:mb-6">
+              <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
+                Comparer les formats
+              </h2>
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
+                Les spécifications selon la taille.
+              </p>
+            </div>
+
+            {/* Tableau moderne : conteneur arrondi, en-tête fondé, lignes hover */}
+            <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-[var(--color-bg-secondary)] text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)]">
+                      <th className="px-4 py-3 font-semibold">Taille</th>
+                      <th className="px-4 py-3 font-semibold">Dimensions</th>
+                      <th className="px-4 py-3 font-semibold">Matériaux</th>
+                      <th className="px-4 py-3 font-semibold text-right">Prix</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border-default)]">
+                    {variants.map((v) => (
+                      <tr key={v.id} className="transition-colors hover:bg-[var(--color-bg-secondary)]">
+                        <td className="px-4 py-3 font-semibold text-[var(--color-text-primary)]">{v.name}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
+                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
+                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
+                          {v.price != null ? formatPrice(v.price) : "Sur devis"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ===== Questions fréquentes ===== */}
       <section className="border-t border-[var(--color-border-default)]">
         <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
@@ -632,50 +676,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         </div>
       </section>
 
-      {/* ===== Caractéristiques : tableau moderne sur fond crème ===== */}
-      {hasVariantsTable && (
-        <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
-          <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
-            <div className="text-center mb-5 md:mb-6">
-              <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
-                Caractéristiques
-              </h2>
-              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
-                Les spécifications selon la taille.
-              </p>
-            </div>
-
-            {/* Tableau moderne : conteneur arrondi, en-tête fondé, lignes hover */}
-            <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-[var(--color-bg-secondary)] text-left text-[11px] uppercase tracking-wide text-[var(--color-text-tertiary)]">
-                      <th className="px-4 py-3 font-semibold">Taille</th>
-                      <th className="px-4 py-3 font-semibold">Dimensions</th>
-                      <th className="px-4 py-3 font-semibold">Matériaux</th>
-                      <th className="px-4 py-3 font-semibold text-right">Prix</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--color-border-default)]">
-                    {variants.map((v) => (
-                      <tr key={v.id} className="transition-colors hover:bg-[var(--color-bg-secondary)]">
-                        <td className="px-4 py-3 font-semibold text-[var(--color-text-primary)]">{v.name}</td>
-                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
-                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
-                          {v.price != null ? formatPrice(v.price) : "Sur devis"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ===== Produits similaires ===== */}
       {relatedProducts.length > 0 && (
         <section className="border-t border-[var(--color-border-default)]">
@@ -695,7 +695,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </div>
             <div className="mt-8 text-center">
               <Link href="/collection">
-                <Button variant="secondary" size="lg">Voir le catalogue</Button>
+                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
               </Link>
             </div>
           </div>

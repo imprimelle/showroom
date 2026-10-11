@@ -7,6 +7,7 @@ import { TopNav } from "@/components/layout/TopNav";
 import { ChromeFooter } from "@/components/layout/ChromeFooter";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
+import { WhatsAppClickTracker } from "@/components/analytics/WhatsAppClickTracker";
 import { ToastContainer } from "@/components/ui/Toast";
 import { getShowcaseSettings } from "@/lib/settings";
 import { normalizePhone } from "@/lib/utils";
@@ -87,12 +88,13 @@ export default async function RootLayout({
           <ChromeFooter social={settings.social} contact={settings.contact} whatsapp={whatsapp} />
           <CookieConsent />
           <AnalyticsScripts
-            pixelId={settings.analytics?.fb_pixel_id}
+            pixelId={settings.analytics?.fb_pixel_id || process.env.NEXT_PUBLIC_FB_PIXEL_ID}
             umamiWebsiteId={settings.analytics?.umami_website_id}
             umamiScriptUrl={settings.analytics?.umami_script_url}
             posthogKey={settings.analytics?.posthog_key}
             posthogHost={settings.analytics?.posthog_host}
           />
+          <WhatsAppClickTracker />
           <ToastContainer />
         </Providers>
       </body>

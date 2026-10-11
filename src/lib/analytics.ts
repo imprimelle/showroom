@@ -11,6 +11,9 @@ const META_EVENTS: Record<string, string> = {
   begin_checkout: "InitiateCheckout",
   add_payment_info: "AddPaymentInfo",
   purchase: "Purchase",
+  lead: "Lead",
+  contact: "Contact",
+  search: "Search",
 };
 
 type WindowWithAnalytics = Window & {

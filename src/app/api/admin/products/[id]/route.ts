@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sanitizeHighlights } from "@/lib/highlights";
 
@@ -123,6 +124,8 @@ export async function PUT(
         await admin.storage.from("images").remove(paths);
       }
     }
+
+    revalidateTag("products", "max");
 
     return NextResponse.json({ success: true });
   } catch (err) {

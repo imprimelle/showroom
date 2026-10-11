@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { SearchSuggest } from "./SearchSuggest";
+import { track } from "@/lib/analytics";
 
 interface CategorySearchProps {
   family: string;
@@ -23,8 +24,10 @@ export function CategorySearch({ family, familyName, initialQuery }: CategorySea
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const query = q.trim();
+    if (query) track("search", { search_string: query });
     const params = new URLSearchParams();
-    if (q.trim()) params.set("q", q.trim());
+    if (query) params.set("q", query);
     const s = params.toString();
     router.push(`/collection/categorie/${family}${s ? `?${s}` : ""}`);
     setFocused(false);

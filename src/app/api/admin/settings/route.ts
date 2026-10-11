@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function PUT(request: NextRequest) {
@@ -7,6 +8,7 @@ export async function PUT(request: NextRequest) {
     const admin = createAdminClient();
     const { error } = await admin.from("showcase_settings").update({ data, updated_at: new Date().toISOString() }).eq("id", 1);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    revalidateTag("showcase-settings", "max");
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 });

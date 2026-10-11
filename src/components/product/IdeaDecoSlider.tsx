@@ -72,7 +72,7 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
           </div>
 
           {/* Piste défilante (cartes compactes) */}
-          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2 -mx-4 px-4 md:mr-0 md:ml-2 md:px-0">
             {videos.map((v, i) => (
               <IdeaDecoCard
                 key={`${v.url}-${i}`}
@@ -277,7 +277,7 @@ function IdeaDecoCard({
   };
 
   return (
-    <div ref={cardRef} className="relative snap-start shrink-0 w-[66vw] max-w-[270px] aspect-[9/16] rounded-xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
+    <div ref={cardRef} className="relative snap-start shrink-0 w-[72vw] max-w-[300px] aspect-[9/16] rounded-xl overflow-hidden bg-[var(--color-bg-tertiary)] shadow-sm">
       <video
         ref={videoRef}
         src={video.url}

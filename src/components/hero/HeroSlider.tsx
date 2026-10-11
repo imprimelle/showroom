@@ -38,6 +38,9 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
           type={s.type}
           imgWidth={1200}
           imgHeight={1600}
+          loading={i === 0 ? "eager" : "lazy"}
+          fetchPriority={i === 0 ? "high" : "low"}
+          videoPreload={i === 0 ? "metadata" : "none"}
           className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-out ${
             i === active ? "opacity-100" : "opacity-0"
           }`}

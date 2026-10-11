@@ -16,6 +16,12 @@ interface MediaRendererProps {
   imgWidth?: number;
   /** Hauteur cible (ratio). À fournir pour éviter la déformation (resize=cover). */
   imgHeight?: number;
+  /** `loading` natif de l'<img> (default "lazy"). Passer "eager" pour le LCP. */
+  loading?: "lazy" | "eager";
+  /** `fetchPriority` de l'<img> ("high" pour l'image héro). */
+  fetchPriority?: "high" | "low" | "auto";
+  /** `preload` natif de la <video> (default "none" — ne télécharge pas avant lecture). */
+  videoPreload?: "none" | "metadata" | "auto";
 }
 
 /**
@@ -31,6 +37,9 @@ export function MediaRenderer({
   autoPlay = true,
   imgWidth = 1200,
   imgHeight,
+  loading = "lazy",
+  fetchPriority = "auto",
+  videoPreload = "none",
 }: MediaRendererProps) {
   const isVideo = type === "video" || (type !== "image" && isVideoUrl(url));
 
@@ -44,9 +53,18 @@ export function MediaRenderer({
         muted
         loop
         playsInline
+        preload={videoPreload}
       />
     );
   }
 
-  return <img src={imgProxyUrl(url, imgWidth, imgHeight)} alt={alt} className={className} />;
+  return (
+    <img
+      src={imgProxyUrl(url, imgWidth, imgHeight)}
+      alt={alt}
+      loading={loading}
+      fetchPriority={fetchPriority}
+      className={className}
+    />
+  );
 }
