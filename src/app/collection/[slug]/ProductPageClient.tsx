@@ -293,12 +293,12 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     : [];
   const groupageAdditionalTotal = groupageOptionsList.reduce((s, o) => s + o.price, 0);
   const groupageTotal = groupPrice != null ? groupPrice + groupageAdditionalTotal : null;
-  // Libellés des options incluses gratuitement dans l'offre groupage (pour le récap sous les images).
-  const includedOptions: string[] = groupageConfig
+  // Options incluses gratuitement dans l'offre groupage (libellé + prix catalogue, pour le récap sous les images).
+  const includedOptions: { id: string; label: string; price: number | null }[] = groupageConfig
     ? parameters.flatMap((param) =>
         param.options
           .filter((o) => groupageConfig.included_option_ids.includes(o.id))
-          .map((o) => o.label)
+          .map((o) => ({ id: o.id, label: o.label, price: o.price ?? null }))
       )
     : [];
 
@@ -638,13 +638,16 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   {groupageSelected && includedOptions.length > 0 && (
                     <div className="mt-3 flex flex-wrap items-center gap-1.5">
                       <span className="text-xs font-semibold text-[var(--color-text-secondary)]">Inclus :</span>
-                      {includedOptions.map((label) => (
+                      {includedOptions.map((opt) => (
                         <span
-                          key={label}
+                          key={opt.id}
                           className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-amber-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-text-primary)]"
                         >
                           <Check className="h-3 w-3 text-[var(--color-accent-amber)]" />
-                          {label}
+                          {opt.label}
+                          {opt.price != null && opt.price > 0 && (
+                            <s className="text-[10px] text-[var(--color-text-tertiary)]">{formatPrice(opt.price)}</s>
+                          )}
                         </span>
                       ))}
                     </div>
