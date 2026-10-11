@@ -10,12 +10,14 @@ export interface GroupageConfig {
   reduction_percent: number;
   /** Nombre de places du groupage. */
   max_places: number;
-  /** Nombre de places restantes forcé (affichage), null = calculé. */
-  forced_remaining: number | null;
+  /** Nombre de places déjà attribuées (base d'affichage, 0..max_places). Les commandes réelles s'y ajoutent. null = 0. */
+  base_places: number | null;
   /** Montant de départ (acompte, FCFA). null = la totalité est payée immédiatement. */
   deposit_fcfa: number | null;
   /** IDs des options de paramètres incluses gratuitement dans l'offre. */
   included_option_ids: string[];
+  /** Nombre de partages affiché artificiellement (base), auquel s'ajoutent les partages réels. */
+  base_shares: number;
 }
 
 /** Référence minimale d'une variante pour les calculs groupage. */
@@ -43,9 +45,9 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
     typeof g.max_places === "number" && g.max_places > 0
       ? Math.round(g.max_places)
       : GROUPAGE_DEFAULT_MAX_PLACES;
-  const forcedRemaining =
-    typeof g.forced_remaining === "number" && g.forced_remaining >= 0
-      ? Math.round(g.forced_remaining)
+  const basePlaces =
+    typeof g.base_places === "number" && g.base_places >= 0
+      ? Math.round(g.base_places)
       : null;
   const deposit =
     typeof g.deposit_fcfa === "number" && g.deposit_fcfa >= 0
@@ -59,9 +61,13 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
     variant_id: typeof g.variant_id === "string" && g.variant_id ? g.variant_id : null,
     reduction_percent: pct,
     max_places: maxPlaces,
-    forced_remaining: forcedRemaining,
+    base_places: basePlaces,
     deposit_fcfa: deposit,
     included_option_ids: included,
+    base_shares:
+      typeof g.base_shares === "number" && g.base_shares >= 0
+        ? Math.round(g.base_shares)
+        : 0,
   };
 }
 

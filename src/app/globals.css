@@ -133,6 +133,17 @@ body {
   animation: indeterminate 2s ease-in-out infinite;
 }
 
+/* === Jauge groupage : va-et-vient lumineux multicolore (activité) === */
+@keyframes groupage-sheen {
+  0% { left: -30%; }
+  50% { left: 105%; }
+  100% { left: -30%; }
+}
+
+.groupage-sheen {
+  animation: groupage-sheen 3s ease-in-out infinite;
+}
+
 /* === Hide scrollbar === */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

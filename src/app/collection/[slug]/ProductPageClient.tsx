@@ -301,6 +301,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           .map((o) => ({ id: o.id, label: o.label, price: o.price ?? null }))
       )
     : [];
+  // Valeur catalogue totale des options incluses gratuitement (prix barré + économie affichée).
+  const includedOptionsValue = includedOptions.reduce((sum, o) => sum + (o.price ?? 0), 0);
 
   const selectedOptionsList: CartItemOption[] = parameters.flatMap((param) => {
     const ids = selectedOptions[param.id] || [];
@@ -405,6 +407,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       options: groupageOptionsList,
       groupage: true,
       groupage_reduction_fcfa: groupageReduction ?? 0,
+      groupage_included_fcfa: includedOptionsValue,
       groupage_deposit_fcfa: groupageConfig.deposit_fcfa,
       online_enabled: true,
       cash_on_delivery: false,
@@ -427,10 +430,13 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     }
   };
 
-  // Jauge groupage (statut live ou repli sur la config).
-  const gPlacesTaken = groupageStatus?.places_taken ?? 0;
+  // Jauge groupage (statut live ou repli sur la config + base d'affichage).
   const gMax = groupageStatus?.max_places ?? groupageConfig?.max_places ?? 60;
-  const gRemaining = groupageStatus?.remaining ?? groupageConfig?.max_places ?? 60;
+  const gPlacesTaken = groupageStatus?.places_taken ?? (groupageConfig?.base_places ?? 0);
+  const gRemaining =
+    groupageStatus?.remaining ?? Math.max(0, gMax - (groupageConfig?.base_places ?? 0));
+  // Compteur de partages affiché = base (artificielle) + partages réels.
+  const displayShares = (groupageConfig?.base_shares ?? 0) + shareCount;
 
   // Bouton CTA principal (ajout au panier / devis WhatsApp), réutilisé en bloc (plein) et en sticky bas (compact).
   const renderPrimaryCta = (compact: boolean) => {
@@ -629,7 +635,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                             },
                             dimensions: clonedVariant?.attributes?.dimensions,
                             price: groupPrice,
-                            originalPrice,
+                            originalPrice: originalPrice + includedOptionsValue,
                             reductionPercent: groupageConfig.reduction_percent,
                           }
                         : null
@@ -673,7 +679,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         onToggleOption={toggleGroupageOption}
                         quantity={groupageQuantity}
                         onQuantityChange={setGroupageQuantity}
-                        sharesCount={shareCount}
+                        sharesCount={displayShares}
                         onShared={handleGroupageShared}
                         onJoin={handleJoinGroupage}
                         joinGroupRef={joinGroupRef}

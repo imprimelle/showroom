@@ -115,9 +115,14 @@ export function GroupageCard({
               {formatPrice(originalTotal)}
             </span>
             <span className="font-mono text-2xl font-bold text-[var(--color-text-primary)]">
-              {formatPrice(groupPrice)}
+              {formatPrice(total)}
             </span>
           </div>
+          {additionalTotal > 0 && (
+            <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+              dont options : +{formatPrice(additionalTotal)}
+            </p>
+          )}
           {reductionFcfa + includedTotal > 0 && (
             <p className="mt-0.5 text-xs font-semibold text-[var(--color-success)]">
               Économisez {formatPrice(reductionFcfa + includedTotal)}
@@ -182,23 +187,21 @@ export function GroupageCard({
           </div>
         )}
 
-        {/* Total unitaire */}
-        <div className="mt-3 flex items-center justify-between border-t border-[var(--color-border-default)] pt-2.5">
-          <span className="text-sm font-medium text-[var(--color-text-secondary)]">Total</span>
-          <span className="font-mono text-lg font-bold text-[var(--color-text-primary)]">{formatPrice(total)}</span>
-        </div>
-
         {/* Jauge */}
         <div className="mt-3">
           <div className="mb-1 flex items-center justify-between text-xs">
             <span className="text-[var(--color-text-secondary)]">{placesTaken} / {maxPlaces} places</span>
             <span className="font-semibold text-[var(--color-accent-amber)]">{remaining} restantes</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
+          <div className="relative h-2.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
             <div
-              className="h-full rounded-full bg-[var(--color-accent-amber)] transition-all"
-              style={{ width: `${pct}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${pct}%`,
+                background: "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)",
+              }}
             />
+            <span className="groupage-sheen absolute inset-y-0 left-0 w-1/4 rounded-full bg-white/50 blur-[3px]" />
           </div>
         </div>
 

@@ -64,12 +64,14 @@ export interface ShowcaseProduct {
       reduction_percent?: number;
       /** Nombre de places du groupage (défaut 60). */
       max_places?: number;
-      /** Nombre de places restantes forcé (affichage), null = calculé. */
-      forced_remaining?: number | null;
+      /** Nombre de places déjà attribuées (base d'affichage, 0..max_places). Les commandes réelles s'y ajoutent. */
+      base_places?: number | null;
       /** Montant de départ (acompte, FCFA). null = paiement total. */
       deposit_fcfa?: number | null;
       /** IDs des options de paramètres incluses gratuitement dans l'offre. */
       included_option_ids?: string[];
+      /** Base de partage : nombre de partages affiché artificiellement, auquel s'ajoutent les partages réels. */
+      base_shares?: number;
     };
   };
   description?: string;

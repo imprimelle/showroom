@@ -9,7 +9,10 @@ import { CookieConsent } from "@/components/layout/CookieConsent";
 import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
 import { WhatsAppClickTracker } from "@/components/analytics/WhatsAppClickTracker";
 import { ToastContainer } from "@/components/ui/Toast";
+import { SocialProofToast } from "@/components/social/SocialProofToast";
 import { getShowcaseSettings } from "@/lib/settings";
+import { getPublishedProducts } from "@/lib/products";
+import { resolveSocialProofEntries } from "@/lib/social-proof";
 import { normalizePhone } from "@/lib/utils";
 import { resolveCategories } from "@/lib/categories";
 
@@ -78,6 +81,8 @@ export default async function RootLayout({
   const whatsapp = normalizePhone(settings.contact?.whatsapp);
   const phone = normalizePhone(settings.contact?.phone || settings.contact?.whatsapp);
   const catalog = resolveCategories(settings.catalog);
+  const products = await getPublishedProducts().catch(() => []);
+  const socialProofEntries = resolveSocialProofEntries(settings.social_proof);
 
   return (
     <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
@@ -96,6 +101,11 @@ export default async function RootLayout({
           />
           <WhatsAppClickTracker />
           <ToastContainer />
+          <SocialProofToast
+            enabled={!!settings.social_proof?.enabled}
+            entries={socialProofEntries}
+            products={products.map((p) => ({ name: p.name, image_url: p.main_image_url }))}
+          />
         </Providers>
       </body>
     </html>

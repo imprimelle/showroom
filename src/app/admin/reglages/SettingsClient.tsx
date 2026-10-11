@@ -4,18 +4,19 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
+import { parseSocialProofEntries, serializeSocialProofEntries, SOCIAL_PROOF_COUNTRIES } from "@/lib/social-proof";
 import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -26,6 +27,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "livraison", label: "Livraison", icon: Truck },
   { id: "paiement", label: "Paiement", icon: Wallet },
   { id: "faq", label: "FAQ produit", icon: HelpCircle },
+  { id: "preuve", label: "Preuve sociale", icon: Megaphone },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -219,6 +221,15 @@ export function SettingsClient({ initialData, products }: {
   const removeIdeaVideo = (famId: string, i: number) =>
     setIdeaDecoFor(famId, ideaDecoFor(famId).filter((_, idx) => idx !== i));
 
+  // === Preuve sociale (« vient de commander ») ===
+  const socialProof = data.social_proof || { enabled: false, entries: [] };
+  const socialProofText = serializeSocialProofEntries(socialProof.entries || []);
+  const socialProofCount = parseSocialProofEntries(socialProofText).length;
+  const setSocialProofEnabled = (enabled: boolean) =>
+    setData({ ...data, social_proof: { ...socialProof, enabled } });
+  const setSocialProofText = (text: string) =>
+    setData({ ...data, social_proof: { ...socialProof, entries: parseSocialProofEntries(text) } });
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -269,6 +280,12 @@ export function SettingsClient({ initialData, products }: {
               })),
           ])
         ),
+        social_proof: data.social_proof
+          ? {
+              enabled: !!data.social_proof.enabled,
+              entries: (data.social_proof.entries || []).filter((e) => e.name?.trim()),
+            }
+          : undefined,
       };
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
@@ -814,6 +831,36 @@ export function SettingsClient({ initialData, products }: {
             ))}
             {faqPills.length === 0 && <p className="text-sm text-[var(--color-text-tertiary)]">Aucune pilule — le site utilisera la FAQ par défaut.</p>}
           </div>
+        </section>
+      )}
+
+      {tab === "preuve" && (
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Preuve sociale (« vient de commander »)</h2>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!socialProof.enabled}
+                onChange={(e) => setSocialProofEnabled(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-[var(--color-text-secondary)]">Activer les notifications</span>
+            </label>
+          </div>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-3">
+            À intervalles aléatoires (2, 4 ou 8 minutes), une notification « [Nom] ([drapeau]) vient de commander [produit] » s&apos;affiche en haut du site pendant quelques secondes. Saisissez une ligne par personne au format « Nom Prénom, Pays ».
+          </p>
+          <textarea
+            value={socialProofText}
+            onChange={(e) => setSocialProofText(e.target.value)}
+            rows={18}
+            placeholder={"Emanuel Loukou, Côte d'Ivoire\nAya Kouassi, Côte d'Ivoire\nMoussa Traoré, Mali"}
+            className="w-full px-3 py-2 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm font-mono text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] resize-y"
+          />
+          <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
+            {socialProofCount} entrée{socialProofCount > 1 ? "s" : ""} valide{socialProofCount > 1 ? "s" : ""} · Pays reconnus : {SOCIAL_PROOF_COUNTRIES.join(", ")}.
+          </p>
         </section>
       )}
 

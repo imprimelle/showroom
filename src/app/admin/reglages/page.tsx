@@ -4,6 +4,7 @@ import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
 import { DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
+import { DEFAULT_SOCIAL_PROOF_ENTRIES } from "@/lib/social-proof";
 import type { ShowcaseSettings } from "@/types";
 import { SettingsClient } from "./SettingsClient";
 
@@ -31,6 +32,13 @@ export default async function AdminSettingsPage() {
       raw.catalog && raw.catalog.length > 0 ? raw.catalog : DEFAULT_CATEGORIES,
     faq_pills:
       raw.faq_pills && raw.faq_pills.length > 0 ? raw.faq_pills : DEFAULT_FAQ_PILLS,
+    social_proof: {
+      enabled: !!raw.social_proof?.enabled,
+      entries:
+        raw.social_proof?.entries && raw.social_proof.entries.length > 0
+          ? raw.social_proof.entries
+          : DEFAULT_SOCIAL_PROOF_ENTRIES,
+    },
     home: {
       ...rawHome,
       cta_title: rawHome?.cta_title ?? DEFAULT_CTA.title,

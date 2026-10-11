@@ -45,6 +45,8 @@ export interface CartItem {
   groupage?: boolean;
   /** Montant de la réduction groupage (FCFA), pour afficher l'économie. */
   groupage_reduction_fcfa?: number;
+  /** Valeur catalogue des options incluses gratuitement (FCFA), ajoutée à l'économie affichée. */
+  groupage_included_fcfa?: number;
   /** Montant de départ (acompte) configuré. null = paiement total. */
   groupage_deposit_fcfa?: number | null;
 }
@@ -193,6 +195,13 @@ export interface ReviewAggregate {
   distribution: { rating: number; count: number }[];
 }
 
+/** Entrée de preuve sociale (« X vient de commander »). */
+export interface SocialProofEntry {
+  name: string;
+  country: string;
+  flag: string;
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -232,4 +241,9 @@ export interface ShowcaseSettings {
   faq_pills?: FaqPill[];
   /** Vidéos d'inspiration « Idées décos » par univers (slug de famille → liste de vidéos). */
   idea_deco?: Record<string, IdeaDecoVideo[]>;
+  /** Notifications « vient de commander » aléatoires (preuve sociale). */
+  social_proof?: {
+    enabled?: boolean;
+    entries?: SocialProofEntry[];
+  };
 }

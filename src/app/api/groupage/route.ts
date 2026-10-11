@@ -5,7 +5,6 @@ import {
   resolveGroupageVariant,
   groupagePrice,
   groupageReductionAmount,
-  remainingPlaces,
 } from "@/lib/groupage";
 
 export const dynamic = "force-dynamic";
@@ -60,13 +59,11 @@ export async function GET(request: NextRequest) {
 
     const maxPlaces = active?.max_places ?? config.max_places;
 
-    // Places restantes : valeur forcée (admin) sinon calculée depuis le compteur réel.
-    const forcedRemaining = config.forced_remaining;
-    const remaining =
-      forcedRemaining != null
-        ? Math.max(0, Math.min(forcedRemaining, maxPlaces))
-        : remainingPlaces(maxPlaces, active?.places_taken ?? 0);
-    const placesTaken = forcedRemaining != null ? maxPlaces - remaining : active?.places_taken ?? 0;
+    // Base d'affichage : nombre de places déjà attribuées (0..max_places), auquel
+    // s'ajoutent les commandes réelles. Jauge = base + places réellement prises.
+    const basePlaces = Math.min(maxPlaces, config.base_places ?? 0);
+    const placesTaken = Math.min(maxPlaces, basePlaces + (active?.places_taken ?? 0));
+    const remaining = Math.max(0, maxPlaces - placesTaken);
 
     return NextResponse.json({
       enabled: true,
@@ -78,7 +75,7 @@ export async function GET(request: NextRequest) {
       deposit_fcfa: config.deposit_fcfa,
       included_option_ids: config.included_option_ids,
       group_price_fcfa: price,
-      forced_remaining: forcedRemaining,
+      base_places: config.base_places,
       places_taken: placesTaken,
       remaining,
       shares_count: active?.shares_count ?? 0,

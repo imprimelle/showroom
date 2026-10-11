@@ -118,14 +118,18 @@ export async function PUT(
             typeof gp.max_places === "number" && gp.max_places > 0
               ? Math.round(gp.max_places)
               : 60,
-          forced_remaining:
-            typeof gp.forced_remaining === "number" && gp.forced_remaining >= 0
-              ? Math.round(gp.forced_remaining)
+          base_places:
+            typeof gp.base_places === "number" && gp.base_places >= 0
+              ? Math.round(gp.base_places)
               : null,
           deposit_fcfa:
             typeof gp.deposit_fcfa === "number" && gp.deposit_fcfa >= 0
               ? Math.round(gp.deposit_fcfa)
               : null,
+          base_shares:
+            typeof gp.base_shares === "number" && gp.base_shares >= 0
+              ? Math.round(gp.base_shares)
+              : 0,
           included_option_ids: Array.isArray(gp.included_option_ids)
             ? gp.included_option_ids.filter((x: any) => typeof x === "string")
             : [],

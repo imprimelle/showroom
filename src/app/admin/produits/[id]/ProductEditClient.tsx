@@ -109,11 +109,14 @@ export function ProductEditClient({ product, availableParameters }: { product: S
   const [groupageMaxPlaces, setGroupageMaxPlaces] = useState<number>(
     product.showcase?.groupage?.max_places ?? 60
   );
-  const [groupageForcedRemaining, setGroupageForcedRemaining] = useState<number | null>(
-    product.showcase?.groupage?.forced_remaining ?? null
+  const [groupageBasePlaces, setGroupageBasePlaces] = useState<number | null>(
+    product.showcase?.groupage?.base_places ?? null
   );
   const [groupageDepositFcfa, setGroupageDepositFcfa] = useState<number | null>(
     product.showcase?.groupage?.deposit_fcfa ?? null
+  );
+  const [groupageBaseShares, setGroupageBaseShares] = useState<number>(
+    product.showcase?.groupage?.base_shares ?? 0
   );
   const [groupageIncludedOptions, setGroupageIncludedOptions] = useState<string[]>(
     product.showcase?.groupage?.included_option_ids ?? []
@@ -244,8 +247,9 @@ export function ProductEditClient({ product, availableParameters }: { product: S
               variant_id: groupageVariantId || null,
               reduction_percent: groupageReductionPercent,
               max_places: groupageMaxPlaces,
-              forced_remaining: groupageForcedRemaining,
+              base_places: groupageBasePlaces,
               deposit_fcfa: groupageDepositFcfa,
+              base_shares: groupageBaseShares,
               included_option_ids: groupageIncludedOptions,
             },
           },
@@ -298,8 +302,9 @@ export function ProductEditClient({ product, availableParameters }: { product: S
         groupageVariantId: product.showcase?.groupage?.variant_id || "",
         groupageReductionPercent: product.showcase?.groupage?.reduction_percent ?? 0,
         groupageMaxPlaces: product.showcase?.groupage?.max_places ?? 60,
-        groupageForcedRemaining: product.showcase?.groupage?.forced_remaining ?? null,
+        groupageBasePlaces: product.showcase?.groupage?.base_places ?? null,
         groupageDepositFcfa: product.showcase?.groupage?.deposit_fcfa ?? null,
+        groupageBaseShares: product.showcase?.groupage?.base_shares ?? 0,
         groupageIncludedOptions: product.showcase?.groupage?.included_option_ids ?? [],
       }),
     [product]
@@ -337,8 +342,9 @@ export function ProductEditClient({ product, availableParameters }: { product: S
       groupageVariantId,
       groupageReductionPercent,
       groupageMaxPlaces,
-      groupageForcedRemaining,
+      groupageBasePlaces,
       groupageDepositFcfa,
+      groupageBaseShares,
       groupageIncludedOptions,
     });
     return cur !== initialSnapshot;
@@ -348,7 +354,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
     images360, threeSixtyEnabled, lightSwitchEnabled, lightSwitchOn, lightSwitchOff,
     galleryOff, variants, faq, activeParameters, cashOnDelivery, onlineEnabled,
     groupageEnabled, groupageVariantId, groupageReductionPercent, groupageMaxPlaces,
-    groupageForcedRemaining, groupageDepositFcfa, groupageIncludedOptions, initialSnapshot,
+    groupageBasePlaces, groupageDepositFcfa, groupageBaseShares, groupageIncludedOptions, initialSnapshot,
   ]);
 
   return (
@@ -872,13 +878,40 @@ export function ProductEditClient({ product, availableParameters }: { product: S
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Forcer les places restantes (optionnel)</label>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">
+                    Forcer le nombre de places attribuées (base, optionnel)
+                  </label>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
+                    Nombre entre 0 et le total de places ({groupageMaxPlaces}). Sert de base d&apos;affichage : la jauge démarre à ce nombre et les commandes réelles s&apos;y ajoutent.
+                  </p>
                   <input
                     type="number"
                     min={0}
-                    value={groupageForcedRemaining ?? ""}
-                    onChange={(e) => setGroupageForcedRemaining(e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
+                    max={groupageMaxPlaces}
+                    value={groupageBasePlaces ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        setGroupageBasePlaces(null);
+                        return;
+                      }
+                      setGroupageBasePlaces(Math.min(groupageMaxPlaces, Math.max(0, Number(raw) || 0)));
+                    }}
                     placeholder="Vide = calculé automatiquement"
+                    className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Base de partage (optionnel)</label>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
+                    Nombre de partages affiché artificiellement au départ. Les partages réels s&apos;y ajoutent.
+                  </p>
+                  <input
+                    type="number"
+                    min={0}
+                    value={groupageBaseShares}
+                    onChange={(e) => setGroupageBaseShares(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="0"
                     className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
                   />
                 </div>

@@ -110,9 +110,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         )}
                       </div>
                       <p className="text-xs text-[var(--color-text-secondary)]">{item.variant_label}</p>
-                      {item.groupage && item.groupage_reduction_fcfa ? (
+                      {item.groupage &&
+                      (item.groupage_reduction_fcfa ?? 0) + (item.groupage_included_fcfa ?? 0) > 0 ? (
                         <p className="text-xs font-semibold text-[var(--color-success)] mt-0.5">
-                          Économisez {formatPrice(item.groupage_reduction_fcfa)}
+                          Économisez{" "}
+                          {formatPrice(
+                            (item.groupage_reduction_fcfa ?? 0) + (item.groupage_included_fcfa ?? 0)
+                          )}
                         </p>
                       ) : null}
                       {item.options && item.options.length > 0 && (
