@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    const maxPlaces = active?.max_places ?? config.max_places;
+    // Le total de places est piloté par la config (modifiable dans l'admin).
+    // L'instance active (`showcase_groupages`) garde un instantané figé à sa création,
+    // mais l'affichage doit toujours refléter la valeur courante de la config.
+    const maxPlaces = config.max_places;
 
     // Base d'affichage : nombre de places déjà attribuées (0..max_places), auquel
     // s'ajoutent les commandes réelles. Jauge = base + places réellement prises.

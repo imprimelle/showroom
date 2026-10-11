@@ -652,7 +652,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                           <Check className="h-3 w-3 text-[var(--color-accent-amber)]" />
                           {opt.label}
                           {opt.price != null && opt.price > 0 && (
-                            <s className="text-[10px] text-[var(--color-text-tertiary)]">{formatPrice(opt.price)}</s>
+                            <span className="text-[10px] font-semibold text-[var(--color-success)]">{formatPrice(opt.price)}</span>
                           )}
                         </span>
                       ))}
