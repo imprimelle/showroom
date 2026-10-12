@@ -133,14 +133,19 @@ export function GroupageCard({
             >
               <Users className="h-3.5 w-3.5" /> Groupage
             </button>
-            <button
+            <motion.button
               type="button"
               onClick={() => setInfoOpen(true)}
               aria-label="En savoir plus sur le groupage"
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+              initial={{ opacity: 0, scale: 0.6, y: -6 }}
+              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.8 }}
+              transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.25 }}
+              className="inline-flex h-6 items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] px-2.5 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               <Info className="h-3.5 w-3.5" />
-            </button>
+              <span className="text-[11px] font-semibold leading-none">Plus d&apos;infos</span>
+            </motion.button>
           </div>
           {reductionPercent > 0 && (
             <span className="text-sm font-bold text-[var(--color-success)]">−{reductionPercent}%</span>
@@ -296,16 +301,20 @@ export function GroupageCard({
           </div>
 
           {/* Bouton rejoindre */}
-          <button
+          <motion.button
             type="button"
             onClick={onJoin}
+            initial={{ x: 0 }}
+            whileInView={{ x: [0, -8, 8, -6, 6, -3, 3, 0] }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.6, ease: "easeInOut", delay: 0.2 }}
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#15803D]"
           >
             <Users className="h-4 w-4" />
             Rejoindre le groupage
             <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
             <span className="font-mono font-bold">{formatPrice(lineTotal)}</span>
-          </button>
+          </motion.button>
 
           {/* Réassurance */}
           <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--color-border-default)] pt-3">

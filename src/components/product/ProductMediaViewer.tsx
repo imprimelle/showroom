@@ -7,7 +7,7 @@ import {
   type Ref,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Ruler, MoveHorizontal, Maximize2, Play, Power, Share2 } from "lucide-react";
+import { Ruler, MoveHorizontal, Maximize2, Play, Power, Share2, Rotate3d } from "lucide-react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { MediaLightbox } from "@/components/product/MediaLightbox";
@@ -502,12 +502,22 @@ export function ProductMediaViewer({
             role="application"
             aria-label="Vue 360° — glissez horizontalement pour faire tourner le produit"
           >
-            <img
-              src={frames360[frameIndex].url}
-              alt={`${productName || "produit"} — vue 360°`}
-              className="pointer-events-none h-full w-full object-cover"
-              draggable={false}
-            />
+            <motion.div
+              className="h-full w-full"
+              animate={interacted ? { x: 0 } : { x: [0, -18, 18, -10, 10, -4, 4, 0] }}
+              transition={
+                interacted
+                  ? { duration: 0.25, ease: "easeOut" }
+                  : { duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.4 }
+              }
+            >
+              <img
+                src={frames360[frameIndex].url}
+                alt={`${productName || "produit"} — vue 360°`}
+                className="pointer-events-none h-full w-full object-cover"
+                draggable={false}
+              />
+            </motion.div>
 
             {/* Indice (disparaît après la première interaction) */}
             {!interacted && (
@@ -583,11 +593,12 @@ export function ProductMediaViewer({
                   aria-pressed={view === "360"}
                   aria-label="Vue 360°"
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-colors",
+                    "flex h-10 shrink-0 items-center gap-1 rounded-lg px-2 transition-colors",
                     view === "360" ? "bg-white text-black" : "bg-white/15 text-white hover:bg-white/25"
                   )}
                 >
-                  <span className="text-sm font-bold leading-none tracking-tight">360</span>
+                  <Rotate3d className="h-4 w-4 shrink-0" />
+                  <span className="text-xs font-bold leading-none tracking-tight">360°</span>
                 </button>
               )}
 

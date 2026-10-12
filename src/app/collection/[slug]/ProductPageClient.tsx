@@ -207,6 +207,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const ctaRef = useRef<HTMLDivElement>(null);
   const joinGroupRef = useRef<HTMLDivElement>(null);
   const [bottomBarVisible, setBottomBarVisible] = useState(false);
+  // Animation one-shot du CTA sticky bas (déclenchée à sa 1re apparition).
+  const [ctaPulsed, setCtaPulsed] = useState(false);
+  const pulsedRef = useRef(false);
 
   useEffect(() => {
     const el = groupageSelected ? joinGroupRef.current : ctaRef.current;
@@ -215,7 +218,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       return;
     }
     const observer = new IntersectionObserver(
-      ([entry]) => setBottomBarVisible(!entry.isIntersecting),
+      ([entry]) => {
+        const visible = !entry.isIntersecting;
+        setBottomBarVisible(visible);
+        if (visible && !pulsedRef.current) {
+          pulsedRef.current = true;
+          setCtaPulsed(true);
+        }
+      },
       { threshold: 0 }
     );
     observer.observe(el);
@@ -890,8 +900,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </p>
             </div>
 
-            {/* Tableau moderne : conteneur arrondi, en-tête fondé, lignes hover */}
-            <div className="overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm">
+            {/* Tableau moderne : sans bordure latérale, déballage au scroll */}
+            <motion.div
+              initial={{ opacity: 0, y: 36, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.65, ease: "easeOut" }}
+              className="overflow-hidden rounded-2xl border-y border-[var(--color-border-default)] bg-[var(--color-surface-card)] shadow-sm"
+            >
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -916,7 +932,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   </tbody>
                 </table>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
       )}
@@ -984,8 +1000,16 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
-              {relatedProducts.map((rp) => (
-                <ProductCard key={rp.id} product={rp} sizes="(max-width: 767px) 50vw, 25vw" />
+              {relatedProducts.map((rp, i) => (
+                <motion.div
+                  key={rp.id}
+                  initial={{ opacity: 0, y: 28 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.55, ease: "easeOut", delay: (i % 4) * 0.09 }}
+                >
+                  <ProductCard product={rp} sizes="(max-width: 767px) 50vw, 25vw" />
+                </motion.div>
               ))}
             </div>
             <div className="mt-8 text-center">
@@ -1096,7 +1120,13 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 </button>
               </div>
             ) : null}
-            {renderPrimaryCta(true)}
+            <motion.div
+              className="flex min-w-0 flex-1"
+              animate={ctaPulsed ? { scale: [1, 1.05, 1, 1.03, 1] } : { scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+            >
+              {renderPrimaryCta(true)}
+            </motion.div>
           </div>
         </div>
       </div>

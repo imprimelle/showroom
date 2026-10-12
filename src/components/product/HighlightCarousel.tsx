@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getHighlightIcon } from "@/lib/highlight-icons";
@@ -17,6 +17,17 @@ export function HighlightCarousel({ highlights }: { highlights: Highlight[] }) {
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(false);
   const [page, setPage] = useState(0);
+
+  // Auto-ouverture du 1er point fort (« En savoir plus ») dès la 1re visibilité au scroll.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(rootRef, { once: true, amount: 0.35 });
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (inView && !autoOpenedRef.current && highlights.length > 0) {
+      autoOpenedRef.current = true;
+      setActive(0);
+    }
+  }, [inView, highlights.length]);
 
   const update = useCallback(() => {
     const el = trackRef.current;
@@ -55,7 +66,7 @@ export function HighlightCarousel({ highlights }: { highlights: Highlight[] }) {
   };
 
   return (
-    <div className="relative">
+    <div ref={rootRef} className="relative">
       {/* Flèche précédente */}
       <button
         type="button"
