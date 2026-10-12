@@ -71,6 +71,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
 
   const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
   const [scrolled, setScrolled] = useState(false);
+  const hideNav = pathname.startsWith("/admin") || pathname.startsWith("/checkout") || pathname === "/notre-histoire";
 
   // Sur les pages avec bannière (home + univers), la barre devient solide après un léger scroll
   useEffect(() => {
@@ -87,6 +88,16 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
+  // Signale la présence de la barre de navigation pour positionner la notification
+  // de preuve sociale sous la barre du haut (toutes pages).
+  useEffect(() => {
+    if (hideNav) return;
+    document.body.dataset.hasTopnav = "1";
+    return () => {
+      delete document.body.dataset.hasTopnav;
+    };
+  }, [hideNav]);
+
   const closeMenu = () => {
     setMenuOpen(false);
     setSearchOpen(false);
@@ -101,7 +112,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
     router.push(q ? `/collection?q=${encodeURIComponent(q)}` : "/collection");
   };
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/checkout") || pathname === "/notre-histoire") return null;
+  if (hideNav) return null;
 
   const transparent = isHero && !scrolled;
   const fg = transparent ? "text-white" : "text-[var(--color-text-primary)]";

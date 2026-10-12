@@ -119,7 +119,8 @@ export function SocialProofToast({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -90, opacity: 0 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className="fixed inset-x-0 top-0 z-[70] flex justify-center px-3 pt-2"
+          className="fixed inset-x-0 z-[70] flex justify-center px-3 pt-2"
+          style={{ top: "var(--topbar-height)" }}
         >
           <a
             href={href}

@@ -7,7 +7,7 @@ import {
   type Ref,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Ruler, MoveHorizontal, Maximize2, Play, Power, Share2, Rotate3d } from "lucide-react";
+import { Ruler, Maximize2, Play, Power, Share2, Rotate3d } from "lucide-react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { MediaLightbox } from "@/components/product/MediaLightbox";
@@ -335,6 +335,25 @@ export function ProductMediaViewer({
     });
   }, [threeSixtyEnabled, images360]);
 
+  // Incitation à la rotation : tant que l'utilisateur n'a pas interagi, le produit
+  // tourne doucement sur lui-même (aller-retour), comme s'il était effleuré par un
+  // doigt — l'utilisateur prend la main dès qu'il touche l'image.
+  useEffect(() => {
+    if (view !== "360" || interacted || frames360.length <= 1) return;
+    let raf = 0;
+    const start = performance.now();
+    const len = frames360.length;
+    const amplitude = Math.max(2, Math.round(len / 4));
+    const period = 3200; // ms pour un aller-retour complet
+    const tick = (t: number) => {
+      const pos = Math.round(Math.sin(((t - start) / period) * Math.PI * 2) * amplitude);
+      setFrameIndex(((pos % len) + len) % len);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [view, interacted, frames360.length]);
+
   // ~ un tour complet (360°) correspond à ~320px de glissement, quel que soit le nb de frames.
   const pxPerFrame = Math.max(3, 320 / Math.max(1, frames360.length));
 
@@ -502,27 +521,17 @@ export function ProductMediaViewer({
             role="application"
             aria-label="Vue 360° — glissez horizontalement pour faire tourner le produit"
           >
-            <motion.div
-              className="h-full w-full"
-              animate={interacted ? { x: 0 } : { x: [0, -18, 18, -10, 10, -4, 4, 0] }}
-              transition={
-                interacted
-                  ? { duration: 0.25, ease: "easeOut" }
-                  : { duration: 1.5, ease: "easeInOut", repeat: Infinity, repeatDelay: 1.4 }
-              }
-            >
-              <img
-                src={frames360[frameIndex].url}
-                alt={`${productName || "produit"} — vue 360°`}
-                className="pointer-events-none h-full w-full object-cover"
-                draggable={false}
-              />
-            </motion.div>
+            <img
+              src={frames360[frameIndex].url}
+              alt={`${productName || "produit"} — vue 360°`}
+              className="pointer-events-none h-full w-full object-cover"
+              draggable={false}
+            />
 
             {/* Indice (disparaît après la première interaction) */}
             {!interacted && (
               <div className="pointer-events-none absolute bottom-16 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/55 px-3 py-1 text-[11px] font-medium text-white">
-                <MoveHorizontal className="h-3.5 w-3.5" />
+                <span className="finger-swipe inline-block text-sm leading-none" aria-hidden="true">👉</span>
                 Glissez pour faire tourner
               </div>
             )}

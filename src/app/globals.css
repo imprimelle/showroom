@@ -158,6 +158,24 @@ body[data-sticky-product="1"] header {
   display: none;
 }
 
+/* === Hauteur de la barre du haut (pour positionner la notification preuve sociale) ===
+   La notification s'affiche juste sous la barre du haut : TopNav (annonce + nav) ou
+   barre sticky produit, quelle que soit la page. */
+:root {
+  --topbar-height: 0px; /* aucune barre (admin, checkout, notre-histoire) */
+}
+body[data-has-topnav="1"] {
+  --topbar-height: 92px; /* annonce h-7 (28px) + nav h-16 (64px) — mobile */
+}
+@media (min-width: 768px) {
+  body[data-has-topnav="1"] {
+    --topbar-height: 104px; /* annonce h-8 (32px) + nav 72px */
+  }
+}
+body[data-sticky-product="1"] {
+  --topbar-height: 56px; /* barre sticky produit h-14 */
+}
+
 /* === Switch allumé/éteint : bouton « Allumer » lumineux multicolore === */
 @keyframes switch-glow-sweep {
   0% { background-position: 0% 50%; }
@@ -179,6 +197,16 @@ body[data-sticky-product="1"] header {
   animation: switch-glow-sweep 3s linear infinite;
   box-shadow: 0 0 16px 2px rgba(255, 140, 0, 0.6);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* === Doigt animé (indice « glissez » de la vue 360°) — effet GIF === */
+@keyframes finger-swipe {
+  0%, 100% { transform: translateX(-9px) rotate(-10deg); }
+  50% { transform: translateX(9px) rotate(10deg); }
+}
+.finger-swipe {
+  display: inline-block;
+  animation: finger-swipe 1.3s ease-in-out infinite;
 }
 
 /* ============================================================

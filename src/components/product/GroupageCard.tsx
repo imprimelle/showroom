@@ -304,10 +304,10 @@ export function GroupageCard({
           <motion.button
             type="button"
             onClick={onJoin}
-            initial={{ x: 0 }}
-            whileInView={{ x: [0, -8, 8, -6, 6, -3, 3, 0] }}
+            initial={{ scale: 1 }}
+            whileInView={{ scale: [1, 1.06, 1, 1.04, 1] }}
             viewport={{ once: true, amount: 0.6 }}
-            transition={{ duration: 0.6, ease: "easeInOut", delay: 0.2 }}
+            transition={{ duration: 0.9, ease: "easeInOut", delay: 0.15 }}
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#15803D]"
           >
             <Users className="h-4 w-4" />

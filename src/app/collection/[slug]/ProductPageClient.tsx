@@ -207,9 +207,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const ctaRef = useRef<HTMLDivElement>(null);
   const joinGroupRef = useRef<HTMLDivElement>(null);
   const [bottomBarVisible, setBottomBarVisible] = useState(false);
-  // Animation one-shot du CTA sticky bas (déclenchée à sa 1re apparition).
-  const [ctaPulsed, setCtaPulsed] = useState(false);
-  const pulsedRef = useRef(false);
 
   useEffect(() => {
     const el = groupageSelected ? joinGroupRef.current : ctaRef.current;
@@ -218,14 +215,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       return;
     }
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        const visible = !entry.isIntersecting;
-        setBottomBarVisible(visible);
-        if (visible && !pulsedRef.current) {
-          pulsedRef.current = true;
-          setCtaPulsed(true);
-        }
-      },
+      ([entry]) => setBottomBarVisible(!entry.isIntersecting),
       { threshold: 0 }
     );
     observer.observe(el);
@@ -832,10 +822,24 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         </button>
                       </div>
                     </div>
-                    {renderPrimaryCta(false)}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                      viewport={{ once: true, amount: 0.4 }}
+                      transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.05 }}
+                    >
+                      {renderPrimaryCta(false)}
+                    </motion.div>
                   </div>
                 ) : (
-                  renderPrimaryCta(false)
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.4 }}
+                    transition={{ type: "spring", stiffness: 240, damping: 22, delay: 0.05 }}
+                  >
+                    {renderPrimaryCta(false)}
+                  </motion.div>
                 )}
               </div>
               {/* Réassurance : bandeau séparé sous le bouton */}
@@ -1120,13 +1124,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 </button>
               </div>
             ) : null}
-            <motion.div
-              className="flex min-w-0 flex-1"
-              animate={ctaPulsed ? { scale: [1, 1.05, 1, 1.03, 1] } : { scale: 1 }}
-              transition={{ duration: 0.6, ease: "easeInOut" }}
-            >
-              {renderPrimaryCta(true)}
-            </motion.div>
+            {renderPrimaryCta(true)}
           </div>
         </div>
       </div>
