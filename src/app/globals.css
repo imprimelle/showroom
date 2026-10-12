@@ -209,6 +209,30 @@ body[data-sticky-product="1"] {
   animation: finger-swipe 1.3s ease-in-out infinite;
 }
 
+/* === Bouton « cette pépite ✨ » (arc-en-ciel) tant qu'il n'est pas cliqué === */
+@keyframes pepite-rainbow-sweep {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+.pepite-rainbow {
+  background: linear-gradient(90deg, #ff0080, #ff8c00, #ffd400, #22c55e, #0ea5e9, #7c3aed, #ff0080);
+  background-size: 300% 100%;
+  animation: pepite-rainbow-sweep 2.6s linear infinite;
+  color: #fff;
+  box-shadow: 0 0 10px 1px rgba(255, 160, 0, 0.35);
+}
+
+/* === Silhouettes qui poussent la jauge groupage === */
+@keyframes push-rock {
+  0%, 100% { transform: rotate(6deg); }
+  50% { transform: rotate(18deg); }
+}
+.push-silhouette {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  animation: push-rock 1.5s ease-in-out infinite;
+}
+
 /* ============================================================
    Page « Notre Histoire » — néon & immersif (mode sombre dédié)
    ============================================================ */

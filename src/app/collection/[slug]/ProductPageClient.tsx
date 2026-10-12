@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
-import { ProductMediaViewer } from "@/components/product/ProductMediaViewer";
+import { ProductMediaViewer, type ProductMediaViewerHandle } from "@/components/product/ProductMediaViewer";
 import { StickyProductBar } from "@/components/product/StickyProductBar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -190,7 +190,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
   // === Barre produit sticky : apparaît quand l'image principale sort du viewport ===
   const mediaRef = useRef<HTMLDivElement>(null);
+  const media360Ref = useRef<ProductMediaViewerHandle | null>(null);
   const [stickyBarVisible, setStickyBarVisible] = useState(false);
+
+  // Clic sur « cette pépite ✨ » : scroll vers le bloc média et bascule en vue 360° si dispo.
+  const handlePepiteClick = () => {
+    mediaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    media360Ref.current?.show360();
+  };
 
   useEffect(() => {
     const el = mediaRef.current;
@@ -527,6 +534,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         <div className="grid grid-cols-1 md:grid-cols-2 md:gap-12 md:items-start">
           {/* Bloc média sticky (pleine largeur, sans marge sur mobile) */}
           <ProductMediaViewer
+            ref={media360Ref}
             images={heroImages}
             defaultImage={variantImage ?? product.main_image_url ?? heroImages[0]?.url}
             videoUrl={heroVideo}
@@ -697,6 +705,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         sharesCount={displayShares}
                         onShared={handleGroupageShared}
                         onJoin={handleJoinGroupage}
+                        onPepiteClick={handlePepiteClick}
                         joinGroupRef={joinGroupRef}
                       />
                     </div>

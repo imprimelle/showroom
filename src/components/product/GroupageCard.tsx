@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X } from "lucide-react";
+import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X, Rotate3d } from "lucide-react";
 import { useFormatPrice } from "@/stores/currency";
 import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
@@ -39,6 +39,8 @@ interface GroupageCardProps {
   sharesCount: number;
   onShared: () => void;
   onJoin: () => void;
+  /** Clic sur « cette pépite ✨ » : scroll vers la vue 360° (ou les photos). */
+  onPepiteClick?: () => void;
   /** Ref sur le groupe « quantité + rejoindre + réassurance » (pour la barre sticky). */
   joinGroupRef?: RefObject<HTMLDivElement | null>;
 }
@@ -72,11 +74,32 @@ export function GroupageCard({
   sharesCount,
   onShared,
   onJoin,
+  onPepiteClick,
   joinGroupRef,
 }: GroupageCardProps) {
   const formatPrice = useFormatPrice();
   const [infoOpen, setInfoOpen] = useState(false);
   const pct = Math.min(100, (placesTaken / maxPlaces) * 100);
+
+  // « Cette pépite ✨ » : l'animation arc-en-ciel reste tant que le bouton n'a pas été
+  // cliqué au moins une fois dans la session pour ce produit.
+  const PEPITE_KEY = `showroom_pepite_clicked_${slug}`;
+  const [pepiteClicked, setPepiteClicked] = useState<boolean>(() => {
+    try {
+      return typeof sessionStorage !== "undefined" && sessionStorage.getItem(PEPITE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const handlePepiteClick = () => {
+    setPepiteClicked(true);
+    try {
+      sessionStorage.setItem(PEPITE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    onPepiteClick?.();
+  };
 
   const sectionStyles = [
     "border-[var(--color-accent-amber)] bg-[var(--color-accent-amber-soft)]",
@@ -234,17 +257,60 @@ export function GroupageCard({
           <p className="mb-1.5 text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
             Il nous manque{" "}
             <span className="font-bold text-[var(--color-accent-amber)]">{remaining}</span>{" "}
-            commande{remaining > 1 ? "s" : ""} pour livrer le groupage
+            commande{remaining > 1 ? "s" : ""} pour livrer{" "}
+            <button
+              type="button"
+              onClick={handlePepiteClick}
+              aria-label="Voir le produit en 360°"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 align-baseline text-sm font-semibold leading-snug transition-colors",
+                pepiteClicked
+                  ? "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
+                  : "pepite-rainbow"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                  pepiteClicked ? "bg-[var(--color-accent-amber)] text-white" : "bg-white/25 text-white"
+                )}
+              >
+                <Rotate3d className="h-3 w-3" />
+                360°
+              </span>
+              cette pépite ✨
+            </button>
           </p>
-          <div className="relative h-2.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
+
+          {/* Barre + silhouettes qui poussent le niveau */}
+          <div className="relative h-9">
+            <div className="absolute inset-x-0 bottom-0 h-3.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+                style={{
+                  width: `${pct}%`,
+                  background: "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)",
+                }}
+              />
+              <span className="groupage-sheen absolute inset-y-0 left-0 w-1/4 rounded-full bg-white/50 blur-[3px]" />
+            </div>
             <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${pct}%`,
-                background: "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)",
-              }}
-            />
-            <span className="groupage-sheen absolute inset-y-0 left-0 w-1/4 rounded-full bg-white/50 blur-[3px]" />
+              className="pointer-events-none absolute bottom-1 flex items-end gap-0.5 transition-all duration-700"
+              style={{ left: `${Math.min(Math.max(pct, 4), 90)}%`, transform: "translateX(-50%)" }}
+            >
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="push-silhouette text-[#1F2937]"
+                  style={{ animationDelay: `${i * 0.16}s` }}
+                >
+                  <svg viewBox="0 0 24 32" className="h-8 w-6" fill="currentColor" aria-hidden="true">
+                    <circle cx="12" cy="5" r="4.5" />
+                    <path d="M4.5 32c0-6.5 3.2-10 7.5-10s7.5 3.5 7.5 10c0 .55-.45 1-1 1h-13c-.55 0-1-.45-1-1z" />
+                  </svg>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 

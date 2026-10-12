@@ -1,6 +1,8 @@
 "use client";
 import {
+  forwardRef,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -195,19 +197,28 @@ function DimensionSchema({ raw, productName }: { raw?: string | null; productNam
   );
 }
 
-export function ProductMediaViewer({
-  images,
-  defaultImage,
-  videoUrl,
-  galleryVideos,
-  dimensions,
-  images360,
-  threeSixtyEnabled,
-  lightSwitch,
-  productName,
-  slug,
-  mediaRef,
-}: ProductMediaViewerProps) {
+export interface ProductMediaViewerHandle {
+  /** Bascule la visionneuse en vue 360° (si disponible). */
+  show360: () => void;
+}
+
+export const ProductMediaViewer = forwardRef<ProductMediaViewerHandle, ProductMediaViewerProps>(
+  function ProductMediaViewer(
+    {
+      images,
+      defaultImage,
+      videoUrl,
+      galleryVideos,
+      dimensions,
+      images360,
+      threeSixtyEnabled,
+      lightSwitch,
+      productName,
+      slug,
+      mediaRef,
+    },
+    ref
+  ) {
   const [view, setView] = useState<ViewMode>("photo");
 
   // ===== Switch allumé/éteint (bascule entre l'image « allumé » et « éteint ») =====
@@ -315,6 +326,20 @@ export function ProductMediaViewer({
   const has360 = !!threeSixtyEnabled && frames360.length > 0;
   const [frameIndex, setFrameIndex] = useState(0);
   const [interacted, setInteracted] = useState(false);
+
+  // Expose impérativement le passage en vue 360° (appelé depuis le parent via un clic).
+  useImperativeHandle(
+    ref,
+    () => ({
+      show360: () => {
+        if (has360) {
+          setView("360");
+          setInteracted(false);
+        }
+      },
+    }),
+    [has360]
+  );
 
   const dragRef = useRef({
     dragging: false,
@@ -647,5 +672,8 @@ export function ProductMediaViewer({
         productName={productName}
       />
     </div>
-  );
-}
+    );
+  }
+);
+
+ProductMediaViewer.displayName = "ProductMediaViewer";
