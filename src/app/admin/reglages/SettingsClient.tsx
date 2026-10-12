@@ -229,6 +229,8 @@ export function SettingsClient({ initialData, products }: {
     setData({ ...data, social_proof: { ...socialProof, enabled } });
   const setSocialProofText = (text: string) =>
     setData({ ...data, social_proof: { ...socialProof, entries: parseSocialProofEntries(text) } });
+  const setSocialProofField = (field: "first_delay_seconds" | "min_minutes" | "max_minutes" | "display_seconds", value: number) =>
+    setData({ ...data, social_proof: { ...socialProof, [field]: value } });
 
   const handleSave = async () => {
     setSaving(true);
@@ -283,6 +285,10 @@ export function SettingsClient({ initialData, products }: {
         social_proof: data.social_proof
           ? {
               enabled: !!data.social_proof.enabled,
+              first_delay_seconds: Number(data.social_proof.first_delay_seconds) || 0,
+              min_minutes: Number(data.social_proof.min_minutes) || 1,
+              max_minutes: Number(data.social_proof.max_minutes) || 1,
+              display_seconds: Number(data.social_proof.display_seconds) || 1,
               entries: (data.social_proof.entries || []).filter((e) => e.name?.trim()),
             }
           : undefined,
@@ -837,7 +843,7 @@ export function SettingsClient({ initialData, products }: {
       {tab === "preuve" && (
         <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Preuve sociale (« vient de commander »)</h2>
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Preuve sociale (« vient de commander » / « a rejoint le groupage »)</h2>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -849,8 +855,27 @@ export function SettingsClient({ initialData, products }: {
             </label>
           </div>
           <p className="text-xs text-[var(--color-text-tertiary)] mb-3">
-            À intervalles aléatoires (2, 4 ou 8 minutes), une notification « [Nom] ([drapeau]) vient de commander [produit] » s&apos;affiche en haut du site pendant quelques secondes. Saisissez une ligne par personne au format « Nom Prénom, Pays ».
+            Une notification « [Nom] ([drapeau]) vient de commander [produit] » ou « … a rejoint le groupage [produit] » s&apos;affiche en haut du site à intervalles aléatoires. La 1re notification d&apos;une première visite apparaît après le délai ci-dessous. Le clic ouvre la fiche produit.
           </p>
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">1re notif — délai (secondes)</label>
+              <input type="number" min={0} value={socialProof.first_delay_seconds ?? 30} onChange={(e) => setSocialProofField("first_delay_seconds", Math.max(0, Number(e.target.value) || 0))} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Durée d&apos;affichage (secondes)</label>
+              <input type="number" min={1} value={socialProof.display_seconds ?? 5} onChange={(e) => setSocialProofField("display_seconds", Math.max(1, Number(e.target.value) || 5))} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Intervalle min (minutes)</label>
+              <input type="number" min={1} value={socialProof.min_minutes ?? 2} onChange={(e) => setSocialProofField("min_minutes", Math.max(1, Number(e.target.value) || 2))} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Intervalle max (minutes)</label>
+              <input type="number" min={1} value={socialProof.max_minutes ?? 8} onChange={(e) => setSocialProofField("max_minutes", Math.max(1, Number(e.target.value) || 8))} className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
+            </div>
+          </div>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-2">Saisissez une ligne par personne au format « Nom Prénom, Pays ».</p>
           <textarea
             value={socialProofText}
             onChange={(e) => setSocialProofText(e.target.value)}

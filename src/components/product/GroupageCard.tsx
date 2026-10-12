@@ -1,5 +1,7 @@
 "use client";
-import { Users, Check, Minus, Plus, Clock, MapPin, Shield } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X } from "lucide-react";
 import { useFormatPrice } from "@/stores/currency";
 import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
@@ -10,7 +12,6 @@ import type { ProductParameter } from "@/types";
 interface GroupageCardProps {
   productName: string;
   slug: string;
-  variantName: string | null;
   originalPrice: number;
   groupPrice: number;
   reductionPercent: number;
@@ -20,8 +21,8 @@ interface GroupageCardProps {
   remaining: number;
   /** Montant de départ (acompte). null = paiement total. */
   depositFcfa: number | null;
-  /** Délai de livraison (bloc réassurance). */
-  deliveryTime: string | null;
+  /** Jours restants avant complétion automatique (bloc réassurance « Délai max »). */
+  maxDelayDays: number;
   parameters: ProductParameter[];
   includedOptionIds: string[];
   selectedOptions: Record<string, string[]>;
@@ -43,7 +44,6 @@ interface GroupageCardProps {
 export function GroupageCard({
   productName,
   slug,
-  variantName,
   originalPrice,
   groupPrice,
   reductionPercent,
@@ -52,7 +52,7 @@ export function GroupageCard({
   maxPlaces,
   remaining,
   depositFcfa,
-  deliveryTime,
+  maxDelayDays,
   parameters,
   includedOptionIds,
   selectedOptions,
@@ -65,6 +65,7 @@ export function GroupageCard({
   joinGroupRef,
 }: GroupageCardProps) {
   const formatPrice = useFormatPrice();
+  const [infoOpen, setInfoOpen] = useState(false);
   const pct = Math.min(100, (placesTaken / maxPlaces) * 100);
 
   // Total unitaire = prix de base réduit + options ajoutées (plein tarif ; incluses = 0).
@@ -95,12 +96,21 @@ export function GroupageCard({
   const lineTotal = total * quantity;
 
   return (
+    <>
     <div className="overflow-hidden rounded-2xl border-2 border-[var(--color-accent-amber)] bg-[var(--color-cream)]">
       <div className="p-4">
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-primary)]">
             <Users className="h-3.5 w-3.5" /> Groupage
+            <button
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              aria-label="En savoir plus sur le groupage"
+              className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-text-primary)]/20 hover:bg-[var(--color-text-primary)]/30"
+            >
+              <Info className="h-3 w-3" />
+            </button>
           </span>
           {reductionPercent > 0 && (
             <span className="text-sm font-bold text-[var(--color-success)]">−{reductionPercent}%</span>
@@ -109,7 +119,6 @@ export function GroupageCard({
 
         {/* Prix de base */}
         <div className="mt-3">
-          {variantName && <p className="text-xs text-[var(--color-text-secondary)]">{variantName}</p>}
           <div className="flex items-baseline gap-2">
             <span className="text-sm text-[var(--color-text-tertiary)] line-through">
               {formatPrice(originalTotal)}
@@ -272,15 +281,15 @@ export function GroupageCard({
 
           {/* Réassurance */}
           <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--color-border-default)] pt-3">
-            {deliveryTime && (
-              <div className="flex items-center gap-2 min-w-0">
-                <Clock className="h-4 w-4 shrink-0 text-[var(--color-accent-amber)]" />
-                <div className="min-w-0">
-                  <p className="truncate text-[10px] leading-none text-[var(--color-text-tertiary)]">Délai</p>
-                  <p className="truncate text-[12px] font-medium leading-tight text-[var(--color-text-primary)]">{deliveryTime}</p>
-                </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <Clock className="h-4 w-4 shrink-0 text-[var(--color-accent-amber)]" />
+              <div className="min-w-0">
+                <p className="truncate text-[10px] leading-none text-[var(--color-text-tertiary)]">Délai max</p>
+                <p className="truncate text-[12px] font-medium leading-tight text-[var(--color-text-primary)]">
+                  moins de {maxDelayDays} jour{maxDelayDays > 1 ? "s" : ""}
+                </p>
               </div>
-            )}
+            </div>
             <div className="flex items-center gap-2 min-w-0">
               <MapPin className="h-4 w-4 shrink-0 text-[var(--color-accent-amber)]" />
               <div className="min-w-0">
@@ -299,5 +308,61 @@ export function GroupageCard({
         </div>
       </div>
     </div>
+
+      {/* Modale « Comment fonctionne le groupage ? » */}
+      <AnimatePresence>
+        {infoOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[70] bg-black/40"
+              onClick={() => setInfoOpen(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 300, damping: 32 }}
+              className="fixed inset-x-0 bottom-0 z-[71] max-h-[75vh] overflow-y-auto rounded-t-2xl bg-[var(--color-surface-card)] px-5 pt-4 pb-6"
+            >
+              <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-[var(--color-border-strong)]" />
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
+                  Comment fonctionne le groupage ?
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setInfoOpen(false)}
+                  aria-label="Fermer"
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="space-y-3 text-sm">
+                <div className="rounded-xl border-l-4 border-[var(--color-accent-amber)] bg-[var(--color-accent-amber-soft)] p-3">
+                  <p className="font-semibold text-[var(--color-text-primary)]">1 · Rejoignez le groupe</p>
+                  <p className="text-[var(--color-text-secondary)]">Choisissez votre format et vos options, puis réservez votre place en payant l&apos;acompte.</p>
+                </div>
+                <div className="rounded-xl border-l-4 border-[var(--color-accent-blue)] bg-[var(--color-info-soft)] p-3">
+                  <p className="font-semibold text-[var(--color-text-primary)]">2 · Plus on est nombreux, moins c&apos;est cher</p>
+                  <p className="text-[var(--color-text-secondary)]">La réduction s&apos;applique au prix du format choisi : le prix groupé affiché l&apos;inclut déjà.</p>
+                </div>
+                <div className="rounded-xl border-l-4 border-[var(--color-success)] bg-[var(--color-success-soft)] p-3">
+                  <p className="font-semibold text-[var(--color-text-primary)]">3 · Livraison groupée</p>
+                  <p className="text-[var(--color-text-secondary)]">Livraison dès que le groupe se complète — délai maximum de 3 semaines.</p>
+                </div>
+                <div className="rounded-xl border-l-4 border-[var(--color-error)] bg-[var(--color-error-soft)] p-3">
+                  <p className="font-semibold text-[var(--color-text-primary)]">4 · Garantie de remboursement</p>
+                  <p className="text-[var(--color-text-secondary)]">Si le groupe ne se complète pas dans les temps, votre acompte est intégralement remboursé.</p>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

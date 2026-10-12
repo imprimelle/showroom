@@ -114,3 +114,18 @@ export function computeDepositBalance(
 export function remainingPlaces(maxPlaces: number, placesTaken: number): number {
   return Math.max(0, maxPlaces - placesTaken);
 }
+
+/** Durée de vie maximale d'un groupage avant complétion automatique (3 semaines). */
+export const GROUPAGE_MAX_DURATION_DAYS = 21;
+
+/** Âge (en jours, décimal) d'un groupage depuis sa date de lancement. */
+export function groupageAgeDays(createdAt: string | null | undefined): number {
+  if (!createdAt) return 0;
+  return (Date.now() - new Date(createdAt).getTime()) / 86_400_000;
+}
+
+/** Jours restants avant complétion automatique (1..21). null de lancement → 21. */
+export function groupageDaysRemaining(createdAt: string | null | undefined): number {
+  if (!createdAt) return GROUPAGE_MAX_DURATION_DAYS;
+  return Math.max(1, GROUPAGE_MAX_DURATION_DAYS - Math.floor(groupageAgeDays(createdAt)));
+}

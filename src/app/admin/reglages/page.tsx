@@ -4,7 +4,7 @@ import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
 import { DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
-import { DEFAULT_SOCIAL_PROOF_ENTRIES } from "@/lib/social-proof";
+import { DEFAULT_SOCIAL_PROOF_ENTRIES, SOCIAL_PROOF_DEFAULTS } from "@/lib/social-proof";
 import type { ShowcaseSettings } from "@/types";
 import { SettingsClient } from "./SettingsClient";
 
@@ -34,6 +34,10 @@ export default async function AdminSettingsPage() {
       raw.faq_pills && raw.faq_pills.length > 0 ? raw.faq_pills : DEFAULT_FAQ_PILLS,
     social_proof: {
       enabled: !!raw.social_proof?.enabled,
+      first_delay_seconds: raw.social_proof?.first_delay_seconds ?? SOCIAL_PROOF_DEFAULTS.first_delay_seconds,
+      min_minutes: raw.social_proof?.min_minutes ?? SOCIAL_PROOF_DEFAULTS.min_minutes,
+      max_minutes: raw.social_proof?.max_minutes ?? SOCIAL_PROOF_DEFAULTS.max_minutes,
+      display_seconds: raw.social_proof?.display_seconds ?? SOCIAL_PROOF_DEFAULTS.display_seconds,
       entries:
         raw.social_proof?.entries && raw.social_proof.entries.length > 0
           ? raw.social_proof.entries

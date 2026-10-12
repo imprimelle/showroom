@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GroupagesListClient } from "./GroupagesListClient";
+import { GROUPAGE_MAX_DURATION_DAYS, groupageAgeDays } from "@/lib/groupage";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,22 @@ export default async function AdminGroupagesPage() {
     .order("created_at", { ascending: false });
 
   const list = (groupages || []) as any[];
+
+  // Auto-complétion : les tours ouverts de plus de 3 semaines sont marqués « complétés ».
+  const now = new Date();
+  const staleOpen = list.filter(
+    (g) => g.status === "open" && groupageAgeDays(g.created_at) >= GROUPAGE_MAX_DURATION_DAYS
+  );
+  if (staleOpen.length > 0) {
+    await admin
+      .from("showcase_groupages")
+      .update({ status: "closed", closed_at: now.toISOString() })
+      .in("id", staleOpen.map((g) => g.id));
+    for (const g of staleOpen) {
+      g.status = "closed";
+      g.closed_at = now.toISOString();
+    }
+  }
 
   // Noms de produits.
   const productIds = [...new Set(list.map((g) => g.product_id))];

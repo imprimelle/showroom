@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import { ProductCard } from "@/components/product/ProductCard";
 import { ProductMediaViewer } from "@/components/product/ProductMediaViewer";
@@ -31,7 +32,7 @@ import { imgProxyUrl } from "@/lib/images";
 import { getCategory, getSubCategory, getCategoryLabel, resolveFamily } from "@/lib/categories";
 import { track } from "@/lib/analytics";
 import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
-import { resolveGroupageConfig, resolveGroupageVariant, groupagePrice, groupageReductionAmount } from "@/lib/groupage";
+import { resolveGroupageConfig, resolveGroupageVariant, groupagePrice, groupageReductionAmount, GROUPAGE_MAX_DURATION_DAYS } from "@/lib/groupage";
 import { GroupageCard } from "@/components/product/GroupageCard";
 import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
@@ -134,7 +135,11 @@ function CartPlusIcon({ className }: { className?: string }) {
 
 export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] } }: ProductPageClientProps) {
   const formatPrice = useFormatPrice();
-  const [selectedSku, setSelectedSku] = useState<string | null>(product.variants?.[0]?.sku ?? null);
+  const searchParams = useSearchParams();
+  const preselectGroupage = searchParams?.get("groupage") === "1";
+  const [selectedSku, setSelectedSku] = useState<string | null>(
+    preselectGroupage ? null : product.variants?.[0]?.sku ?? null
+  );
   const [cartOpen, setCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
@@ -148,7 +153,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const clonedVariant = groupageConfig ? resolveGroupageVariant(groupageConfig, product.variants) : null;
   const originalPrice = clonedVariant?.price ?? null;
   const groupageReduction = groupageConfig ? groupageReductionAmount(groupageConfig, product.variants) : null;
-  const [groupageSelected, setGroupageSelected] = useState(false);
+  const [groupageSelected, setGroupageSelected] = useState(preselectGroupage);
   const [groupageOptions, setGroupageOptions] = useState<Record<string, string[]>>({});
   const [groupageQuantity, setGroupageQuantity] = useState(1);
   const [shareCount, setShareCount] = useState(0);
@@ -156,6 +161,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     places_taken: number;
     max_places: number;
     remaining: number;
+    days_remaining: number;
   } | null>(null);
 
   useEffect(() => {
@@ -169,6 +175,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           places_taken: d.places_taken ?? 0,
           max_places: d.max_places ?? groupageConfig.max_places,
           remaining: d.remaining ?? groupageConfig.max_places,
+          days_remaining: d.days_remaining ?? GROUPAGE_MAX_DURATION_DAYS,
         });
         setShareCount(d.shares_count ?? 0);
       })
@@ -437,6 +444,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     groupageStatus?.remaining ?? Math.max(0, gMax - (groupageConfig?.base_places ?? 0));
   // Compteur de partages affiché = base (artificielle) + partages réels.
   const displayShares = (groupageConfig?.base_shares ?? 0) + shareCount;
+  // Jours restants avant complétion automatique (délai max).
+  const gMaxDelayDays = groupageStatus?.days_remaining ?? GROUPAGE_MAX_DURATION_DAYS;
 
   // Bouton CTA principal (ajout au panier / devis WhatsApp), réutilisé en bloc (plein) et en sticky bas (compact).
   const renderPrimaryCta = (compact: boolean) => {
@@ -663,7 +672,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                       <GroupageCard
                         productName={product.name}
                         slug={product.slug}
-                        variantName={clonedVariant?.name ?? null}
                         originalPrice={originalPrice}
                         groupPrice={groupPrice}
                         reductionPercent={groupageConfig.reduction_percent}
@@ -672,7 +680,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         maxPlaces={gMax}
                         remaining={gRemaining}
                         depositFcfa={groupageConfig.deposit_fcfa}
-                        deliveryTime={product.showcase?.delivery_time ?? null}
+                        maxDelayDays={gMaxDelayDays}
                         parameters={parameters}
                         includedOptionIds={groupageConfig.included_option_ids}
                         selectedOptions={groupageOptions}

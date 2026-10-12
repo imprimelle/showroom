@@ -12,7 +12,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { SocialProofToast } from "@/components/social/SocialProofToast";
 import { getShowcaseSettings } from "@/lib/settings";
 import { getPublishedProducts } from "@/lib/products";
-import { resolveSocialProofEntries } from "@/lib/social-proof";
+import { resolveSocialProofConfig } from "@/lib/social-proof";
 import { normalizePhone } from "@/lib/utils";
 import { resolveCategories } from "@/lib/categories";
 
@@ -82,7 +82,7 @@ export default async function RootLayout({
   const phone = normalizePhone(settings.contact?.phone || settings.contact?.whatsapp);
   const catalog = resolveCategories(settings.catalog);
   const products = await getPublishedProducts().catch(() => []);
-  const socialProofEntries = resolveSocialProofEntries(settings.social_proof);
+  const socialProof = resolveSocialProofConfig(settings.social_proof);
 
   return (
     <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
@@ -102,9 +102,18 @@ export default async function RootLayout({
           <WhatsAppClickTracker />
           <ToastContainer />
           <SocialProofToast
-            enabled={!!settings.social_proof?.enabled}
-            entries={socialProofEntries}
-            products={products.map((p) => ({ name: p.name, image_url: p.main_image_url }))}
+            enabled={socialProof.enabled}
+            entries={socialProof.entries}
+            products={products.map((p) => ({
+              name: p.name,
+              image_url: p.main_image_url,
+              slug: p.slug,
+              has_groupage: !!p.showcase?.groupage?.enabled,
+            }))}
+            firstDelaySeconds={socialProof.first_delay_seconds}
+            minMinutes={socialProof.min_minutes}
+            maxMinutes={socialProof.max_minutes}
+            displaySeconds={socialProof.display_seconds}
           />
         </Providers>
       </body>

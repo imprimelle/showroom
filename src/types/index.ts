@@ -241,9 +241,17 @@ export interface ShowcaseSettings {
   faq_pills?: FaqPill[];
   /** Vidéos d'inspiration « Idées décos » par univers (slug de famille → liste de vidéos). */
   idea_deco?: Record<string, IdeaDecoVideo[]>;
-  /** Notifications « vient de commander » aléatoires (preuve sociale). */
+  /** Notifications « vient de commander » / « a rejoint le groupage » (preuve sociale). */
   social_proof?: {
     enabled?: boolean;
+    /** Délai (secondes) avant la 1re notification lors d'une première visite. */
+    first_delay_seconds?: number;
+    /** Intervalle minimum (minutes) entre deux notifications. */
+    min_minutes?: number;
+    /** Intervalle maximum (minutes) entre deux notifications. */
+    max_minutes?: number;
+    /** Durée d'affichage d'une notification (secondes). */
+    display_seconds?: number;
     entries?: SocialProofEntry[];
   };
 }

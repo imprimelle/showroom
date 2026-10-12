@@ -5,6 +5,9 @@ import {
   resolveGroupageVariant,
   groupagePrice,
   groupageReductionAmount,
+  GROUPAGE_MAX_DURATION_DAYS,
+  groupageAgeDays,
+  groupageDaysRemaining,
 } from "@/lib/groupage";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +51,7 @@ export async function GET(request: NextRequest) {
     const clonedVariant = resolveGroupageVariant(config, variants);
 
     // Groupage ouvert (le plus récent) — sans création.
-    const { data: active } = await admin
+    const { data: activeRow } = await admin
       .from("showcase_groupages")
       .select("*")
       .eq("product_id", productId)
@@ -56,6 +59,16 @@ export async function GET(request: NextRequest) {
       .order("round", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    // Auto-complétion : un tour actif de plus de 3 semaines est marqué « complété ».
+    let active = activeRow;
+    if (active && groupageAgeDays(active.created_at) >= GROUPAGE_MAX_DURATION_DAYS) {
+      await admin
+        .from("showcase_groupages")
+        .update({ status: "closed", closed_at: new Date().toISOString() })
+        .eq("id", active.id);
+      active = null;
+    }
 
     // Le total de places est piloté par la config (modifiable dans l'admin).
     // L'instance active (`showcase_groupages`) garde un instantané figé à sa création,
@@ -81,6 +94,7 @@ export async function GET(request: NextRequest) {
       base_places: config.base_places,
       places_taken: placesTaken,
       remaining,
+      days_remaining: groupageDaysRemaining(active?.created_at ?? null),
       shares_count: active?.shares_count ?? 0,
       active: active
         ? {

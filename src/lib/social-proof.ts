@@ -1,4 +1,4 @@
-import type { SocialProofEntry } from "@/types";
+import type { ShowcaseSettings, SocialProofEntry } from "@/types";
 
 /**
  * Preuve sociale (« X vient de commander »).
@@ -92,4 +92,48 @@ export function parseSocialProofEntries(text: string): SocialProofEntry[] {
 /** Sérialise des entrées → texte « Nom, Pays » (une ligne par entrée) pour l'admin. */
 export function serializeSocialProofEntries(entries: SocialProofEntry[]): string {
   return (entries || []).map((e) => `${e.name}, ${e.country}`).join("\n");
+}
+
+/** Configuration de preuve sociale résolue (avec valeurs par défaut). */
+export interface SocialProofConfig {
+  enabled: boolean;
+  first_delay_seconds: number;
+  min_minutes: number;
+  max_minutes: number;
+  display_seconds: number;
+  entries: SocialProofEntry[];
+}
+
+export const SOCIAL_PROOF_DEFAULTS = {
+  first_delay_seconds: 30,
+  min_minutes: 2,
+  max_minutes: 8,
+  display_seconds: 5,
+};
+
+/** Résout la config de preuve sociale (replis sur les valeurs par défaut). */
+export function resolveSocialProofConfig(config?: ShowcaseSettings["social_proof"]): SocialProofConfig {
+  const c = config || {};
+  const min =
+    typeof c.min_minutes === "number" && c.min_minutes >= 1
+      ? c.min_minutes
+      : SOCIAL_PROOF_DEFAULTS.min_minutes;
+  const max =
+    typeof c.max_minutes === "number" && c.max_minutes >= min
+      ? c.max_minutes
+      : Math.max(min, SOCIAL_PROOF_DEFAULTS.max_minutes);
+  return {
+    enabled: !!c.enabled,
+    first_delay_seconds:
+      typeof c.first_delay_seconds === "number" && c.first_delay_seconds >= 0
+        ? c.first_delay_seconds
+        : SOCIAL_PROOF_DEFAULTS.first_delay_seconds,
+    min_minutes: min,
+    max_minutes: max,
+    display_seconds:
+      typeof c.display_seconds === "number" && c.display_seconds >= 1
+        ? c.display_seconds
+        : SOCIAL_PROOF_DEFAULTS.display_seconds,
+    entries: resolveSocialProofEntries(c),
+  };
 }
