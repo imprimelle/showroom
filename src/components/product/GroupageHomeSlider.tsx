@@ -6,30 +6,7 @@ import { Users, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useFormatPrice } from "@/stores/currency";
 import { imgProxyUrl } from "@/lib/images";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-
-/**
- * Donnée d'un produit groupable, résolue côté serveur (page d'accueil).
- * Reprend le style de la grande carte groupage (GroupageCard) mais réduit :
- * pas de partage, pas d'options ajoutables — seulement les options incluses.
- */
-export interface GroupageHomeItem {
-  id: string;
-  slug: string;
-  name: string;
-  image: string | null;
-  /** Prix groupé de base (variante clonée × (1 − réduction %)). */
-  groupPrice: number;
-  /** Prix « normal » barré : variante clonée + valeur catalogue des options incluses. */
-  originalTotal: number;
-  reductionPercent: number;
-  /** Économie affichée = réduction + valeur catalogue des options incluses. */
-  savings: number;
-  maxPlaces: number;
-  /** Places déjà attribuées (base d'affichage additive). */
-  basePlaces: number;
-  /** Options incluses gratuitement (libellé + valeur catalogue). */
-  includedOptions: { id: string; label: string; price: number | null }[];
-}
+import type { GroupageHomeItem } from "@/lib/groupage-home";
 
 interface GroupageStatus {
   places_taken: number;

@@ -13,9 +13,9 @@ interface SectionHeaderProps {
 }
 
 /**
- * En-tête de section réutilisable pour la page d'accueil.
- * Apporte une hiérarchie visuelle claire : eyebrow → titre → sous-titre,
- * avec un lien d'action optionnel aligné à droite.
+ * En-tête de section réutilisable (page d'accueil + guides).
+ * Typographie alignée sur les sections de fiche produit (« Vous aimerez aussi ») :
+ * kicker orange en majuscules `tracking-[0.22em]`, titre `font-serif text-3xl md:text-4xl`.
  */
 export function SectionHeader({
   eyebrow,
@@ -37,18 +37,11 @@ export function SectionHeader({
     >
       <div className={cn(isCenter && "mx-auto max-w-2xl")}>
         {eyebrow ? (
-          <p
-            className={cn(
-              "mb-1.5 flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-accent-amber)]",
-              isCenter && "justify-center"
-            )}
-          >
-            {isCenter && <span aria-hidden className="h-px w-6 bg-current opacity-60" />}
+          <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
             {eyebrow}
-            {isCenter && <span aria-hidden className="h-px w-6 bg-current opacity-60" />}
           </p>
         ) : null}
-        <h2 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
           {title}
         </h2>
         {subtitle ? (

@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
+import { buildGroupageHomeItems } from "@/lib/groupage-home";
+import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +40,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const all = await getPublishedProducts().catch(() => []);
   const settings = await getShowcaseSettings();
   const catTitle = settings.categories?.[cat.id]?.title || cat.name;
+  const groupageItems = buildGroupageHomeItems(all, settings.product_parameters);
   const familyProducts = all.filter(
     (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === cat.id
   );
@@ -170,6 +173,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         </div>
       </div>
       </div>
+
+      {/* Groupages en cours (fin de page catégorie) */}
+      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
     </div>
   );
 }
