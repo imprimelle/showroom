@@ -197,6 +197,23 @@ export function GroupageCard({
           )}
         </div>
 
+        {/* Bouton « Voir le produit en 360° » (au-dessus des options) */}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={handlePepiteClick}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
+              pepiteClicked
+                ? "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
+                : "pepite-rainbow"
+            )}
+          >
+            <Rotate3d className="h-4 w-4" />
+            Voir le produit en 360°
+          </button>
+        </div>
+
         {/* Options : incluses (0 FCFA, « Inclus ») + ajoutables (plein tarif) */}
         {visibleOptions.length > 0 && (
           <div className="mt-3 border-t border-[var(--color-border-default)] pt-3">
@@ -257,60 +274,36 @@ export function GroupageCard({
           <p className="mb-1.5 text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
             Il nous manque{" "}
             <span className="font-bold text-[var(--color-accent-amber)]">{remaining}</span>{" "}
-            commande{remaining > 1 ? "s" : ""} pour livrer{" "}
-            <button
-              type="button"
-              onClick={handlePepiteClick}
-              aria-label="Voir le produit en 360°"
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 align-baseline text-sm font-semibold leading-snug transition-colors",
-                pepiteClicked
-                  ? "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
-                  : "pepite-rainbow"
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                  pepiteClicked ? "bg-[var(--color-accent-amber)] text-white" : "bg-white/25 text-white"
-                )}
-              >
-                <Rotate3d className="h-3 w-3" />
-                360°
-              </span>
-              cette pépite ✨
-            </button>
+            commande{remaining > 1 ? "s" : ""} pour livrer le groupage
           </p>
 
-          {/* Barre + silhouettes qui poussent le niveau */}
-          <div className="relative h-9">
-            <div className="absolute inset-x-0 bottom-0 h-3.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
-              <div
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-                style={{
-                  width: `${pct}%`,
-                  background: "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)",
-                }}
-              />
-              <span className="groupage-sheen absolute inset-y-0 left-0 w-1/4 rounded-full bg-white/50 blur-[3px]" />
-            </div>
+          {/* Barre (fond multicolore + reflet va-et-vient) */}
+          <div className="relative h-3.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
             <div
-              className="pointer-events-none absolute bottom-1 flex items-end gap-0.5 transition-all duration-700"
-              style={{ left: `${Math.min(Math.max(pct, 4), 90)}%`, transform: "translateX(-50%)" }}
-            >
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="push-silhouette text-[#1F2937]"
-                  style={{ animationDelay: `${i * 0.16}s` }}
-                >
-                  <svg viewBox="0 0 24 32" className="h-8 w-6" fill="currentColor" aria-hidden="true">
-                    <circle cx="12" cy="5" r="4.5" />
-                    <path d="M4.5 32c0-6.5 3.2-10 7.5-10s7.5 3.5 7.5 10c0 .55-.45 1-1 1h-13c-.55 0-1-.45-1-1z" />
-                  </svg>
-                </span>
+              className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+              style={{
+                width: `${pct}%`,
+                background: "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)",
+              }}
+            />
+            <span className="groupage-sheen absolute inset-y-0 left-0 w-1/4 rounded-full bg-white/50 blur-[3px]" />
+          </div>
+
+          {/* Graduation : 0 — places prises — total */}
+          <div className="relative mt-2 h-5 text-[10px] leading-none">
+            <div className="absolute inset-x-0 top-0 flex justify-between">
+              {[0, 25, 50, 75, 100].map((t) => (
+                <span key={t} className="h-1.5 w-px bg-[var(--color-border-strong)]" />
               ))}
             </div>
+            <span className="absolute left-0 top-2 font-medium text-[var(--color-text-tertiary)]">0</span>
+            <span
+              className="absolute top-2 -translate-x-1/2 font-bold text-[var(--color-accent-amber)]"
+              style={{ left: `${pct}%` }}
+            >
+              {placesTaken}
+            </span>
+            <span className="absolute right-0 top-2 font-medium text-[var(--color-text-tertiary)]">{maxPlaces}</span>
           </div>
         </div>
 

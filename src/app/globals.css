@@ -222,17 +222,6 @@ body[data-sticky-product="1"] {
   box-shadow: 0 0 10px 1px rgba(255, 160, 0, 0.35);
 }
 
-/* === Silhouettes qui poussent la jauge groupage === */
-@keyframes push-rock {
-  0%, 100% { transform: rotate(6deg); }
-  50% { transform: rotate(18deg); }
-}
-.push-silhouette {
-  display: inline-block;
-  transform-origin: 50% 100%;
-  animation: push-rock 1.5s ease-in-out infinite;
-}
-
 /* ============================================================
    Page « Notre Histoire » — néon & immersif (mode sombre dédié)
    ============================================================ */
