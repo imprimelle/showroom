@@ -15,6 +15,14 @@ import { Truck, ShieldCheck, MapPin, Lock, ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem } from "@/types";
 import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
+import {
+  resolveGroupageConfig,
+  resolveGroupageVariant,
+  groupagePrice,
+  groupageReductionAmount,
+} from "@/lib/groupage";
+import { resolveActiveParameters } from "@/lib/parameters";
+import { GroupageHomeSlider, type GroupageHomeItem } from "@/components/product/GroupageHomeSlider";
 
 export const dynamic = "force-dynamic";
 
@@ -96,6 +104,43 @@ export default async function HomePage() {
   });
 
   const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
+
+  // Produits groupables (achat groupé activé + variante clonée avec prix) pour le
+  // slider « groupage » de l'accueil. Prix et options incluses résolus côté serveur ;
+  // la jauge « live » (places restantes) est chargée côté client.
+  const groupageItems: GroupageHomeItem[] = products
+    .map((p) => {
+      const config = resolveGroupageConfig(p.showcase);
+      if (!config) return null;
+      const cloned = resolveGroupageVariant(config, p.variants);
+      const groupPrice = groupagePrice(config, p.variants);
+      const originalPrice = cloned?.price ?? null;
+      if (groupPrice == null || originalPrice == null) return null;
+
+      const params = resolveActiveParameters(p.showcase, settings.product_parameters);
+      const includedOptions = params.flatMap((param) =>
+        param.options
+          .filter((o) => config.included_option_ids.includes(o.id))
+          .map((o) => ({ id: o.id, label: o.label, price: o.price ?? null }))
+      );
+      const includedTotal = includedOptions.reduce((s, o) => s + (o.price ?? 0), 0);
+      const reductionFcfa = groupageReductionAmount(config, p.variants) ?? 0;
+
+      return {
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        image: p.main_image_url,
+        groupPrice,
+        originalTotal: originalPrice + includedTotal,
+        reductionPercent: config.reduction_percent,
+        savings: reductionFcfa + includedTotal,
+        maxPlaces: config.max_places,
+        basePlaces: config.base_places ?? 0,
+        includedOptions,
+      } satisfies GroupageHomeItem;
+    })
+    .filter((x): x is GroupageHomeItem => !!x);
 
   return (
     <div>
@@ -217,6 +262,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ===== 3.4 Groupages en cours (slider, juste après les produits vedettes) ===== */}
+      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
       {/* ===== 3.5 Guide de choix ===== */}
       <ChoiceGuide products={products} />
