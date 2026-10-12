@@ -231,10 +231,11 @@ export function GroupageCard({
 
         {/* Jauge */}
         <div className="mt-3">
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="text-[var(--color-text-secondary)]">{placesTaken} / {maxPlaces} places</span>
-            <span className="font-semibold text-[var(--color-accent-amber)]">{remaining} restantes</span>
-          </div>
+          <p className="mb-1.5 text-sm font-semibold leading-snug text-[var(--color-text-primary)]">
+            Il nous manque{" "}
+            <span className="font-bold text-[var(--color-accent-amber)]">{remaining}</span>{" "}
+            commande{remaining > 1 ? "s" : ""} pour livrer le groupage
+          </p>
           <div className="relative h-2.5 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
             <div
               className="h-full rounded-full transition-all duration-700"
@@ -248,15 +249,12 @@ export function GroupageCard({
         </div>
 
         {/* Paiement : montant de départ / solde (sans mention « paiement total » si pas d'acompte) */}
-        <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
-          {depositFcfa != null && (
-            <>
-              <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(deposit)}</span> maintenant ·{" "}
-              <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(balance)}</span> à la livraison ·{" "}
-            </>
-          )}
-          plus que {remaining} personnes pour livrer le groupage
-        </p>
+        {depositFcfa != null && (
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+            <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(deposit)}</span> maintenant ·{" "}
+            <span className="font-semibold text-[var(--color-text-primary)]">{formatPrice(balance)}</span> à la livraison
+          </p>
+        )}
 
         {/* Partage (CTA marketing) */}
         <div className="mt-3">
