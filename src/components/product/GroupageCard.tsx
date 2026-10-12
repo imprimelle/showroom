@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X, Rotate3d } from "lucide-react";
+import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X } from "lucide-react";
 import { useFormatPrice } from "@/stores/currency";
 import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
@@ -39,8 +39,6 @@ interface GroupageCardProps {
   sharesCount: number;
   onShared: () => void;
   onJoin: () => void;
-  /** Clic sur « cette pépite ✨ » : scroll vers la vue 360° (ou les photos). */
-  onPepiteClick?: () => void;
   /** Ref sur le groupe « quantité + rejoindre + réassurance » (pour la barre sticky). */
   joinGroupRef?: RefObject<HTMLDivElement | null>;
 }
@@ -74,32 +72,11 @@ export function GroupageCard({
   sharesCount,
   onShared,
   onJoin,
-  onPepiteClick,
   joinGroupRef,
 }: GroupageCardProps) {
   const formatPrice = useFormatPrice();
   const [infoOpen, setInfoOpen] = useState(false);
   const pct = Math.min(100, (placesTaken / maxPlaces) * 100);
-
-  // « Cette pépite ✨ » : l'animation arc-en-ciel reste tant que le bouton n'a pas été
-  // cliqué au moins une fois dans la session pour ce produit.
-  const PEPITE_KEY = `showroom_pepite_clicked_${slug}`;
-  const [pepiteClicked, setPepiteClicked] = useState<boolean>(() => {
-    try {
-      return typeof sessionStorage !== "undefined" && sessionStorage.getItem(PEPITE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
-  const handlePepiteClick = () => {
-    setPepiteClicked(true);
-    try {
-      sessionStorage.setItem(PEPITE_KEY, "1");
-    } catch {
-      /* ignore */
-    }
-    onPepiteClick?.();
-  };
 
   const sectionStyles = [
     "border-[var(--color-accent-amber)] bg-[var(--color-accent-amber-soft)]",
@@ -195,23 +172,6 @@ export function GroupageCard({
               Économisez {formatPrice(reductionFcfa + includedTotal)}
             </p>
           )}
-        </div>
-
-        {/* Bouton « Voir le produit en 360° » (au-dessus des options) */}
-        <div className="mt-3">
-          <button
-            type="button"
-            onClick={handlePepiteClick}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
-              pepiteClicked
-                ? "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
-                : "pepite-rainbow"
-            )}
-          >
-            <Rotate3d className="h-4 w-4" />
-            Voir le produit en 360°
-          </button>
         </div>
 
         {/* Options : incluses (0 FCFA, « Inclus ») + ajoutables (plein tarif) */}

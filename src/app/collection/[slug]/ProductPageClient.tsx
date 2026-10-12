@@ -13,6 +13,7 @@ import {
   ChevronRight,
   X,
   Users,
+  Rotate3d,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
@@ -193,8 +194,37 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const media360Ref = useRef<ProductMediaViewerHandle | null>(null);
   const [stickyBarVisible, setStickyBarVisible] = useState(false);
 
-  // Clic sur « cette pépite ✨ » : scroll vers le bloc média et bascule en vue 360° si dispo.
+  // === Bouton flottant « Voir le produit en 360° » : sous la barre sticky, visible dès
+  // que la section « Points forts » entre à l'écran (et masqué en remontant). ===
+  const pointsFortsRef = useRef<HTMLElement>(null);
+  const [show360Btn, setShow360Btn] = useState(false);
+  const [pepiteClicked, setPepiteClicked] = useState<boolean>(() => {
+    try {
+      return typeof sessionStorage !== "undefined" && sessionStorage.getItem(`showroom_pepite_clicked_${product.slug}`) === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const el = pointsFortsRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShow360Btn(entry.boundingClientRect.top < window.innerHeight),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Clic : mémorise le clic (fin de l'arc-en-ciel), remonte vers le média et bascule en 360°.
   const handlePepiteClick = () => {
+    setPepiteClicked(true);
+    try {
+      sessionStorage.setItem(`showroom_pepite_clicked_${product.slug}`, "1");
+    } catch {
+      /* ignore */
+    }
     mediaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     media360Ref.current?.show360();
   };
@@ -705,7 +735,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         sharesCount={displayShares}
                         onShared={handleGroupageShared}
                         onJoin={handleJoinGroupage}
-                        onPepiteClick={handlePepiteClick}
                         joinGroupRef={joinGroupRef}
                       />
                     </div>
@@ -885,7 +914,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
       {/* ===== Points forts : cartes modernes sur fond crème ===== */}
       {highlights.length > 0 && (
-        <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
+        <section ref={pointsFortsRef} className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
           <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
             <div className="text-center mb-5 md:mb-6">
               <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
@@ -1137,6 +1166,33 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           </div>
         </div>
       </div>
+
+      {/* Bouton flottant « Voir le produit en 360° » (sous la barre sticky, visible dès « Points forts ») */}
+      <AnimatePresence>
+        {show360Btn && (
+          <motion.div
+            initial={{ y: -70, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -70, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 320, damping: 30 }}
+            className="fixed inset-x-0 top-14 z-40 px-3 pt-2"
+          >
+            <button
+              type="button"
+              onClick={handlePepiteClick}
+              className={cn(
+                "mx-auto flex w-full max-w-7xl items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition-colors",
+                pepiteClicked
+                  ? "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
+                  : "pepite-rainbow"
+              )}
+            >
+              <Rotate3d className="h-4 w-4" />
+              Voir le produit en 360°
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Barre produit sticky (remplace la TopNav quand l'image principale est sortie du viewport) */}
       <StickyProductBar
