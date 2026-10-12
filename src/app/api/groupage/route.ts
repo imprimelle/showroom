@@ -5,7 +5,6 @@ import {
   resolveGroupageVariant,
   groupagePrice,
   groupageReductionAmount,
-  GROUPAGE_MAX_DURATION_DAYS,
   groupageAgeDays,
   groupageDaysRemaining,
 } from "@/lib/groupage";
@@ -60,9 +59,9 @@ export async function GET(request: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    // Auto-complétion : un tour actif de plus de 3 semaines est marqué « complété ».
+    // Auto-complétion : un tour actif de plus de `max_duration_days` est marqué « complété ».
     let active = activeRow;
-    if (active && groupageAgeDays(active.created_at) >= GROUPAGE_MAX_DURATION_DAYS) {
+    if (active && groupageAgeDays(active.created_at) >= config.max_duration_days) {
       await admin
         .from("showcase_groupages")
         .update({ status: "closed", closed_at: new Date().toISOString() })
@@ -94,7 +93,7 @@ export async function GET(request: NextRequest) {
       base_places: config.base_places,
       places_taken: placesTaken,
       remaining,
-      days_remaining: groupageDaysRemaining(active?.created_at ?? null),
+      days_remaining: groupageDaysRemaining(active?.created_at ?? null, config.max_duration_days),
       shares_count: active?.shares_count ?? 0,
       active: active
         ? {

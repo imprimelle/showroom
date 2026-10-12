@@ -9,6 +9,12 @@ export function productUrl(slug?: string | null): string | null {
   return `${SITE_URL}/collection/${slug}`;
 }
 
+/** URL d'une fiche produit en mode groupage présélectionné. */
+export function groupageProductUrl(slug?: string | null): string | null {
+  const url = productUrl(slug);
+  return url ? `${url}?groupage=1` : null;
+}
+
 /** Phrase de fin de message selon le moyen de paiement choisi. */
 export function paymentMethodNote(method?: string | null): string {
   switch (method) {

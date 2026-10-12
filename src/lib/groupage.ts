@@ -1,3 +1,5 @@
+import type { GroupageInfo } from "@/types";
+
 /** Nombre de places par défaut d'un groupage (60 personnes). */
 export const GROUPAGE_DEFAULT_MAX_PLACES = 60;
 
@@ -10,6 +12,8 @@ export interface GroupageConfig {
   reduction_percent: number;
   /** Nombre de places du groupage. */
   max_places: number;
+  /** Durée de vie max du groupage (jours) avant complétion automatique. */
+  max_duration_days: number;
   /** Nombre de places déjà attribuées (base d'affichage, 0..max_places). Les commandes réelles s'y ajoutent. null = 0. */
   base_places: number | null;
   /** Montant de départ (acompte, FCFA). null = la totalité est payée immédiatement. */
@@ -45,6 +49,10 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
     typeof g.max_places === "number" && g.max_places > 0
       ? Math.round(g.max_places)
       : GROUPAGE_DEFAULT_MAX_PLACES;
+  const maxDurationDays =
+    typeof g.max_duration_days === "number" && g.max_duration_days > 0
+      ? Math.round(g.max_duration_days)
+      : GROUPAGE_MAX_DURATION_DAYS;
   const basePlaces =
     typeof g.base_places === "number" && g.base_places >= 0
       ? Math.round(g.base_places)
@@ -61,6 +69,7 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
     variant_id: typeof g.variant_id === "string" && g.variant_id ? g.variant_id : null,
     reduction_percent: pct,
     max_places: maxPlaces,
+    max_duration_days: maxDurationDays,
     base_places: basePlaces,
     deposit_fcfa: deposit,
     included_option_ids: included,
@@ -124,8 +133,43 @@ export function groupageAgeDays(createdAt: string | null | undefined): number {
   return (Date.now() - new Date(createdAt).getTime()) / 86_400_000;
 }
 
-/** Jours restants avant complétion automatique (1..21). null de lancement → 21. */
-export function groupageDaysRemaining(createdAt: string | null | undefined): number {
-  if (!createdAt) return GROUPAGE_MAX_DURATION_DAYS;
-  return Math.max(1, GROUPAGE_MAX_DURATION_DAYS - Math.floor(groupageAgeDays(createdAt)));
+/** Jours restants avant complétion automatique (1..max). null de lancement → max. */
+export function groupageDaysRemaining(
+  createdAt: string | null | undefined,
+  maxDurationDays: number = GROUPAGE_MAX_DURATION_DAYS
+): number {
+  if (!createdAt) return maxDurationDays;
+  return Math.max(1, maxDurationDays - Math.floor(groupageAgeDays(createdAt)));
+}
+
+/** Contenu par défaut de la modale d'infos groupage. */
+export const DEFAULT_GROUPAGE_INFO: GroupageInfo = {
+  title: "Comment fonctionne le groupage ?",
+  sections: [
+    {
+      title: "1 · Rejoignez le groupe",
+      text: "Choisissez votre format et vos options, puis réservez votre place en payant l'acompte.",
+    },
+    {
+      title: "2 · Plus on est nombreux, moins c'est cher",
+      text: "La réduction s'applique au prix du format choisi : le prix groupé affiché l'inclut déjà.",
+    },
+    {
+      title: "3 · Livraison groupée",
+      text: "Livraison dès que le groupe se complète — délai maximum de 3 semaines.",
+    },
+    {
+      title: "4 · Garantie de remboursement",
+      text: "Si le groupe ne se complète pas dans les temps, votre acompte est intégralement remboursé.",
+    },
+  ],
+};
+
+/** Résout le contenu de la modale d'infos groupage (repli sur le défaut). */
+export function resolveGroupageInfo(info?: GroupageInfo | null): GroupageInfo {
+  if (!info || typeof info.title !== "string") return DEFAULT_GROUPAGE_INFO;
+  const sections = Array.isArray(info.sections) && info.sections.length > 0
+    ? info.sections.filter((s) => s && typeof s.title === "string" && typeof s.text === "string")
+    : [];
+  return sections.length > 0 ? { title: info.title, sections } : DEFAULT_GROUPAGE_INFO;
 }

@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { GroupagesListClient } from "./GroupagesListClient";
-import { GROUPAGE_MAX_DURATION_DAYS, groupageAgeDays } from "@/lib/groupage";
+import { GROUPAGE_MAX_DURATION_DAYS, groupageAgeDays, groupageDaysRemaining } from "@/lib/groupage";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +26,30 @@ export default async function AdminGroupagesPage() {
 
   const list = (groupages || []) as any[];
 
-  // Auto-complétion : les tours ouverts de plus de 3 semaines sont marqués « complétés ».
+  // Produits (nom + durée de vie max configurée par produit).
+  const productIds = [...new Set(list.map((g) => g.product_id))];
+  const { data: products } = productIds.length
+    ? await admin.from("products").select("id, name, slug, showcase").in("id", productIds)
+    : { data: [] };
+  const nameById = new Map<string, string>(
+    ((products as any[]) || []).map((p) => [p.id, p.name])
+  );
+  const maxDurationById = new Map<string, number>(
+    ((products as any[]) || []).map((p) => [
+      p.id,
+      typeof p.showcase?.groupage?.max_duration_days === "number" &&
+        p.showcase.groupage.max_duration_days > 0
+        ? Math.round(p.showcase.groupage.max_duration_days)
+        : GROUPAGE_MAX_DURATION_DAYS,
+    ])
+  );
+
+  // Auto-complétion : les tours ouverts au-delà de leur durée max sont marqués « complétés ».
   const now = new Date();
   const staleOpen = list.filter(
-    (g) => g.status === "open" && groupageAgeDays(g.created_at) >= GROUPAGE_MAX_DURATION_DAYS
+    (g) =>
+      g.status === "open" &&
+      groupageAgeDays(g.created_at) >= (maxDurationById.get(g.product_id) ?? GROUPAGE_MAX_DURATION_DAYS)
   );
   if (staleOpen.length > 0) {
     await admin
@@ -41,15 +61,6 @@ export default async function AdminGroupagesPage() {
       g.closed_at = now.toISOString();
     }
   }
-
-  // Noms de produits.
-  const productIds = [...new Set(list.map((g) => g.product_id))];
-  const { data: products } = productIds.length
-    ? await admin.from("products").select("id, name, slug").in("id", productIds)
-    : { data: [] };
-  const nameById = new Map<string, string>(
-    ((products as any[]) || []).map((p) => [p.id, p.name])
-  );
 
   // Commandes liées.
   const groupageIds = list.map((g) => g.id);
@@ -73,6 +84,14 @@ export default async function AdminGroupagesPage() {
     ...g,
     product_name: nameById.get(g.product_id) || "Produit supprimé",
     remaining: Math.max(0, g.max_places - g.places_taken),
+    shares_count: g.shares_count ?? 0,
+    days_remaining:
+      g.status === "open"
+        ? groupageDaysRemaining(
+            g.created_at,
+            maxDurationById.get(g.product_id) ?? GROUPAGE_MAX_DURATION_DAYS
+          )
+        : 0,
     orders: ordersByGroupage.get(g.id) || [],
   }));
 

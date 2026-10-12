@@ -202,6 +202,18 @@ export interface SocialProofEntry {
   flag: string;
 }
 
+/** Rubrique de la modale d'infos groupage. */
+export interface GroupageInfoSection {
+  title: string;
+  text: string;
+}
+
+/** Contenu de la modale « Comment fonctionne le groupage ? » (global). */
+export interface GroupageInfo {
+  title: string;
+  sections: GroupageInfoSection[];
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -254,4 +266,6 @@ export interface ShowcaseSettings {
     display_seconds?: number;
     entries?: SocialProofEntry[];
   };
+  /** Contenu de la modale d'infos groupage (éditable globalement). */
+  groupage_info?: GroupageInfo;
 }

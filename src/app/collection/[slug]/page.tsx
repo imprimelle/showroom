@@ -103,6 +103,7 @@ export default async function ProductPage({ params }: Props) {
           ideaDecoVideos={ideaDecoVideos}
           reviews={allReviews}
           aggregate={aggregate}
+          groupageInfo={settings.groupage_info}
         />
       </Suspense>
     </>

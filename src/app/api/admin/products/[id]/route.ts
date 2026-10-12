@@ -118,6 +118,10 @@ export async function PUT(
             typeof gp.max_places === "number" && gp.max_places > 0
               ? Math.round(gp.max_places)
               : 60,
+          max_duration_days:
+            typeof gp.max_duration_days === "number" && gp.max_duration_days > 0
+              ? Math.round(gp.max_duration_days)
+              : 21,
           base_places:
             typeof gp.base_places === "number" && gp.base_places >= 0
               ? Math.round(gp.base_places)

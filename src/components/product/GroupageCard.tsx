@@ -7,7 +7,7 @@ import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
 import { cn } from "@/lib/utils";
 import type { RefObject } from "react";
-import type { ProductParameter } from "@/types";
+import type { ProductParameter, GroupageInfo } from "@/types";
 
 interface GroupageCardProps {
   productName: string;
@@ -23,6 +23,10 @@ interface GroupageCardProps {
   depositFcfa: number | null;
   /** Jours restants avant complétion automatique (bloc réassurance « Délai max »). */
   maxDelayDays: number;
+  /** Durée de vie max configurée (jours) — affichage mobile « ~ X jrs ». */
+  maxDurationDays: number;
+  /** Contenu de la modale d'infos groupage (global). */
+  info: GroupageInfo;
   parameters: ProductParameter[];
   includedOptionIds: string[];
   selectedOptions: Record<string, string[]>;
@@ -53,6 +57,8 @@ export function GroupageCard({
   remaining,
   depositFcfa,
   maxDelayDays,
+  maxDurationDays,
+  info,
   parameters,
   includedOptionIds,
   selectedOptions,
@@ -67,6 +73,13 @@ export function GroupageCard({
   const formatPrice = useFormatPrice();
   const [infoOpen, setInfoOpen] = useState(false);
   const pct = Math.min(100, (placesTaken / maxPlaces) * 100);
+
+  const sectionStyles = [
+    "border-[var(--color-accent-amber)] bg-[var(--color-accent-amber-soft)]",
+    "border-[var(--color-accent-blue)] bg-[var(--color-info-soft)]",
+    "border-[var(--color-success)] bg-[var(--color-success-soft)]",
+    "border-[var(--color-error)] bg-[var(--color-error-soft)]",
+  ];
 
   // Total unitaire = prix de base réduit + options ajoutées (plein tarif ; incluses = 0).
   const additionalTotal = parameters.reduce((sum, param) => {
@@ -101,17 +114,24 @@ export function GroupageCard({
       <div className="p-4">
         {/* En-tête */}
         <div className="flex items-center justify-between">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-primary)]">
-            <Users className="h-3.5 w-3.5" /> Groupage
+          <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => setInfoOpen(true)}
               aria-label="En savoir plus sur le groupage"
-              className="ml-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-text-primary)]/20 hover:bg-[var(--color-text-primary)]/30"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-primary)]"
             >
-              <Info className="h-3 w-3" />
+              <Users className="h-3.5 w-3.5" /> Groupage
             </button>
-          </span>
+            <button
+              type="button"
+              onClick={() => setInfoOpen(true)}
+              aria-label="En savoir plus sur le groupage"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </div>
           {reductionPercent > 0 && (
             <span className="text-sm font-bold text-[var(--color-success)]">−{reductionPercent}%</span>
           )}
@@ -286,7 +306,8 @@ export function GroupageCard({
               <div className="min-w-0">
                 <p className="truncate text-[10px] leading-none text-[var(--color-text-tertiary)]">Délai max</p>
                 <p className="truncate text-[12px] font-medium leading-tight text-[var(--color-text-primary)]">
-                  moins de {maxDelayDays} jour{maxDelayDays > 1 ? "s" : ""}
+                  <span className="sm:hidden">~ {maxDurationDays} jrs</span>
+                  <span className="hidden sm:inline">moins de {maxDelayDays} jour{maxDelayDays > 1 ? "s" : ""}</span>
                 </p>
               </div>
             </div>
@@ -330,7 +351,7 @@ export function GroupageCard({
               <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-[var(--color-border-strong)]" />
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
-                  Comment fonctionne le groupage ?
+                  {info.title}
                 </h3>
                 <button
                   type="button"
@@ -342,22 +363,15 @@ export function GroupageCard({
                 </button>
               </div>
               <div className="space-y-3 text-sm">
-                <div className="rounded-xl border-l-4 border-[var(--color-accent-amber)] bg-[var(--color-accent-amber-soft)] p-3">
-                  <p className="font-semibold text-[var(--color-text-primary)]">1 · Rejoignez le groupe</p>
-                  <p className="text-[var(--color-text-secondary)]">Choisissez votre format et vos options, puis réservez votre place en payant l&apos;acompte.</p>
-                </div>
-                <div className="rounded-xl border-l-4 border-[var(--color-accent-blue)] bg-[var(--color-info-soft)] p-3">
-                  <p className="font-semibold text-[var(--color-text-primary)]">2 · Plus on est nombreux, moins c&apos;est cher</p>
-                  <p className="text-[var(--color-text-secondary)]">La réduction s&apos;applique au prix du format choisi : le prix groupé affiché l&apos;inclut déjà.</p>
-                </div>
-                <div className="rounded-xl border-l-4 border-[var(--color-success)] bg-[var(--color-success-soft)] p-3">
-                  <p className="font-semibold text-[var(--color-text-primary)]">3 · Livraison groupée</p>
-                  <p className="text-[var(--color-text-secondary)]">Livraison dès que le groupe se complète — délai maximum de 3 semaines.</p>
-                </div>
-                <div className="rounded-xl border-l-4 border-[var(--color-error)] bg-[var(--color-error-soft)] p-3">
-                  <p className="font-semibold text-[var(--color-text-primary)]">4 · Garantie de remboursement</p>
-                  <p className="text-[var(--color-text-secondary)]">Si le groupe ne se complète pas dans les temps, votre acompte est intégralement remboursé.</p>
-                </div>
+                {info.sections.map((s, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl border-l-4 ${sectionStyles[i % sectionStyles.length]} p-3`}
+                  >
+                    <p className="font-semibold text-[var(--color-text-primary)]">{s.title}</p>
+                    <p className="text-[var(--color-text-secondary)]">{s.text}</p>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </>

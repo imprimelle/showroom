@@ -32,7 +32,7 @@ import { imgProxyUrl } from "@/lib/images";
 import { getCategory, getSubCategory, getCategoryLabel, resolveFamily } from "@/lib/categories";
 import { track } from "@/lib/analytics";
 import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
-import { resolveGroupageConfig, resolveGroupageVariant, groupagePrice, groupageReductionAmount, GROUPAGE_MAX_DURATION_DAYS } from "@/lib/groupage";
+import { resolveGroupageConfig, resolveGroupageVariant, groupagePrice, groupageReductionAmount, GROUPAGE_MAX_DURATION_DAYS, resolveGroupageInfo } from "@/lib/groupage";
 import { GroupageCard } from "@/components/product/GroupageCard";
 import { normalizeHighlights } from "@/lib/highlights";
 import { DEFAULT_FAQ, DEFAULT_FAQ_PILLS } from "@/lib/faq";
@@ -40,7 +40,7 @@ import { HighlightCarousel } from "@/components/product/HighlightCarousel";
 import { IdeaDecoSlider } from "@/components/product/IdeaDecoSlider";
 import { ReviewSection } from "@/components/product/ReviewSection";
 import { StepHeader } from "@/components/product/StepHeader";
-import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide, ShowcaseReview, ReviewAggregate } from "@/types";
+import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide, ShowcaseReview, ReviewAggregate, GroupageInfo } from "@/types";
 
 interface ProductPageClientProps {
   product: ShowcaseProduct;
@@ -51,6 +51,7 @@ interface ProductPageClientProps {
   ideaDecoVideos?: IdeaDecoSlide[];
   reviews?: ShowcaseReview[];
   aggregate?: ReviewAggregate;
+  groupageInfo?: GroupageInfo;
 }
 
 /** Étoile pleine / demi / vide (lucide `Star`). */
@@ -133,7 +134,7 @@ function CartPlusIcon({ className }: { className?: string }) {
   );
 }
 
-export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] } }: ProductPageClientProps) {
+export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] }, groupageInfo }: ProductPageClientProps) {
   const formatPrice = useFormatPrice();
   const searchParams = useSearchParams();
   const preselectGroupage = searchParams?.get("groupage") === "1";
@@ -153,6 +154,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const clonedVariant = groupageConfig ? resolveGroupageVariant(groupageConfig, product.variants) : null;
   const originalPrice = clonedVariant?.price ?? null;
   const groupageReduction = groupageConfig ? groupageReductionAmount(groupageConfig, product.variants) : null;
+  const info = resolveGroupageInfo(groupageInfo);
   const [groupageSelected, setGroupageSelected] = useState(preselectGroupage);
   const [groupageOptions, setGroupageOptions] = useState<Record<string, string[]>>({});
   const [groupageQuantity, setGroupageQuantity] = useState(1);
@@ -445,7 +447,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   // Compteur de partages affiché = base (artificielle) + partages réels.
   const displayShares = (groupageConfig?.base_shares ?? 0) + shareCount;
   // Jours restants avant complétion automatique (délai max).
-  const gMaxDelayDays = groupageStatus?.days_remaining ?? GROUPAGE_MAX_DURATION_DAYS;
+  const gMaxDelayDays = groupageStatus?.days_remaining ?? groupageConfig?.max_duration_days ?? GROUPAGE_MAX_DURATION_DAYS;
 
   // Bouton CTA principal (ajout au panier / devis WhatsApp), réutilisé en bloc (plein) et en sticky bas (compact).
   const renderPrimaryCta = (compact: boolean) => {
@@ -681,6 +683,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         remaining={gRemaining}
                         depositFcfa={groupageConfig.deposit_fcfa}
                         maxDelayDays={gMaxDelayDays}
+                        maxDurationDays={groupageConfig.max_duration_days}
+                        info={info}
                         parameters={parameters}
                         includedOptionIds={groupageConfig.included_option_ids}
                         selectedOptions={groupageOptions}

@@ -1,6 +1,6 @@
 "use client";
 import { Share2 } from "lucide-react";
-import { buildGroupageShareMessage, waShareUrl, productUrl } from "@/lib/whatsapp";
+import { buildGroupageShareMessage, waShareUrl, groupageProductUrl } from "@/lib/whatsapp";
 
 interface GroupageShareSectionProps {
   productName: string;
@@ -80,7 +80,7 @@ export function GroupageShareSection({
   sharesCount,
   onShared,
 }: GroupageShareSectionProps) {
-  const url = productUrl(slug) || "";
+  const url = groupageProductUrl(slug) || "";
   const text = buildGroupageShareMessage({ productName, url, reductionFcfa, groupPriceFcfa });
 
   const handleNativeShare = async () => {

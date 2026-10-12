@@ -109,6 +109,9 @@ export function ProductEditClient({ product, availableParameters }: { product: S
   const [groupageMaxPlaces, setGroupageMaxPlaces] = useState<number>(
     product.showcase?.groupage?.max_places ?? 60
   );
+  const [groupageMaxDurationDays, setGroupageMaxDurationDays] = useState<number>(
+    product.showcase?.groupage?.max_duration_days ?? 21
+  );
   const [groupageBasePlaces, setGroupageBasePlaces] = useState<number | null>(
     product.showcase?.groupage?.base_places ?? null
   );
@@ -247,6 +250,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
               variant_id: groupageVariantId || null,
               reduction_percent: groupageReductionPercent,
               max_places: groupageMaxPlaces,
+              max_duration_days: groupageMaxDurationDays,
               base_places: groupageBasePlaces,
               deposit_fcfa: groupageDepositFcfa,
               base_shares: groupageBaseShares,
@@ -302,6 +306,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
         groupageVariantId: product.showcase?.groupage?.variant_id || "",
         groupageReductionPercent: product.showcase?.groupage?.reduction_percent ?? 0,
         groupageMaxPlaces: product.showcase?.groupage?.max_places ?? 60,
+        groupageMaxDurationDays: product.showcase?.groupage?.max_duration_days ?? 21,
         groupageBasePlaces: product.showcase?.groupage?.base_places ?? null,
         groupageDepositFcfa: product.showcase?.groupage?.deposit_fcfa ?? null,
         groupageBaseShares: product.showcase?.groupage?.base_shares ?? 0,
@@ -342,6 +347,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
       groupageVariantId,
       groupageReductionPercent,
       groupageMaxPlaces,
+      groupageMaxDurationDays,
       groupageBasePlaces,
       groupageDepositFcfa,
       groupageBaseShares,
@@ -354,7 +360,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
     images360, threeSixtyEnabled, lightSwitchEnabled, lightSwitchOn, lightSwitchOff,
     galleryOff, variants, faq, activeParameters, cashOnDelivery, onlineEnabled,
     groupageEnabled, groupageVariantId, groupageReductionPercent, groupageMaxPlaces,
-    groupageBasePlaces, groupageDepositFcfa, groupageBaseShares, groupageIncludedOptions, initialSnapshot,
+    groupageMaxDurationDays, groupageBasePlaces, groupageDepositFcfa, groupageBaseShares, groupageIncludedOptions, initialSnapshot,
   ]);
 
   return (
@@ -876,6 +882,20 @@ export function ProductEditClient({ product, availableParameters }: { product: S
                       className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Durée max du groupage (jours)</label>
+                  <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
+                    Durée de vie maximale d&apos;un tour avant complétion automatique (3 semaines = 21 jours).
+                  </p>
+                  <input
+                    type="number"
+                    min={1}
+                    value={groupageMaxDurationDays}
+                    onChange={(e) => setGroupageMaxDurationDays(Math.max(1, Number(e.target.value) || 21))}
+                    placeholder="21"
+                    className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">

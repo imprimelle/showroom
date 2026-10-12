@@ -4,6 +4,7 @@ import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
 import { DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
+import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { DEFAULT_SOCIAL_PROOF_ENTRIES, SOCIAL_PROOF_DEFAULTS } from "@/lib/social-proof";
 import type { ShowcaseSettings } from "@/types";
 import { SettingsClient } from "./SettingsClient";
@@ -43,6 +44,10 @@ export default async function AdminSettingsPage() {
           ? raw.social_proof.entries
           : DEFAULT_SOCIAL_PROOF_ENTRIES,
     },
+    groupage_info:
+      raw.groupage_info?.sections && raw.groupage_info.sections.length > 0
+        ? raw.groupage_info
+        : DEFAULT_GROUPAGE_INFO,
     home: {
       ...rawHome,
       cta_title: rawHome?.cta_title ?? DEFAULT_CTA.title,

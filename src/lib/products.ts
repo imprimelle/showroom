@@ -64,6 +64,8 @@ export interface ShowcaseProduct {
       reduction_percent?: number;
       /** Nombre de places du groupage (défaut 60). */
       max_places?: number;
+      /** Durée de vie max du groupage (jours) avant complétion automatique. */
+      max_duration_days?: number;
       /** Nombre de places déjà attribuées (base d'affichage, 0..max_places). Les commandes réelles s'y ajoutent. */
       base_places?: number | null;
       /** Montant de départ (acompte, FCFA). null = paiement total. */

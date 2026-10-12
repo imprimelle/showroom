@@ -30,6 +30,8 @@ interface GroupageRow {
   created_at: string;
   closed_at: string | null;
   remaining: number;
+  shares_count: number;
+  days_remaining: number;
   orders: OrderRef[];
 }
 
@@ -137,6 +139,14 @@ export function GroupagesListClient({ groupages }: { groupages: GroupageRow[] })
                 <span className="text-[var(--color-text-secondary)]">
                   Commandes : <span className="font-semibold text-[var(--color-text-primary)]">{g.orders.length}</span>
                 </span>
+                <span className="text-[var(--color-text-secondary)]">
+                  Partages : <span className="font-semibold text-[var(--color-text-primary)]">{g.shares_count}</span>
+                </span>
+                {g.status === "open" && (
+                  <span className="text-[var(--color-text-secondary)]">
+                    Délai restant : <span className="font-semibold text-[var(--color-accent-amber)]">{g.days_remaining} j</span>
+                  </span>
+                )}
               </div>
 
               {/* Commandes liées */}

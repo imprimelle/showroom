@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Share2, Check, Link2 } from "lucide-react";
-import { buildGroupageShareMessage, waShareUrl, productUrl } from "@/lib/whatsapp";
+import { buildGroupageShareMessage, waShareUrl, groupageProductUrl } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
 interface GroupageShareButtonProps {
@@ -24,7 +24,7 @@ export function GroupageShareButton({
   compact = false,
 }: GroupageShareButtonProps) {
   const [copied, setCopied] = useState(false);
-  const url = productUrl(slug) || "";
+  const url = groupageProductUrl(slug) || "";
 
   const handleWhatsApp = () => {
     const msg = buildGroupageShareMessage({

@@ -4,19 +4,20 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
+import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { parseSocialProofEntries, serializeSocialProofEntries, SOCIAL_PROOF_COUNTRIES } from "@/lib/social-proof";
 import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -28,6 +29,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "paiement", label: "Paiement", icon: Wallet },
   { id: "faq", label: "FAQ produit", icon: HelpCircle },
   { id: "preuve", label: "Preuve sociale", icon: Megaphone },
+  { id: "groupage", label: "Groupage", icon: Users },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -232,6 +234,29 @@ export function SettingsClient({ initialData, products }: {
   const setSocialProofField = (field: "first_delay_seconds" | "min_minutes" | "max_minutes" | "display_seconds", value: number) =>
     setData({ ...data, social_proof: { ...socialProof, [field]: value } });
 
+  // === Infos groupage (modale « i ») ===
+  const groupageInfo = data.groupage_info || DEFAULT_GROUPAGE_INFO;
+  const setGroupageInfoTitle = (title: string) =>
+    setData({ ...data, groupage_info: { ...groupageInfo, title } });
+  const updateGroupageSection = (i: number, patch: Partial<GroupageInfoSection>) =>
+    setData({
+      ...data,
+      groupage_info: {
+        ...groupageInfo,
+        sections: groupageInfo.sections.map((s, idx) => (idx === i ? { ...s, ...patch } : s)),
+      },
+    });
+  const addGroupageSection = () =>
+    setData({
+      ...data,
+      groupage_info: { ...groupageInfo, sections: [...groupageInfo.sections, { title: "", text: "" }] },
+    });
+  const removeGroupageSection = (i: number) =>
+    setData({
+      ...data,
+      groupage_info: { ...groupageInfo, sections: groupageInfo.sections.filter((_, idx) => idx !== i) },
+    });
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -290,6 +315,14 @@ export function SettingsClient({ initialData, products }: {
               max_minutes: Number(data.social_proof.max_minutes) || 1,
               display_seconds: Number(data.social_proof.display_seconds) || 1,
               entries: (data.social_proof.entries || []).filter((e) => e.name?.trim()),
+            }
+          : undefined,
+        groupage_info: data.groupage_info
+          ? {
+              title: data.groupage_info.title?.trim() || DEFAULT_GROUPAGE_INFO.title,
+              sections: (data.groupage_info.sections || [])
+                .filter((s) => s.title?.trim() || s.text?.trim())
+                .map((s) => ({ title: s.title.trim(), text: s.text.trim() })),
             }
           : undefined,
       };
@@ -886,6 +919,36 @@ export function SettingsClient({ initialData, products }: {
           <p className="mt-2 text-xs text-[var(--color-text-tertiary)]">
             {socialProofCount} entrée{socialProofCount > 1 ? "s" : ""} valide{socialProofCount > 1 ? "s" : ""} · Pays reconnus : {SOCIAL_PROOF_COUNTRIES.join(", ")}.
           </p>
+        </section>
+      )}
+
+      {tab === "groupage" && (
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Infos groupage (modale « i »)</h2>
+            <button type="button" onClick={addGroupageSection} className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+              <Plus className="w-3.5 h-3.5" /> Rubrique
+            </button>
+          </div>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+            Contenu de la modale « Comment fonctionne le groupage ? » affichée sur toutes les fiches produit éligibles au groupage. Chaque rubrique apparaît avec une couleur différente.
+          </p>
+          <Input label="Titre de la modale" value={groupageInfo.title} onChange={(e) => setGroupageInfoTitle(e.target.value)} />
+          <div className="mt-4 space-y-3">
+            {groupageInfo.sections.map((s, i) => (
+              <div key={i} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-semibold text-[var(--color-text-tertiary)] w-5 shrink-0 text-center">{i + 1}</span>
+                  <Input value={s.title} onChange={(e) => updateGroupageSection(i, { title: e.target.value })} placeholder="Titre de la rubrique" />
+                  <button type="button" onClick={() => removeGroupageSection(i)} aria-label="Supprimer la rubrique" className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors shrink-0">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <textarea value={s.text} onChange={(e) => updateGroupageSection(i, { text: e.target.value })} placeholder="Texte de la rubrique" rows={2} className="w-full px-3 py-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] resize-none" />
+              </div>
+            ))}
+            {groupageInfo.sections.length === 0 && <p className="text-sm text-[var(--color-text-tertiary)]">Aucune rubrique.</p>}
+          </div>
         </section>
       )}
 
