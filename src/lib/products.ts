@@ -74,6 +74,10 @@ export interface ShowcaseProduct {
       included_option_ids?: string[];
       /** Base de partage : nombre de partages affiché artificiellement, auquel s'ajoutent les partages réels. */
       base_shares?: number;
+      /** Autorise le client à ajouter des options non incluses. */
+      allow_additional_options?: boolean;
+      /** Options masquées dans l'offre groupage. */
+      hidden_option_ids?: string[];
     };
   };
   description?: string;

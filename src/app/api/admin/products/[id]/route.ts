@@ -137,6 +137,10 @@ export async function PUT(
           included_option_ids: Array.isArray(gp.included_option_ids)
             ? gp.included_option_ids.filter((x: any) => typeof x === "string")
             : [],
+          allow_additional_options: gp.allow_additional_options !== false,
+          hidden_option_ids: Array.isArray(gp.hidden_option_ids)
+            ? gp.hidden_option_ids.filter((x: any) => typeof x === "string")
+            : [],
         };
       }
       updates.showcase = merged;

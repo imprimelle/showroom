@@ -7,12 +7,13 @@ import {
   type Ref,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Ruler, MoveHorizontal, Maximize2, Play, Power } from "lucide-react";
+import { Ruler, MoveHorizontal, Maximize2, Play, Power, Share2 } from "lucide-react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { MediaLightbox } from "@/components/product/MediaLightbox";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
+import { productUrl, waShareUrl } from "@/lib/whatsapp";
 
 interface MediaImage {
   url: string;
@@ -47,6 +48,8 @@ interface ProductMediaViewerProps {
     gallery_off?: Record<string, string>;
   };
   productName?: string;
+  /** Slug du produit (pour le bouton partager). */
+  slug?: string | null;
   /** Ref vers le bloc média (pour observer sa sortie de viewport → barre sticky). */
   mediaRef?: Ref<HTMLDivElement>;
 }
@@ -202,6 +205,7 @@ export function ProductMediaViewer({
   threeSixtyEnabled,
   lightSwitch,
   productName,
+  slug,
   mediaRef,
 }: ProductMediaViewerProps) {
   const [view, setView] = useState<ViewMode>("photo");
@@ -257,6 +261,16 @@ export function ProductMediaViewer({
     if (media.length === 0) return;
     setLightboxIndex(activeIndex);
     setLightboxOpen(true);
+  };
+
+  const handleShare = () => {
+    const url = productUrl(slug) || "";
+    const text = `Découvrez « ${productName || "ce produit"} » sur Imprimelle`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: productName || "Produit", text, url }).catch(() => {});
+      return;
+    }
+    window.open(waShareUrl(`${text} ${url}`), "_blank", "noopener,noreferrer");
   };
 
   // ===== Swipe fluide entre les médias — vue « photo » uniquement =====
@@ -524,11 +538,11 @@ export function ProductMediaViewer({
           </button>
         )}
 
-        {/* ===== Bandeau outils collé au bas de l'image (miniatures + 360° + Dimensions, même aspect) ===== */}
+        {/* ===== Bandeau outils collé au bas de l'image (miniatures défilantes + icônes fixes) ===== */}
         <div className="absolute inset-x-0 bottom-0 z-20">
           <div className="flex items-center gap-2 bg-gradient-to-t from-black/55 to-black/10 px-3 pb-3 pt-8">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-              {/* Miniatures des médias (même aspect que les boutons) */}
+            {/* Miniatures défilantes (seule cette zone scrolle) */}
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto scrollbar-hide">
               {hasMultipleItems &&
                 media.map((item, i) => (
                   <button
@@ -555,8 +569,11 @@ export function ProductMediaViewer({
                     )}
                   </button>
                 ))}
+            </div>
 
-              {hasMultipleItems && <span className="mx-0.5 h-6 w-px shrink-0 bg-white/25" />}
+            {/* Icônes fixes : 360° + Dimensions + Partager (après « | ») */}
+            <div className="flex shrink-0 items-center gap-2">
+              {hasMultipleItems && <span className="h-6 w-px bg-white/25" />}
 
               {/* Bouton 360° (affiché uniquement si la vue est activée + frames configurées) */}
               {has360 && (
@@ -586,6 +603,16 @@ export function ProductMediaViewer({
                 )}
               >
                 <Ruler className="h-5 w-5" />
+              </button>
+
+              {/* Bouton Partager (lien produit uniquement) */}
+              <button
+                type="button"
+                onClick={handleShare}
+                aria-label="Partager le produit"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-accent-amber-hover)]"
+              >
+                <Share2 className="h-3.5 w-3.5" /> Partager
               </button>
             </div>
           </div>

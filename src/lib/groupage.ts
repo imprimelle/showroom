@@ -22,6 +22,10 @@ export interface GroupageConfig {
   included_option_ids: string[];
   /** Nombre de partages affiché artificiellement (base), auquel s'ajoutent les partages réels. */
   base_shares: number;
+  /** Autorise le client à ajouter des options non incluses (false = seulement les incluses). */
+  allow_additional_options: boolean;
+  /** Options masquées dans l'offre groupage (non affichées). */
+  hidden_option_ids: string[];
 }
 
 /** Référence minimale d'une variante pour les calculs groupage. */
@@ -64,6 +68,10 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
   const included = Array.isArray(g.included_option_ids)
     ? g.included_option_ids.filter((x: any) => typeof x === "string")
     : [];
+  const allowAdditional = g.allow_additional_options !== false;
+  const hidden = Array.isArray(g.hidden_option_ids)
+    ? g.hidden_option_ids.filter((x: any) => typeof x === "string")
+    : [];
   return {
     enabled: true,
     variant_id: typeof g.variant_id === "string" && g.variant_id ? g.variant_id : null,
@@ -77,6 +85,8 @@ export function resolveGroupageConfig(showcase: any): GroupageConfig | null {
       typeof g.base_shares === "number" && g.base_shares >= 0
         ? Math.round(g.base_shares)
         : 0,
+    allow_additional_options: allowAdditional,
+    hidden_option_ids: hidden,
   };
 }
 

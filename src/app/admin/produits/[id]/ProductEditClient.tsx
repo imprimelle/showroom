@@ -124,6 +124,12 @@ export function ProductEditClient({ product, availableParameters }: { product: S
   const [groupageIncludedOptions, setGroupageIncludedOptions] = useState<string[]>(
     product.showcase?.groupage?.included_option_ids ?? []
   );
+  const [groupageAllowAdditionalOptions, setGroupageAllowAdditionalOptions] = useState<boolean>(
+    product.showcase?.groupage?.allow_additional_options !== false
+  );
+  const [groupageHiddenOptions, setGroupageHiddenOptions] = useState<string[]>(
+    product.showcase?.groupage?.hidden_option_ids ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [tab, setTab] = useState<TabId>("general");
@@ -166,9 +172,12 @@ export function ProductEditClient({ product, availableParameters }: { product: S
     );
   };
 
-  const toggleGroupageIncludedOption = (optionId: string) => {
+  const setGroupageOptionState = (optionId: string, state: "normal" | "included" | "hidden") => {
     setGroupageIncludedOptions((prev) =>
-      prev.includes(optionId) ? prev.filter((id) => id !== optionId) : [...prev, optionId]
+      state === "included" ? [...new Set([...prev, optionId])] : prev.filter((id) => id !== optionId)
+    );
+    setGroupageHiddenOptions((prev) =>
+      state === "hidden" ? [...new Set([...prev, optionId])] : prev.filter((id) => id !== optionId)
     );
   };
 
@@ -255,6 +264,8 @@ export function ProductEditClient({ product, availableParameters }: { product: S
               deposit_fcfa: groupageDepositFcfa,
               base_shares: groupageBaseShares,
               included_option_ids: groupageIncludedOptions,
+              allow_additional_options: groupageAllowAdditionalOptions,
+              hidden_option_ids: groupageHiddenOptions,
             },
           },
         }),
@@ -311,6 +322,8 @@ export function ProductEditClient({ product, availableParameters }: { product: S
         groupageDepositFcfa: product.showcase?.groupage?.deposit_fcfa ?? null,
         groupageBaseShares: product.showcase?.groupage?.base_shares ?? 0,
         groupageIncludedOptions: product.showcase?.groupage?.included_option_ids ?? [],
+        groupageAllowAdditionalOptions: product.showcase?.groupage?.allow_additional_options !== false,
+        groupageHiddenOptions: product.showcase?.groupage?.hidden_option_ids ?? [],
       }),
     [product]
   );
@@ -352,6 +365,8 @@ export function ProductEditClient({ product, availableParameters }: { product: S
       groupageDepositFcfa,
       groupageBaseShares,
       groupageIncludedOptions,
+      groupageAllowAdditionalOptions,
+      groupageHiddenOptions,
     });
     return cur !== initialSnapshot;
   }, [
@@ -360,7 +375,7 @@ export function ProductEditClient({ product, availableParameters }: { product: S
     images360, threeSixtyEnabled, lightSwitchEnabled, lightSwitchOn, lightSwitchOff,
     galleryOff, variants, faq, activeParameters, cashOnDelivery, onlineEnabled,
     groupageEnabled, groupageVariantId, groupageReductionPercent, groupageMaxPlaces,
-    groupageMaxDurationDays, groupageBasePlaces, groupageDepositFcfa, groupageBaseShares, groupageIncludedOptions, initialSnapshot,
+    groupageMaxDurationDays, groupageBasePlaces, groupageDepositFcfa, groupageBaseShares, groupageIncludedOptions, groupageAllowAdditionalOptions, groupageHiddenOptions, initialSnapshot,
   ]);
 
   return (
@@ -948,30 +963,46 @@ export function ProductEditClient({ product, availableParameters }: { product: S
                 </div>
                 {availableParameters.filter((p) => activeParameters.includes(p.id)).length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Options incluses gratuitement</label>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">Options de personnalisation</label>
                     <p className="text-xs text-[var(--color-text-tertiary)] mb-2">
-                      Les options cochées font partie de l&apos;offre : grisées et gratuites côté client.
+                      Définissez pour chaque option son statut dans l&apos;offre groupage : incluse (gratuite), masquée (non affichée) ou sélectionnable (payante).
                     </p>
+                    <label className="flex items-center gap-2 mb-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={groupageAllowAdditionalOptions}
+                        onChange={(e) => setGroupageAllowAdditionalOptions(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm text-[var(--color-text-primary)]">Autoriser le client à sélectionner des options non incluses</span>
+                    </label>
                     <div className="space-y-2">
                       {availableParameters.filter((p) => activeParameters.includes(p.id)).map((param) => (
                         <div key={param.id}>
                           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">{param.name}</p>
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             {param.options.map((opt) => {
-                              const checked = groupageIncludedOptions.includes(opt.id);
+                              const state = groupageIncludedOptions.includes(opt.id)
+                                ? "included"
+                                : groupageHiddenOptions.includes(opt.id)
+                                  ? "hidden"
+                                  : "normal";
                               return (
-                                <label key={opt.id} className="flex items-center gap-2 py-1 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() => toggleGroupageIncludedOption(opt.id)}
-                                    className="w-4 h-4"
-                                  />
+                                <div key={opt.id} className="flex items-center justify-between gap-2 py-1">
                                   <span className="text-sm text-[var(--color-text-primary)]">
                                     {opt.label}
                                     {opt.price != null && opt.price > 0 ? <span className="text-xs text-[var(--color-text-tertiary)]"> ({opt.price} FCFA)</span> : null}
                                   </span>
-                                </label>
+                                  <select
+                                    value={state}
+                                    onChange={(e) => setGroupageOptionState(opt.id, e.target.value as "normal" | "included" | "hidden")}
+                                    className="h-8 px-2 rounded-lg border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-xs shrink-0"
+                                  >
+                                    <option value="normal">Sélectionnable</option>
+                                    <option value="included">Incluse</option>
+                                    <option value="hidden">Masquée</option>
+                                  </select>
+                                </div>
                               );
                             })}
                           </div>

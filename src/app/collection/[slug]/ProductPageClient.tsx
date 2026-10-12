@@ -536,6 +536,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             threeSixtyEnabled={product.showcase?.three_sixty_enabled}
             lightSwitch={product.showcase?.light_switch}
             productName={product.name}
+            slug={product.slug}
             mediaRef={mediaRef}
           />
 
@@ -687,6 +688,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         info={info}
                         parameters={parameters}
                         includedOptionIds={groupageConfig.included_option_ids}
+                        hiddenOptionIds={groupageConfig.hidden_option_ids}
+                        allowAdditionalOptions={groupageConfig.allow_additional_options}
                         selectedOptions={groupageOptions}
                         onToggleOption={toggleGroupageOption}
                         quantity={groupageQuantity}

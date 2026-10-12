@@ -29,6 +29,8 @@ interface GroupageCardProps {
   info: GroupageInfo;
   parameters: ProductParameter[];
   includedOptionIds: string[];
+  hiddenOptionIds: string[];
+  allowAdditionalOptions: boolean;
   selectedOptions: Record<string, string[]>;
   onToggleOption: (param: ProductParameter, optionId: string) => void;
   /** Nombre de places choisies par le client. */
@@ -61,6 +63,8 @@ export function GroupageCard({
   info,
   parameters,
   includedOptionIds,
+  hiddenOptionIds,
+  allowAdditionalOptions,
   selectedOptions,
   onToggleOption,
   quantity,
@@ -107,6 +111,12 @@ export function GroupageCard({
   const originalTotal = originalPrice + includedTotal + additionalTotal;
   const { deposit, balance } = computeDepositBalance(total, depositFcfa);
   const lineTotal = total * quantity;
+
+  // Options affichées : masquées exclues ; les supplémentaires ne sont listées que si autorisées.
+  const visibleOptions = parameters
+    .flatMap((param) => param.options.map((opt) => ({ param, opt })))
+    .filter(({ opt }) => !hiddenOptionIds.includes(opt.id))
+    .filter(({ opt }) => includedOptionIds.includes(opt.id) || allowAdditionalOptions);
 
   return (
     <>
@@ -160,15 +170,13 @@ export function GroupageCard({
         </div>
 
         {/* Options : incluses (0 FCFA, « Inclus ») + ajoutables (plein tarif) */}
-        {parameters.length > 0 && (
+        {visibleOptions.length > 0 && (
           <div className="mt-3 border-t border-[var(--color-border-default)] pt-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
               Options
             </p>
             <div className="mt-2 space-y-1.5">
-              {parameters
-                .flatMap((param) => param.options.map((opt) => ({ param, opt })))
-                .map(({ param, opt }) => {
+              {visibleOptions.map(({ param, opt }) => {
                   const isIncluded = includedOptionIds.includes(opt.id);
                   const isSelected = isIncluded || selectedOptions[param.id]?.includes(opt.id);
                   if (isIncluded) {
