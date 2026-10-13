@@ -8,6 +8,7 @@ import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { ChoiceGuide } from "@/components/decision/ChoiceGuide";
 import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
 import { getWhatsAppUrl, normalizePhone } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
@@ -128,6 +129,9 @@ export default async function HomePage() {
             eyebrow="Explorez"
             title="Nos catégories"
             subtitle="Nos univers pour illuminer vos espaces"
+            eyebrowKey="home.categories.eyebrow"
+            titleKey="home.categories.title"
+            subtitleKey="home.categories.subtitle"
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             {familyCounts.map((fam) => (
@@ -180,7 +184,9 @@ export default async function HomePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--color-text-tertiary)]">Bientôt disponible</p>
+                    <p className="text-sm text-[var(--color-text-tertiary)]">
+                      <EditableText contentKey="home.categories.empty" defaultValue="Bientôt disponible" />
+                    </p>
                   )}
 
                   <Link
@@ -188,7 +194,7 @@ export default async function HomePage() {
                     className="mt-auto pt-4 block"
                   >
                     <span className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] font-semibold min-h-[46px] px-6 text-sm transition-colors hover:bg-[#2A2A2A]">
-                      Explorer la catégorie
+                      <EditableText contentKey="home.categories.explore" defaultValue="Explorer la catégorie" />
                       <ArrowRight className="w-4 h-4" />
                     </span>
                   </Link>
@@ -208,9 +214,12 @@ export default async function HomePage() {
               eyebrow="Sélection"
               title="Nos produits vedettes"
               subtitle="Les plus appréciés par nos clients"
+              eyebrowKey="home.featured.eyebrow"
+              titleKey="home.featured.title"
+              subtitleKey="home.featured.subtitle"
               action={
                 <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline">
-                  Voir tout →
+                  <EditableText contentKey="home.featured.see_all" defaultValue="Voir tout →" />
                 </Link>
               }
             />
@@ -221,7 +230,9 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 text-center md:hidden">
               <Link href="/collection">
-                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
+                <Button variant="secondary" size="sm">
+                  <EditableText contentKey="home.featured.see_all_mobile" defaultValue="Voir tout le catalogue" />
+                </Button>
               </Link>
             </div>
           </div>
@@ -252,9 +263,12 @@ export default async function HomePage() {
             eyebrow="Portfolio"
             title="Nos dernières réalisations"
             subtitle="Un aperçu de nos projets récents"
+            eyebrowKey="home.realisations.eyebrow"
+            titleKey="home.realisations.title"
+            subtitleKey="home.realisations.subtitle"
             action={
               <Link href="/realisations" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline">
-                Tout voir →
+                <EditableText contentKey="home.realisations.see_all" defaultValue="Tout voir →" />
               </Link>
             }
           />
@@ -273,7 +287,9 @@ export default async function HomePage() {
           </div>
           <div className="mt-6 text-center md:hidden">
             <Link href="/realisations">
-              <Button variant="secondary" size="sm">Voir toutes les réalisations</Button>
+              <Button variant="secondary" size="sm">
+                <EditableText contentKey="home.realisations.see_all_mobile" defaultValue="Voir toutes les réalisations" />
+              </Button>
             </Link>
           </div>
         </section>
@@ -286,6 +302,9 @@ export default async function HomePage() {
             eyebrow="Simple & rapide"
             title="Comment ça marche"
             subtitle="De la commande à la livraison en 4 étapes"
+            eyebrowKey="home.how.eyebrow"
+            titleKey="home.how.title"
+            subtitleKey="home.how.subtitle"
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {stepItems.map((step) => (
@@ -312,11 +331,13 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <a href={getWhatsAppUrl(whatsapp, quoteMessage("Devis gratuit"))} target="_blank" rel="noopener noreferrer">
-              <Button variant="whatsapp" size="lg">💬 Devis gratuit sur WhatsApp</Button>
+              <Button variant="whatsapp" size="lg">
+                <EditableText contentKey="home.cta.whatsapp" defaultValue="💬 Devis gratuit sur WhatsApp" />
+              </Button>
             </a>
             <Link href="/comment-ca-marche">
               <Button variant="secondary" size="lg" className="bg-transparent text-[var(--color-bg-primary)] border-[var(--color-bg-primary)]/30 hover:bg-white/10">
-                Comment ça marche <ArrowRight className="w-4 h-4 ml-2" />
+                <EditableText contentKey="home.cta.how" defaultValue="Comment ça marche" /> <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { METIERS } from "@/lib/metiers";
 import type { ShowcaseSettings } from "@/types";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 // Icônes de marque en SVG inline (lucide-react n'exporte plus Facebook/Instagram/TikTok).
 const SOCIAL_PATHS: Record<string, string> = {
@@ -33,8 +34,11 @@ export function Footer({
             Imprim<span className="text-[var(--color-accent-amber)]">elle</span>
           </h3>
           <p className="text-sm text-[var(--color-text-secondary)]">
-            Fabricant d&apos;enseignes lumineuses et de mobilier lumineux en Côte d&apos;Ivoire.
-            Qualité professionnelle, fabrication locale.
+            <EditableText
+              multiline
+              contentKey="footer.tagline"
+              defaultValue="Fabricant d'enseignes lumineuses et de mobilier lumineux en Côte d'Ivoire. Qualité professionnelle, fabrication locale."
+            />
           </p>
           {contact?.email && (
             <p className="mt-3 text-sm text-[var(--color-text-secondary)]">
@@ -69,25 +73,29 @@ export function Footer({
           )}
         </div>
         <div>
-          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">Navigation</h4>
+          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">
+            <EditableText contentKey="footer.title.nav" defaultValue="Navigation" />
+          </h4>
           <ul className="space-y-2">
             {[
-              { href: "/collection", label: "Catalogue" },
-              { href: "/realisations", label: "Réalisations" },
-              { href: "/notre-histoire", label: "Notre histoire" },
-              { href: "/comment-ca-marche", label: "Comment ça marche" },
-              { href: "/faq", label: "FAQ" },
+              { href: "/collection", label: "Catalogue", contentKey: "footer.nav.catalogue" },
+              { href: "/realisations", label: "Réalisations", contentKey: "footer.nav.realisations" },
+              { href: "/notre-histoire", label: "Notre histoire", contentKey: "footer.nav.histoire" },
+              { href: "/comment-ca-marche", label: "Comment ça marche", contentKey: "footer.nav.how" },
+              { href: "/faq", label: "FAQ", contentKey: "footer.nav.faq" },
             ].map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
-                  {link.label}
+                  <EditableText contentKey={link.contentKey} defaultValue={link.label} />
                 </Link>
               </li>
             ))}
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">Par métier</h4>
+          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">
+            <EditableText contentKey="footer.title.metier" defaultValue="Par métier" />
+          </h4>
           <ul className="space-y-2">
             {METIERS.map((m) => (
               <li key={m.slug}>
@@ -99,16 +107,18 @@ export function Footer({
           </ul>
         </div>
         <div>
-          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">Légal</h4>
+          <h4 className="font-semibold text-sm text-[var(--color-text-primary)] mb-3">
+            <EditableText contentKey="footer.title.legal" defaultValue="Légal" />
+          </h4>
           <ul className="space-y-2">
             {[
-              { href: "/legal/mentions-legales", label: "Mentions légales" },
-              { href: "/legal/cgv", label: "CGV" },
-              { href: "/legal/confidentialite", label: "Confidentialité" },
+              { href: "/legal/mentions-legales", label: "Mentions légales", contentKey: "footer.legal.mentions" },
+              { href: "/legal/cgv", label: "CGV", contentKey: "footer.legal.cgv" },
+              { href: "/legal/confidentialite", label: "Confidentialité", contentKey: "footer.legal.confidentialite" },
             ].map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors">
-                  {link.label}
+                  <EditableText contentKey={link.contentKey} defaultValue={link.label} />
                 </Link>
               </li>
             ))}
@@ -117,7 +127,8 @@ export function Footer({
       </div>
       <div className="max-w-7xl mx-auto px-4 pb-6 text-center">
         <p className="text-xs text-[var(--color-text-tertiary)]">
-          © {new Date().getFullYear()} Imprimelle CI. Tous droits réservés.
+          © {new Date().getFullYear()}{" "}
+          <EditableText contentKey="footer.copyright" defaultValue="Imprimelle CI. Tous droits réservés." />
         </p>
       </div>
     </footer>

@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { PenTool, ClipboardCheck } from "lucide-react";
 import { ACTE_1 } from "./content";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -74,11 +75,15 @@ export function DualFocusSection() {
       className="relative min-h-screen flex flex-col justify-center px-6 py-24"
     >
       <div className="duo-head max-w-2xl mb-14">
-        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">{ACTE_1.kicker}</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">
+          <EditableText contentKey="histoire.acte1.kicker" defaultValue={ACTE_1.kicker} />
+        </p>
         <h2 className="mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
-          {ACTE_1.title}
+          <EditableText contentKey="histoire.acte1.title" defaultValue={ACTE_1.title} />
         </h2>
-        <p className="mt-4 text-white/65 text-base md:text-lg">{ACTE_1.intro}</p>
+        <p className="mt-4 text-white/65 text-base md:text-lg">
+          <EditableText contentKey="histoire.acte1.intro" defaultValue={ACTE_1.intro} />
+        </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-5 max-w-6xl">
@@ -106,15 +111,21 @@ export function DualFocusSection() {
               </span>
 
               <div className="relative mt-10">
-                <h3 className="font-display text-2xl md:text-3xl font-bold">{p.label}</h3>
-                <p className="mt-3 text-white/65 text-base md:text-lg leading-relaxed">{p.line}</p>
+                <h3 className="font-display text-2xl md:text-3xl font-bold">
+                  <EditableText contentKey={`histoire.acte1.${p.key}.label`} defaultValue={p.label} />
+                </h3>
+                <p className="mt-3 text-white/65 text-base md:text-lg leading-relaxed">
+                  <EditableText contentKey={`histoire.acte1.${p.key}.line`} defaultValue={p.line} />
+                </p>
               </div>
             </article>
           );
         })}
       </div>
 
-      <p className="duo-footer mt-10 max-w-2xl text-white/55 text-base md:text-lg">{ACTE_1.footer}</p>
+      <p className="duo-footer mt-10 max-w-2xl text-white/55 text-base md:text-lg">
+        <EditableText contentKey="histoire.acte1.footer" defaultValue={ACTE_1.footer} />
+      </p>
     </section>
   );
 }

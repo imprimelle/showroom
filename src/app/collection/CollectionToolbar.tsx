@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { CATEGORIES, getCategory, getFamilyOfSubCategory } from "@/lib/categories";
 import { USAGES } from "@/lib/usages";
 import { cn } from "@/lib/utils";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 interface CollectionToolbarProps {
   currentFamily?: string;
@@ -53,7 +54,7 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentUsage
       {/* Familles (niveau 1) */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4">
         <Link href="/collection" className={chipClass(!activeFamily)}>
-          Toutes
+          <EditableText contentKey="collection.chips.all" defaultValue="Toutes" />
         </Link>
         {CATEGORIES.map((fam) => (
           <Link key={fam.id} href={`/collection?family=${fam.id}`} className={chipClass(activeFamily?.id === fam.id)}>
@@ -79,9 +80,11 @@ export function CollectionToolbar({ currentFamily, currentCategory, currentUsage
 
       {/* Emplacement (usage intérieur/extérieur) */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 items-center">
-        <span className="text-xs font-medium text-[var(--color-text-tertiary)] shrink-0">Emplacement :</span>
+        <span className="text-xs font-medium text-[var(--color-text-tertiary)] shrink-0">
+          <EditableText contentKey="collection.usage.label" defaultValue="Emplacement :" />
+        </span>
         <Link href={usageHref(null)} className={chipClass(!currentUsage)}>
-          Tous
+          <EditableText contentKey="collection.chips.usage_all" defaultValue="Tous" />
         </Link>
         {USAGES.map((u) => (
           <Link key={u.id} href={usageHref(u.id)} className={chipClass(currentUsage === u.id)}>

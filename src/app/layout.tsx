@@ -8,9 +8,11 @@ import { ChromeFooter } from "@/components/layout/ChromeFooter";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
 import { WhatsAppClickTracker } from "@/components/analytics/WhatsAppClickTracker";
+import { ContentEditProvider } from "@/components/admin/content/ContentEditProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SocialProofToast } from "@/components/social/SocialProofToast";
 import { getShowcaseSettings } from "@/lib/settings";
+import { getContentMap } from "@/lib/content";
 import { getPublishedProducts } from "@/lib/products";
 import { resolveSocialProofConfig } from "@/lib/social-proof";
 import { normalizePhone } from "@/lib/utils";
@@ -78,6 +80,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getShowcaseSettings();
+  const contentMap = await getContentMap();
   const whatsapp = normalizePhone(settings.contact?.whatsapp);
   const phone = normalizePhone(settings.contact?.phone || settings.contact?.whatsapp);
   const catalog = resolveCategories(settings.catalog);
@@ -87,6 +90,7 @@ export default async function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col">
+        <ContentEditProvider initialContent={contentMap}>
         <Providers categories={catalog}>
           <TopNav whatsapp={whatsapp} phone={phone} />
           <main className="flex-1">{children}</main>
@@ -116,6 +120,7 @@ export default async function RootLayout({
             displaySeconds={socialProof.display_seconds}
           />
         </Providers>
+        </ContentEditProvider>
       </body>
     </html>
   );

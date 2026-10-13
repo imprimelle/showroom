@@ -21,21 +21,22 @@ import { generalInquiryMessage } from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
 import { CATEGORIES } from "@/lib/categories";
 import { SearchSuggest } from "@/components/search/SearchSuggest";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 const links = [
-  { href: "/", label: "Accueil", icon: House },
-  { href: "/collection", label: "Catalogue", icon: Search },
-  { href: "/realisations", label: "Réalisations", icon: Info },
-  { href: "/notre-histoire", label: "Notre histoire", icon: Sparkles },
-  { href: "/comment-ca-marche", label: "Comment ça marche", icon: HelpCircle },
-  { href: "/faq", label: "FAQ", icon: HelpCircle },
-  { href: "/suivi", label: "Suivi", icon: FileText },
+  { href: "/", label: "Accueil", icon: House, contentKey: "nav.links.home" },
+  { href: "/collection", label: "Catalogue", icon: Search, contentKey: "nav.links.catalogue" },
+  { href: "/realisations", label: "Réalisations", icon: Info, contentKey: "nav.links.realisations" },
+  { href: "/notre-histoire", label: "Notre histoire", icon: Sparkles, contentKey: "nav.links.histoire" },
+  { href: "/comment-ca-marche", label: "Comment ça marche", icon: HelpCircle, contentKey: "nav.links.how" },
+  { href: "/faq", label: "FAQ", icon: HelpCircle, contentKey: "nav.links.faq" },
+  { href: "/suivi", label: "Suivi", icon: FileText, contentKey: "nav.links.suivi" },
 ];
 
 const legalLinks = [
-  { href: "/legal/mentions-legales", label: "Mentions légales" },
-  { href: "/legal/cgv", label: "CGV" },
-  { href: "/legal/confidentialite", label: "Confidentialité" },
+  { href: "/legal/mentions-legales", label: "Mentions légales", contentKey: "nav.legal.mentions" },
+  { href: "/legal/cgv", label: "CGV", contentKey: "nav.legal.cgv" },
+  { href: "/legal/confidentialite", label: "Confidentialité", contentKey: "nav.legal.confidentialite" },
 ];
 
 function BurgerSearchIcon({ className }: { className?: string }) {
@@ -132,7 +133,9 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
         {/* === Barre fine orange d'annonce (toujours solide, jamais fondue dans le héro) === */}
         <div className="bg-[var(--color-accent-orange)] text-white">
           <div className="max-w-7xl mx-auto px-4 h-7 md:h-8 flex items-center justify-between text-[11px] md:text-xs">
-            <span className="font-semibold">Fièrement Ivoiriens 🇨🇮</span>
+            <span className="font-semibold">
+              <EditableText contentKey="nav.announcement" defaultValue="Fièrement Ivoiriens 🇨🇮" />
+            </span>
             {phone && (
               <a
                 href={`tel:+${phone}`}
@@ -253,7 +256,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
                   )}
                 >
                   <Icon className="w-5 h-5" />
-                  {link.label}
+                  <EditableText contentKey={link.contentKey} defaultValue={link.label} />
                 </Link>
               );
             })}
@@ -262,7 +265,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
           {/* Univers (accès direct aux 2 catégories) */}
           <div className="px-2 pb-2 border-t border-[var(--color-border-default)]">
             <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              Nos univers
+              <EditableText contentKey="nav.universes" defaultValue="Nos univers" />
             </p>
             {CATEGORIES.map((fam) => (
               <Link
@@ -289,14 +292,14 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#25D366] hover:bg-[var(--color-bg-tertiary)] transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
-              WhatsApp
+              <EditableText contentKey="nav.whatsapp" defaultValue="WhatsApp" />
             </a>
             <a
               href={`tel:+${whatsapp}`}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
             >
               <Phone className="w-5 h-5" />
-              Appeler
+              <EditableText contentKey="nav.call" defaultValue="Appeler" />
             </a>
           </div>
 
@@ -310,7 +313,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
                   onClick={() => setMenuOpen(false)}
                   className="hover:text-[var(--color-text-secondary)] transition-colors"
                 >
-                  {link.label}
+                  <EditableText contentKey={link.contentKey} defaultValue={link.label} />
                 </Link>
               ))}
             </div>

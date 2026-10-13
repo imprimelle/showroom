@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ABIDJAN, AFRICA_COUNTRIES, ACTE_3, type AfricaCountry } from "./content";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,9 +47,11 @@ export function AfricaMapSection() {
   return (
     <section id="acte-3" ref={root} className="relative min-h-screen flex flex-col justify-center px-6 py-24">
       <div className="max-w-2xl mb-10">
-        <p className="africa-reveal text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">{ACTE_3.kicker}</p>
+        <p className="africa-reveal text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">
+          <EditableText contentKey="histoire.acte3.kicker" defaultValue={ACTE_3.kicker} />
+        </p>
         <h2 className="africa-reveal mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
-          {ACTE_3.title}
+          <EditableText contentKey="histoire.acte3.title" defaultValue={ACTE_3.title} />
         </h2>
       </div>
 
@@ -144,9 +147,11 @@ export function AfricaMapSection() {
         )}
       </div>
 
-      <p className="africa-reveal mt-8 max-w-2xl text-white/65 text-base md:text-lg">{ACTE_3.line}</p>
+      <p className="africa-reveal mt-8 max-w-2xl text-white/65 text-base md:text-lg">
+        <EditableText contentKey="histoire.acte3.line" defaultValue={ACTE_3.line} />
+      </p>
       <p className="africa-reveal mt-4 font-display text-xl md:text-2xl font-semibold histoire-neon-text">
-        {ACTE_3.belief}
+        <EditableText contentKey="histoire.acte3.belief" defaultValue={ACTE_3.belief} />
       </p>
     </section>
   );

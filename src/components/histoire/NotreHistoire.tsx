@@ -8,6 +8,7 @@ import { DualFocusSection } from "./DualFocusSection";
 import { FabricationSection } from "./FabricationSection";
 import { AfricaMapSection } from "./AfricaMapSection";
 import { CtaSection } from "./CtaSection";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { cn } from "@/lib/utils";
 
 const SECTIONS = [
@@ -55,7 +56,9 @@ export function NotreHistoire({ whatsapp }: { whatsapp: string }) {
         className="fixed top-5 left-5 z-50 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/40 backdrop-blur-md px-4 py-2 text-sm text-white/80 hover:text-white hover:border-white/35 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span className="hidden sm:inline">Retour</span>
+        <span className="hidden sm:inline">
+          <EditableText contentKey="histoire.retour" defaultValue="Retour" />
+        </span>
       </Link>
 
       {/* Rail de progression (sections) */}

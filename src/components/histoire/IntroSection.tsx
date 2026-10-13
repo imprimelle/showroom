@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronDown } from "lucide-react";
 import { INTRO, HISTOIRE_TITLE } from "./content";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -52,26 +53,37 @@ export function IntroSection() {
       />
 
       <p className="intro-eyebrow relative text-[11px] md:text-xs uppercase tracking-[0.4em] text-[rgba(255,165,0,0.75)]">
-        {INTRO.eyebrow}
+        <EditableText contentKey="histoire.intro.eyebrow" defaultValue={INTRO.eyebrow} />
       </p>
 
-      <h1 className="relative mt-6 font-display font-black leading-[0.95] tracking-tight text-[clamp(2.75rem,11vw,8.5rem)]">
+      <EditableText
+        as="h1"
+        contentKey="histoire.title"
+        defaultValue={HISTOIRE_TITLE}
+        className="relative mt-6 font-display font-black leading-[0.95] tracking-tight text-[clamp(2.75rem,11vw,8.5rem)]"
+      >
         {words.map((w, i) => (
           <span key={i} className="intro-word inline-block histoire-neon-text">
             {w}
             {i < words.length - 1 ? "\u00A0" : ""}
           </span>
         ))}
-      </h1>
+      </EditableText>
 
-      <p className="intro-line relative mt-8 max-w-md text-base md:text-lg text-white/60">{INTRO.line}</p>
-      <p className="intro-ignite relative mt-4 font-display text-xl md:text-2xl font-semibold histoire-neon-text">
-        {INTRO.ignite}
+      <p className="intro-line relative mt-8 max-w-md text-base md:text-lg text-white/60">
+        <EditableText contentKey="histoire.intro.line" defaultValue={INTRO.line} />
       </p>
-      <p className="intro-sub relative mt-4 max-w-md text-white/70 text-base md:text-lg leading-relaxed">{INTRO.sub}</p>
+      <p className="intro-ignite relative mt-4 font-display text-xl md:text-2xl font-semibold histoire-neon-text">
+        <EditableText contentKey="histoire.intro.ignite" defaultValue={INTRO.ignite} />
+      </p>
+      <p className="intro-sub relative mt-4 max-w-md text-white/70 text-base md:text-lg leading-relaxed">
+        <EditableText contentKey="histoire.intro.sub" defaultValue={INTRO.sub} />
+      </p>
 
       <div className="intro-scroll absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/40">
-        <span className="text-[11px] uppercase tracking-[0.3em]">{INTRO.scrollHint}</span>
+        <span className="text-[11px] uppercase tracking-[0.3em]">
+          <EditableText contentKey="histoire.intro.scroll" defaultValue={INTRO.scrollHint} />
+        </span>
         <ChevronDown className="w-5 h-5 animate-bounce" />
       </div>
     </section>

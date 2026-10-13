@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ACTE_2 } from "./content";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { WireframeTable } from "./WireframeTable";
 import { MirrorInfinity } from "./MirrorInfinity";
 import { DayNightToggle } from "./DayNightToggle";
@@ -78,9 +79,11 @@ export function FabricationSection() {
   return (
     <section id="acte-2" ref={root} className="relative">
       <div className="fab-head max-w-2xl px-6 pt-24 pb-10">
-        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">{ACTE_2.kicker}</p>
+        <p className="text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">
+          <EditableText contentKey="histoire.acte2.kicker" defaultValue={ACTE_2.kicker} />
+        </p>
         <h2 className="mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2rem,6vw,4rem)]">
-          {ACTE_2.title}
+          <EditableText contentKey="histoire.acte2.title" defaultValue={ACTE_2.title} />
         </h2>
       </div>
 
@@ -97,9 +100,11 @@ export function FabricationSection() {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <h3 className="mt-5 font-display font-bold text-[clamp(1.75rem,4vw,3rem)] leading-tight">
-                    {step.title}
+                    <EditableText contentKey={`histoire.acte2.${step.id}.title`} defaultValue={step.title} />
                   </h3>
-                  <p className="mt-3 text-white/60 text-lg">{step.line}</p>
+                  <p className="mt-3 text-white/60 text-lg">
+                    <EditableText contentKey={`histoire.acte2.${step.id}.line`} defaultValue={step.line} />
+                  </p>
                 </div>
 
                 <div className="relative aspect-square lg:aspect-[4/3] rounded-3xl border border-white/10 bg-[var(--histoire-ink)] overflow-hidden">

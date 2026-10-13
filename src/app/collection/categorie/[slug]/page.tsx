@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { Comparator } from "@/components/decision/Comparator";
 import { CategorySearch } from "@/components/search/CategorySearch";
 import { Button } from "@/components/ui/Button";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
@@ -87,9 +88,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-[var(--color-text-tertiary)] mb-4">
-          <Link href="/" className="hover:text-[var(--color-text-primary)]">Accueil</Link>
+          <Link href="/" className="hover:text-[var(--color-text-primary)]">
+            <EditableText contentKey="categorie.breadcrumb.home" defaultValue="Accueil" />
+          </Link>
           <span className="mx-2">/</span>
-          <Link href="/collection" className="hover:text-[var(--color-text-primary)]">Catalogue</Link>
+          <Link href="/collection" className="hover:text-[var(--color-text-primary)]">
+            <EditableText contentKey="categorie.breadcrumb.catalogue" defaultValue="Catalogue" />
+          </Link>
           <span className="mx-2">/</span>
           <span className="text-[var(--color-text-primary)]">{catTitle}</span>
         </nav>
@@ -109,7 +114,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
                 : "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-default)]"
             )}
           >
-            Tous
+            <EditableText contentKey="categorie.chips.all" defaultValue="Tous" />
           </Link>
           {cat.children.map((s) => (
             <Link
@@ -141,15 +146,19 @@ export default async function CategoryPage({ params, searchParams }: Props) {
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <span className="text-5xl mb-4">{cat.icon}</span>
           <h2 className="text-lg font-semibold text-[var(--color-text-secondary)]">
-            {cat.children.length === 0 ? "Bientôt disponible" : "Aucun produit dans cette catégorie"}
+            <EditableText
+              contentKey="categorie.empty.title"
+              defaultValue={cat.children.length === 0 ? "Bientôt disponible" : "Aucun produit dans cette catégorie"}
+            />
           </h2>
           <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-            {cat.children.length === 0
-              ? "Cette collection arrive prochainement."
-              : "Essayez une autre sous-catégorie."}
+            <EditableText
+              contentKey="categorie.empty.desc"
+              defaultValue={cat.children.length === 0 ? "Cette collection arrive prochainement." : "Essayez une autre sous-catégorie."}
+            />
           </p>
           <Link href="/collection" className="text-sm text-[var(--color-accent-blue)] hover:underline mt-2">
-            Voir tout le catalogue
+            <EditableText contentKey="categorie.empty.cta" defaultValue="Voir tout le catalogue" />
           </Link>
         </div>
       )}
@@ -160,7 +169,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           Un projet {catTitle} sur mesure ?
         </h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-          Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.
+          <EditableText contentKey="categorie.cta.subtitle" defaultValue="Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement." />
         </p>
         <div className="mt-6 flex items-center justify-center">
           <a
@@ -168,7 +177,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Button variant="whatsapp" size="lg">💬 Demander un devis WhatsApp</Button>
+            <Button variant="whatsapp" size="lg">
+              <EditableText contentKey="categorie.cta.button" defaultValue="💬 Demander un devis WhatsApp" />
+            </Button>
           </a>
         </div>
       </div>

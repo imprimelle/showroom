@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { CONCLUSION } from "./content";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { getWhatsAppUrl } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
 
@@ -41,21 +42,27 @@ export function CtaSection({ whatsapp }: { whatsapp: string }) {
       />
 
       <p className="cta-reveal relative text-xs uppercase tracking-[0.35em] text-[rgba(255,165,0,0.7)]">
-        05 — À vous
+        <EditableText contentKey="histoire.conclusion.kicker" defaultValue="05 — À vous" />
       </p>
       <h2 className="cta-reveal relative mt-4 font-display font-black leading-[1.02] tracking-tight text-[clamp(2.5rem,8vw,6rem)] histoire-neon-text">
-        {CONCLUSION.title}
+        <EditableText contentKey="histoire.conclusion.title" defaultValue={CONCLUSION.title} />
       </h2>
-      <p className="cta-reveal relative mt-6 max-w-xl text-base md:text-lg text-white/70">{CONCLUSION.line}</p>
-      <p className="cta-reveal relative mt-6 font-display text-lg md:text-xl text-white/85">{CONCLUSION.welcome}</p>
-      <p className="cta-reveal relative mt-2 text-sm md:text-base tracking-wide text-white/60">{CONCLUSION.tagline}</p>
+      <p className="cta-reveal relative mt-6 max-w-xl text-base md:text-lg text-white/70">
+        <EditableText contentKey="histoire.conclusion.line" defaultValue={CONCLUSION.line} />
+      </p>
+      <p className="cta-reveal relative mt-6 font-display text-lg md:text-xl text-white/85">
+        <EditableText contentKey="histoire.conclusion.welcome" defaultValue={CONCLUSION.welcome} />
+      </p>
+      <p className="cta-reveal relative mt-2 text-sm md:text-base tracking-wide text-white/60">
+        <EditableText contentKey="histoire.conclusion.tagline" defaultValue={CONCLUSION.tagline} />
+      </p>
 
       <div className="cta-reveal relative mt-12 flex flex-col sm:flex-row items-center gap-4">
         <Link
           href="/collection"
           className="histoire-neon-btn inline-flex items-center gap-2.5 rounded-full px-8 py-4 font-semibold text-base md:text-lg min-h-[56px]"
         >
-          {CONCLUSION.catalog}
+          <EditableText contentKey="histoire.conclusion.catalog" defaultValue={CONCLUSION.catalog} />
           <ArrowRight className="w-5 h-5" />
         </Link>
         <a
@@ -64,7 +71,7 @@ export function CtaSection({ whatsapp }: { whatsapp: string }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-full border border-white/20 px-7 py-4 font-medium text-white/85 hover:text-white hover:border-white/40 transition-colors min-h-[56px]"
         >
-          {CONCLUSION.project}
+          <EditableText contentKey="histoire.conclusion.project" defaultValue={CONCLUSION.project} />
           <ArrowUpRight className="w-5 h-5" />
         </a>
       </div>

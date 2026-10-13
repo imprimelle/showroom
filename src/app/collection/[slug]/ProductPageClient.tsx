@@ -41,6 +41,7 @@ import { HighlightCarousel } from "@/components/product/HighlightCarousel";
 import { IdeaDecoSlider } from "@/components/product/IdeaDecoSlider";
 import { ReviewSection } from "@/components/product/ReviewSection";
 import { StepHeader } from "@/components/product/StepHeader";
+import { EditableText } from "@/components/admin/content/EditableText";
 import type { ProductParameter, CartItemOption, FaqPill, IdeaDecoSlide, ShowcaseReview, ReviewAggregate, GroupageInfo } from "@/types";
 
 interface ProductPageClientProps {
@@ -53,6 +54,10 @@ interface ProductPageClientProps {
   reviews?: ShowcaseReview[];
   aggregate?: ReviewAggregate;
   groupageInfo?: GroupageInfo;
+  /** Interrupteur global maître des vues 360° (Réglages → 360°). */
+  threeSixtyGlobalEnabled?: boolean;
+  /** Affiche le bouton flottant « Voir le produit en 360° » (barre sticky). */
+  threeSixtyStickyButtonEnabled?: boolean;
 }
 
 /** Étoile pleine / demi / vide (lucide `Star`). */
@@ -135,7 +140,7 @@ function CartPlusIcon({ className }: { className?: string }) {
   );
 }
 
-export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] }, groupageInfo }: ProductPageClientProps) {
+export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT_WHATSAPP, parameters = [], faqPills = DEFAULT_FAQ_PILLS, ideaDecoVideos = [], reviews = [], aggregate = { average: 0, count: 0, distribution: [] }, groupageInfo, threeSixtyGlobalEnabled = true, threeSixtyStickyButtonEnabled = false }: ProductPageClientProps) {
   const formatPrice = useFormatPrice();
   const searchParams = useSearchParams();
   const preselectGroupage = searchParams?.get("groupage") === "1";
@@ -411,6 +416,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const hasVariantsTable = variants.some((v) => v.attributes?.dimensions || v.attributes?.materials);
   const faqItems = product.showcase?.faq?.length ? product.showcase.faq : DEFAULT_FAQ;
 
+  // === Vue 360° : interrupteur global maître + activation produit + frames configurées ===
+  const images360 = product.showcase?.images_360 || [];
+  const threeSixtyEffective = !!threeSixtyGlobalEnabled && !!product.showcase?.three_sixty_enabled;
+  const has360 = threeSixtyEffective && images360.length > 0;
+  // Bouton flottant « Voir le produit en 360° » (barre sticky) : masqué par défaut
+  // (contrôle spécifique désactivé), et uniquement si le produit dispose réellement d'une vue 360°.
+  const showSticky360Button = show360Btn && has360 && !!threeSixtyStickyButtonEnabled;
+
   const handleAddToCart = () => {
     if (!selectedVariant || selectedVariant.price == null) return;
     const key = `${product.id}:${selectedVariant.sku}:${selectedOptionsList
@@ -502,7 +515,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         >
           <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
             <Users className="h-5 w-5 shrink-0" />
-            <span className="font-semibold">Rejoindre le groupage</span>
+            <span className="font-semibold">
+              <EditableText contentKey="product.groupage.join" defaultValue="Rejoindre le groupage" />
+            </span>
             {groupPrice != null && (
               <>
                 <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
@@ -529,12 +544,14 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           {selectedSku ? (
             <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
               <CartPlusIcon className="h-5 w-5 shrink-0" />
-              <span className="font-semibold">Ajouter au panier</span>
+              <span className="font-semibold">
+                <EditableText contentKey="product.cta.add_to_cart" defaultValue="Ajouter au panier" />
+              </span>
               <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
               <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
             </span>
           ) : (
-            "Sélectionnez une taille"
+            <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
           )}
         </Button>
       );
@@ -549,9 +566,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         <Button variant="whatsapp" size={compact ? "md" : "lg"} className="w-full">
           {variants.length > 0
             ? selectedSku
-              ? "💬 Demander un devis WhatsApp"
-              : "Sélectionnez une taille"
-            : "💬 Demander un devis WhatsApp"}
+              ? <EditableText contentKey="product.cta.quote_whatsapp" defaultValue="💬 Demander un devis WhatsApp" />
+              : <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
+            : <EditableText contentKey="product.cta.quote_whatsapp" defaultValue="💬 Demander un devis WhatsApp" />}
         </Button>
       </a>
     );
@@ -570,8 +587,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             videoUrl={heroVideo}
             galleryVideos={galleryVideos}
             dimensions={selectedVariant?.attributes?.dimensions ?? variants[0]?.attributes?.dimensions ?? null}
-            images360={product.showcase?.images_360}
-            threeSixtyEnabled={product.showcase?.three_sixty_enabled}
+            images360={images360}
+            threeSixtyEnabled={threeSixtyEffective}
             lightSwitch={product.showcase?.light_switch}
             productName={product.name}
             slug={product.slug}
@@ -635,7 +652,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                 ) : currentPrice != null ? (
                   <div>
                     <span className="text-xs text-[var(--color-text-tertiary)]">
-                      {selectedVariant ? selectedVariant.name : "À partir de"}
+                      {selectedVariant ? selectedVariant.name : (
+                        <EditableText contentKey="product.price.from" defaultValue="À partir de" />
+                      )}
                     </span>
                     <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
                       {formatPrice(totalPrice ?? currentPrice)}
@@ -647,7 +666,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                     )}
                   </div>
                 ) : (
-                  <p className="text-lg font-semibold text-[var(--color-text-secondary)]">Sur devis</p>
+                  <p className="text-lg font-semibold text-[var(--color-text-secondary)]">
+                    <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
+                  </p>
                 )}
               </div>
             </div>
@@ -666,6 +687,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   step={1}
                   title="Choisissez votre format"
                   subtitle="Sélectionnez la taille qui vous convient"
+                  titleKey="product.step.format.title"
+                  subtitleKey="product.step.format.subtitle"
                 />
                 <div className="mt-3">
                   <VariantSelector
@@ -751,6 +774,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   title="Ajoutez des options"
                   subtitle="Personnalisez votre produit"
                   optional
+                  titleKey="product.step.options.title"
+                  subtitleKey="product.step.options.subtitle"
                 />
                 <div className="mt-3 space-y-2.5">
                   {parameters.map((param) => {
@@ -838,7 +863,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   <div className="space-y-3">
                     {/* Sélecteur de quantité (bloc arrondi) */}
                     <div className="flex items-center justify-between rounded-full border border-[var(--color-border-strong)] pl-4 pr-1 py-1">
-                      <span className="text-sm font-medium text-[var(--color-text-primary)]">Quantité</span>
+                      <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                        <EditableText contentKey="product.quantity" defaultValue="Quantité" />
+                      </span>
                       <div className="flex items-center gap-1">
                         <button
                           type="button"
@@ -918,10 +945,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
             <div className="text-center mb-5 md:mb-6">
               <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
-                Points forts
+                <EditableText contentKey="product.section.highlights.title" defaultValue="Points forts" />
               </h2>
               <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
-                Ce qui distingue ce produit — cliquez sur une carte pour en savoir plus.
+                <EditableText contentKey="product.section.highlights.subtitle" defaultValue="Ce qui distingue ce produit — cliquez sur une carte pour en savoir plus." />
               </p>
             </div>
             <HighlightCarousel highlights={highlights} />
@@ -935,10 +962,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
             <div className="text-center mb-5 md:mb-6">
               <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
-                Comparer les formats
+                <EditableText contentKey="product.section.specs.title" defaultValue="Comparer les formats" />
               </h2>
               <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
-                Les spécifications selon la taille.
+                <EditableText contentKey="product.section.specs.subtitle" defaultValue="Les spécifications selon la taille." />
               </p>
             </div>
 
@@ -967,7 +994,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
                         <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
                         <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
-                          {v.price != null ? formatPrice(v.price) : "Sur devis"}
+                          {v.price != null ? formatPrice(v.price) : (
+                            <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -984,10 +1013,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         <div className="max-w-3xl mx-auto px-4 py-8 md:py-10">
           <div className="mb-5 md:mb-6">
             <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
-              Plus d&apos;infos
+              <EditableText contentKey="product.section.faq.eyebrow" defaultValue="Plus d'infos" />
             </p>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
-              Questions fréquentes
+              <EditableText contentKey="product.section.faq.title" defaultValue="Questions fréquentes" />
             </h2>
           </div>
 
@@ -1024,7 +1053,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
           {/* CTA conseiller */}
           <a href={getWhatsAppUrl(whatsapp, showWhatsAppMsg)} target="_blank" rel="noopener noreferrer">
-            <Button variant="whatsapp" size="lg" className="w-full">💬 Parler à un conseiller</Button>
+            <Button variant="whatsapp" size="lg" className="w-full">
+              <EditableText contentKey="product.cta.advisor" defaultValue="💬 Parler à un conseiller" />
+            </Button>
           </a>
         </div>
       </section>
@@ -1035,10 +1066,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
             <div className="mb-6">
               <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
-                Suggestions
+                <EditableText contentKey="product.section.related.eyebrow" defaultValue="Suggestions" />
               </p>
               <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
-                Vous aimerez aussi
+                <EditableText contentKey="product.section.related.title" defaultValue="Vous aimerez aussi" />
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-8">
@@ -1056,7 +1087,9 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             </div>
             <div className="mt-8 text-center">
               <Link href="/collection">
-                <Button variant="secondary" size="sm">Voir tout le catalogue</Button>
+                <Button variant="secondary" size="sm">
+                  <EditableText contentKey="product.related.see_all" defaultValue="Voir tout le catalogue" />
+                </Button>
               </Link>
             </div>
           </div>
@@ -1169,7 +1202,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
 
       {/* Bouton flottant « Voir le produit en 360° » (sous la barre sticky, visible dès « Points forts ») */}
       <AnimatePresence>
-        {show360Btn && (
+        {showSticky360Button && (
           <motion.div
             initial={{ y: -70, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -1188,7 +1221,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               )}
             >
               <Rotate3d className="h-4 w-4" />
-              Voir le produit en 360°
+              <EditableText contentKey="product.cta.360" defaultValue="Voir le produit en 360°" />
             </button>
           </motion.div>
         )}

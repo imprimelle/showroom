@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 interface SectionHeaderProps {
   /** Petit libellé au-dessus du titre (accent doré, majuscules). */
@@ -10,12 +11,17 @@ interface SectionHeaderProps {
   /** Lien/action affiché à droite (desktop) quand align="left". */
   action?: ReactNode;
   className?: string;
+  /** Clés de surcarte (édition inline). Omises → texte statique inchangé. */
+  eyebrowKey?: string;
+  titleKey?: string;
+  subtitleKey?: string;
 }
 
 /**
  * En-tête de section réutilisable (page d'accueil + guides).
  * Typographie alignée sur les sections de fiche produit (« Vous aimerez aussi ») :
  * kicker orange en majuscules `tracking-[0.22em]`, titre `font-serif text-3xl md:text-4xl`.
+ * Les textes peuvent être rendus éditables inline via les props `*Key`.
  */
 export function SectionHeader({
   eyebrow,
@@ -24,6 +30,9 @@ export function SectionHeader({
   align = "center",
   action,
   className,
+  eyebrowKey,
+  titleKey,
+  subtitleKey,
 }: SectionHeaderProps) {
   const isCenter = align === "center";
 
@@ -38,15 +47,23 @@ export function SectionHeader({
       <div className={cn(isCenter && "mx-auto max-w-2xl")}>
         {eyebrow ? (
           <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
-            {eyebrow}
+            {eyebrowKey ? (
+              <EditableText contentKey={eyebrowKey} defaultValue={eyebrow} />
+            ) : (
+              eyebrow
+            )}
           </p>
         ) : null}
         <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
-          {title}
+          {titleKey ? <EditableText contentKey={titleKey} defaultValue={title} /> : title}
         </h2>
         {subtitle ? (
           <p className="mt-1.5 text-sm md:text-base text-[var(--color-text-secondary)]">
-            {subtitle}
+            {subtitleKey ? (
+              <EditableText contentKey={subtitleKey} defaultValue={subtitle} />
+            ) : (
+              subtitle
+            )}
           </p>
         ) : null}
       </div>

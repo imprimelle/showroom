@@ -4,6 +4,7 @@ import { resolveFamily } from "@/lib/categories";
 import { normalizeForSearch } from "@/lib/utils";
 import { getUsage } from "@/lib/usages";
 import { ProductCard } from "@/components/product/ProductCard";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { ProductCardSkeleton } from "@/components/ui/Skeleton";
 import { CollectionToolbar } from "./CollectionToolbar";
 import type { ShowcaseProduct } from "@/lib/products";
@@ -20,10 +21,10 @@ function CatalogueGrid({ products }: { products: ShowcaseProduct[] }) {
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <span className="text-5xl mb-4">🔍</span>
         <h2 className="text-lg font-semibold text-[var(--color-text-secondary)]">
-          Aucun produit trouvé
+          <EditableText contentKey="collection.empty.title" defaultValue="Aucun produit trouvé" />
         </h2>
         <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-          Essayez une autre catégorie ou un autre mot-clé
+          <EditableText contentKey="collection.empty.desc" defaultValue="Essayez une autre catégorie ou un autre mot-clé" />
         </p>
       </div>
     );
@@ -77,7 +78,7 @@ export default async function CollectionPage({ searchParams }: Props) {
       {/* Header */}
       <div className="mb-6 text-center md:text-left">
         <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)]">
-          Tous nos produits
+          <EditableText contentKey="collection.title" defaultValue="Tous nos produits" />
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">
           {products.length} produit{products.length > 1 ? "s" : ""}
