@@ -104,6 +104,8 @@ export default async function ProductPage({ params }: Props) {
           reviews={allReviews}
           aggregate={aggregate}
           groupageInfo={settings.groupage_info}
+          threeSixtyGlobalEnabled={settings.three_sixty?.enabled ?? true}
+          threeSixtyStickyButtonEnabled={!!settings.three_sixty?.sticky_button_enabled}
         />
       </Suspense>
     </>

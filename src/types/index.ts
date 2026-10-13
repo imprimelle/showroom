@@ -268,4 +268,11 @@ export interface ShowcaseSettings {
   };
   /** Contenu de la modale d'infos groupage (éditable globalement). */
   groupage_info?: GroupageInfo;
+  /** Réglages globaux de la vue 360° (Réglages → 360°). */
+  three_sixty?: {
+    /** Interrupteur global maître : active/désactive les vues 360° sur tout le site. */
+    enabled?: boolean;
+    /** Affiche le bouton flottant « Voir le produit en 360° » de la barre sticky. */
+    sticky_button_enabled?: boolean;
+  };
 }

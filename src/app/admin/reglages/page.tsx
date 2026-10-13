@@ -48,6 +48,10 @@ export default async function AdminSettingsPage() {
       raw.groupage_info?.sections && raw.groupage_info.sections.length > 0
         ? raw.groupage_info
         : DEFAULT_GROUPAGE_INFO,
+    three_sixty: {
+      enabled: raw.three_sixty?.enabled ?? true,
+      sticky_button_enabled: !!raw.three_sixty?.sticky_button_enabled,
+    },
     home: {
       ...rawHome,
       cta_title: rawHome?.cta_title ?? DEFAULT_CTA.title,

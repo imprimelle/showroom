@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -17,7 +17,7 @@ import { imgProxyUrl } from "@/lib/images";
 import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -30,6 +30,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "faq", label: "FAQ produit", icon: HelpCircle },
   { id: "preuve", label: "Preuve sociale", icon: Megaphone },
   { id: "groupage", label: "Groupage", icon: Users },
+  { id: "three_sixty", label: "360°", icon: Rotate3d },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -229,6 +230,11 @@ export function SettingsClient({ initialData, products }: {
   const socialProofCount = parseSocialProofEntries(socialProofText).length;
   const setSocialProofEnabled = (enabled: boolean) =>
     setData({ ...data, social_proof: { ...socialProof, enabled } });
+
+  // === Vue 360° globale ===
+  const threeSixty = data.three_sixty || { enabled: true, sticky_button_enabled: false };
+  const setThreeSixty = (patch: Partial<{ enabled: boolean; sticky_button_enabled: boolean }>) =>
+    setData({ ...data, three_sixty: { ...threeSixty, ...patch } });
   const setSocialProofText = (text: string) =>
     setData({ ...data, social_proof: { ...socialProof, entries: parseSocialProofEntries(text) } });
   const setSocialProofField = (field: "first_delay_seconds" | "min_minutes" | "max_minutes" | "display_seconds", value: number) =>
@@ -323,6 +329,12 @@ export function SettingsClient({ initialData, products }: {
               sections: (data.groupage_info.sections || [])
                 .filter((s) => s.title?.trim() || s.text?.trim())
                 .map((s) => ({ title: s.title.trim(), text: s.text.trim() })),
+            }
+          : undefined,
+        three_sixty: data.three_sixty
+          ? {
+              enabled: !!data.three_sixty.enabled,
+              sticky_button_enabled: !!data.three_sixty.sticky_button_enabled,
             }
           : undefined,
       };
@@ -948,6 +960,42 @@ export function SettingsClient({ initialData, products }: {
               </div>
             ))}
             {groupageInfo.sections.length === 0 && <p className="text-sm text-[var(--color-text-tertiary)]">Aucune rubrique.</p>}
+          </div>
+        </section>
+      )}
+
+      {tab === "three_sixty" && (
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Vue 360°</h2>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+            Gestion globale de la vue 360° sur le site. L&apos;activation globale est un interrupteur
+            maître : les vues 360° ne s&apos;affichent que si elle est activée (en plus de
+            l&apos;activation propre à chaque produit). Le bouton « Voir le produit en 360° » de la
+            barre sticky est contrôlé séparément.
+          </p>
+
+          <div className="space-y-2">
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Activer les vues 360°</span>
+              <input
+                type="checkbox"
+                checked={!!threeSixty.enabled}
+                onChange={(e) => setThreeSixty({ enabled: e.target.checked })}
+                className="w-4 h-4 accent-[var(--color-accent-blue)]"
+              />
+            </label>
+
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">
+                Afficher le bouton « Voir le produit en 360° » (barre sticky)
+              </span>
+              <input
+                type="checkbox"
+                checked={!!threeSixty.sticky_button_enabled}
+                onChange={(e) => setThreeSixty({ sticky_button_enabled: e.target.checked })}
+                className="w-4 h-4 accent-[var(--color-accent-blue)]"
+              />
+            </label>
           </div>
         </section>
       )}
