@@ -117,6 +117,15 @@ export function AnalyticsScripts({
       s.src = umamiScriptUrl;
       s.setAttribute("data-website-id", umamiWebsiteId);
       document.head.appendChild(s);
+
+      // Umami session recording (replays) — même site, même consentement analytics.
+      const recorderUrl = new URL("recorder.js", umamiScriptUrl).href;
+      const r = document.createElement("script");
+      r.async = true;
+      r.defer = true;
+      r.src = recorderUrl;
+      r.setAttribute("data-website-id", umamiWebsiteId);
+      document.head.appendChild(r);
     }
 
     // PostHog — analytics
