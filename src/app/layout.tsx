@@ -8,6 +8,7 @@ import { ChromeFooter } from "@/components/layout/ChromeFooter";
 import { CookieConsent } from "@/components/layout/CookieConsent";
 import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
 import { WhatsAppClickTracker } from "@/components/analytics/WhatsAppClickTracker";
+import { FirstPartyTracker } from "@/components/analytics/FirstPartyTracker";
 import { ContentEditProvider } from "@/components/admin/content/ContentEditProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SocialProofToast } from "@/components/social/SocialProofToast";
@@ -104,6 +105,7 @@ export default async function RootLayout({
             posthogHost={settings.analytics?.posthog_host}
           />
           <WhatsAppClickTracker />
+          <FirstPartyTracker />
           <ToastContainer />
           <SocialProofToast
             enabled={socialProof.enabled}

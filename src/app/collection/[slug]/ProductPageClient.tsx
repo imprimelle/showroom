@@ -154,6 +154,21 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [activeFaq, setActiveFaq] = useState<FaqPill | null>(null);
   const addItem = useCartStore((s) => s.addItem);
 
+  // Tracking `view_item` (une seule fois par fiche produit).
+  useEffect(() => {
+    const minPrice = product.variants?.reduce<number | null>(
+      (min, v) => (v.price != null && (min == null || v.price < min) ? v.price : min),
+      null
+    );
+    track("view_item", {
+      product_slug: product.slug,
+      product_name: product.name,
+      value: minPrice ?? undefined,
+      currency: "XOF",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.slug]);
+
   // === Groupage (achat groupé) : config produit + statut live (jauge de places) ===
   const groupageConfig = resolveGroupageConfig(product.showcase);
   const groupPrice = groupageConfig ? groupagePrice(groupageConfig, product.variants) : null;

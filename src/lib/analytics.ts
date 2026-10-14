@@ -1,8 +1,10 @@
 /**
  * Tracking d'événements analytics côté client.
- * Envoie chaque événement aux outils chargés (Umami, PostHog, Meta Pixel).
+ * Envoie chaque événement aux outils chargés (Umami, PostHog, Meta Pixel)
+ * ET au collecteur first-party hébergé (table `showroom_events`).
  * No-op silencieux si un outil n'est pas chargé (consentement refusé ou non configuré).
  */
+import { sendEvent } from "./first-party";
 
 // Mapping des événements internes vers les noms standards Meta Pixel.
 const META_EVENTS: Record<string, string> = {
@@ -48,5 +50,12 @@ export function track(event: string, data?: Record<string, unknown>) {
     } catch {
       /* ignore */
     }
+  }
+
+  // Collecteur first-party (respecte le consentement « analytics » en interne).
+  try {
+    sendEvent(event, data);
+  } catch {
+    /* ignore */
   }
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getPublishedProducts } from "@/lib/products";
 import { getShowcaseSettings } from "@/lib/settings";
 import { CATEGORIES, resolveFamily } from "@/lib/categories";
-import { ProductCard } from "@/components/product/ProductCard";
+import { ProductSlider } from "@/components/product/ProductSlider";
 import { HeroSlider } from "@/components/hero/HeroSlider";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { ChoiceGuide } from "@/components/decision/ChoiceGuide";
@@ -122,7 +122,7 @@ export default async function HomePage() {
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
       {/* ===== 2. Catégories (focus familles) ===== */}
-      <section className="bg-[var(--color-bg-secondary)] py-12 md:py-16">
+      <section className="bg-[var(--color-bg-secondary)] pt-8 pb-12 md:pt-10 md:pb-16">
         <div className="max-w-7xl mx-auto px-4">
           <SectionHeader
             align="left"
@@ -137,13 +137,13 @@ export default async function HomePage() {
             {familyCounts.map((fam) => (
               <div
                 key={fam.id}
-                className="group overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] flex flex-col hover:shadow-lg transition-shadow"
+                className="group relative flex flex-col overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
               >
-                {/* Média 3/4 (image ou vidéo) — cliquable vers l'univers */}
+                {/* Média 4/5 — cliquable vers l'univers */}
                 <Link
                   href={`/collection/categorie/${fam.id}`}
                   aria-label={`Voir l'univers ${fam.title}`}
-                  className="relative aspect-[3/4] overflow-hidden block cursor-pointer"
+                  className="relative aspect-[4/5] overflow-hidden block cursor-pointer bg-[var(--color-bg-tertiary)]"
                 >
                   {fam.media ? (
                     <MediaRenderer
@@ -151,35 +151,49 @@ export default async function HomePage() {
                       alt={fam.media.alt || fam.name}
                       type={fam.media.type}
                       imgWidth={800}
-                      imgHeight={1067}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      imgHeight={1000}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                     />
                   ) : (
                     <div className={`w-full h-full bg-gradient-to-br ${fam.color}`} />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-3 left-4 right-4 flex items-center gap-2.5">
-                    <span className="text-3xl">{fam.icon}</span>
-                    <div>
-                      <h3 className="text-white text-lg font-bold leading-tight">{fam.title}</h3>
-                      <span className="text-white/70 text-xs">
-                        {fam.count} produit{fam.count > 1 ? "s" : ""}
-                      </span>
-                    </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+
+                  {/* Icône (chip verre dépoli, haut-gauche) */}
+                  <div className="absolute top-3 left-3 w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-sm">
+                    {fam.icon}
                   </div>
+
+                  {/* Compteur (badge, haut-droite) */}
+                  <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/40 backdrop-blur-md text-white border border-white/15">
+                    {fam.count} produit{fam.count > 1 ? "s" : ""}
+                  </span>
+
+                  {/* Titre (bas-gauche) */}
+                  <div className="absolute bottom-4 left-4 right-16">
+                    <h3 className="text-white text-xl md:text-2xl font-display font-bold leading-tight drop-shadow-sm">
+                      {fam.title}
+                    </h3>
+                  </div>
+
+                  {/* Flèche (bas-droite) */}
+                  <span className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] flex items-center justify-center shadow-md group-hover:bg-[var(--color-accent-amber)] group-hover:text-white transition-colors">
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
                 </Link>
 
-                {/* Contenu */}
-                <div className="p-5 flex flex-col flex-1">
+                {/* Sous-catégories + CTA */}
+                <div className="p-4 flex flex-col flex-1 gap-3">
                   {fam.children.length > 0 ? (
                     <div className="flex flex-wrap gap-1.5">
                       {fam.children.map((sub) => (
                         <Link
                           key={sub.id}
                           href={`/collection?category=${sub.id}`}
-                          className="px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-text-primary)] hover:text-[var(--color-bg-primary)] transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
                         >
-                          {sub.icon} {sub.name}
+                          <span className="text-sm leading-none">{sub.icon}</span>
+                          {sub.name}
                         </Link>
                       ))}
                     </div>
@@ -191,9 +205,9 @@ export default async function HomePage() {
 
                   <Link
                     href={`/collection/categorie/${fam.id}`}
-                    className="mt-auto pt-4 block"
+                    className="mt-auto pt-1 block"
                   >
-                    <span className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] font-semibold min-h-[46px] px-6 text-sm transition-colors hover:bg-[#2A2A2A]">
+                    <span className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] font-semibold min-h-[44px] px-6 text-sm transition-colors hover:bg-[#2A2A2A]">
                       <EditableText contentKey="home.categories.explore" defaultValue="Explorer la catégorie" />
                       <ArrowRight className="w-4 h-4" />
                     </span>
@@ -205,7 +219,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 3. Produits en vedette (grille fixe 2×3) ===== */}
+      {/* ===== 3. Produits en vedette (slider interactif) ===== */}
       {featured.length > 0 && (
         <section className="py-12 md:py-16">
           <div className="max-w-7xl mx-auto px-4">
@@ -223,11 +237,7 @@ export default async function HomePage() {
                 </Link>
               }
             />
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-6">
-              {featured.map((p) => (
-                <ProductCard key={p.id} product={p} sizes="(max-width: 767px) 50vw, 33vw" />
-              ))}
-            </div>
+            <ProductSlider products={featured} />
             <div className="mt-6 text-center md:hidden">
               <Link href="/collection">
                 <Button variant="secondary" size="sm">

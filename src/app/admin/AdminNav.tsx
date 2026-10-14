@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Package, ClipboardList, Settings, DollarSign, Users } from "lucide-react";
+import { LayoutDashboard, Package, ClipboardList, Settings, DollarSign, Users, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/produits", label: "Produits", icon: Package },
   { href: "/admin/prix", label: "Prix", icon: DollarSign },
   { href: "/admin/commandes", label: "Commandes", icon: ClipboardList },
