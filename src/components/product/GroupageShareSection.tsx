@@ -1,5 +1,6 @@
 "use client";
 import { Share2 } from "lucide-react";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { buildGroupageShareMessage, waShareUrl, groupageProductUrl } from "@/lib/whatsapp";
 
 interface GroupageShareSectionProps {
@@ -123,7 +124,7 @@ export function GroupageShareSection({
   return (
     <div className="rounded-xl bg-[var(--color-accent-amber)]/10 p-3">
       <p className="text-xs font-semibold text-[var(--color-text-primary)]">
-        Invitez vos amis à rejoindre le groupage pour accélérer la livraison
+        <EditableText contentKey="groupage.share.invite" defaultValue="Invitez vos amis à rejoindre le groupage pour accélérer la livraison" />
       </p>
       <p className="mt-1 text-[11px] text-[var(--color-text-secondary)]">
         {sharesCount > 0
@@ -136,7 +137,7 @@ export function GroupageShareSection({
           onClick={handleNativeShare}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-3 py-1.5 text-xs font-semibold text-[var(--color-text-primary)] transition-colors hover:bg-[var(--color-accent-amber-hover)]"
         >
-          <Share2 className="h-3.5 w-3.5" /> Partager
+          <Share2 className="h-3.5 w-3.5" /> <EditableText contentKey="groupage.share.button" defaultValue="Partager" />
         </button>
         <button type="button" onClick={() => openShareUrl(facebookUrl)} aria-label="Partager sur Facebook" className={`${iconBtn} bg-[#1877F2]`}>
           <FacebookIcon className="h-4 w-4" />

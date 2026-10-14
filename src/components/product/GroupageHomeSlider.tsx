@@ -6,6 +6,7 @@ import { Users, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { useFormatPrice } from "@/stores/currency";
 import { imgProxyUrl } from "@/lib/images";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { EditableText } from "@/components/admin/content/EditableText";
 import type { GroupageHomeItem } from "@/lib/groupage-home";
 
 interface GroupageStatus {
@@ -92,6 +93,9 @@ export function GroupageHomeSlider({ items }: { items: GroupageHomeItem[] }) {
           eyebrow="Achat groupé"
           title="Rejoignez un groupage"
           subtitle="Plus on est nombreux, moins c'est cher"
+          eyebrowKey="home.groupage.eyebrow"
+          titleKey="home.groupage.title"
+          subtitleKey="home.groupage.subtitle"
         />
 
         <div className="relative">
@@ -200,7 +204,7 @@ function GroupageHomeCard({
           </div>
         )}
         <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-accent-amber)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-text-primary)]">
-          <Users className="h-3.5 w-3.5" /> Groupage
+          <Users className="h-3.5 w-3.5" /> <EditableText contentKey="groupage.badge" defaultValue="Groupage" />
         </span>
         {item.reductionPercent > 0 && (
           <span className="absolute right-3 top-3 rounded-full bg-[var(--color-success)] px-2 py-0.5 text-xs font-bold text-white">
@@ -233,7 +237,7 @@ function GroupageHomeCard({
         {item.includedOptions.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
-              Inclus :
+              <EditableText contentKey="groupage.included" defaultValue="Inclus :" />
             </span>
             {item.includedOptions.map((opt) => (
               <span
@@ -299,7 +303,7 @@ function GroupageHomeCard({
           className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#15803D]"
         >
           <Users className="h-4 w-4" />
-          Rejoindre le groupage
+          <EditableText contentKey="groupage.join" defaultValue="Rejoindre le groupage" />
         </Link>
       </div>
     </div>

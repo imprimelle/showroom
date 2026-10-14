@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, RotateCcw } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
+import { EditableText } from "@/components/admin/content/EditableText";
 import { getMinPrice } from "@/lib/utils";
 import { resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
@@ -99,6 +100,9 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
           eyebrow="Trouvez le bon produit"
           title="Besoin d&apos;un conseil ?"
           subtitle="Répondez à 3 questions pour trouver le produit qu&apos;il vous faut"
+          eyebrowKey="home.guide.eyebrow"
+          titleKey="home.guide.title"
+          subtitleKey="home.guide.subtitle"
         />
 
         {/* Progress */}
@@ -118,7 +122,9 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
         {/* Step 1 — Emplacement */}
         {step === 0 && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">{questionTitles[0]}</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
+              <EditableText contentKey="home.guide.q1" defaultValue={questionTitles[0]} />
+            </h3>
             <div className="space-y-2.5">
               {PLACEMENTS.map((p) => (
                 <button
@@ -140,7 +146,9 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
         {/* Step 2 — Univers */}
         {step === 1 && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">{questionTitles[1]}</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
+              <EditableText contentKey="home.guide.q2" defaultValue={questionTitles[1]} />
+            </h3>
             <div className="space-y-2.5">
               {UNIVERSES.map((u) => (
                 <button
@@ -157,7 +165,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
               ))}
             </div>
             <button onClick={() => setStep(0)} className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
-              ← Revenir
+              <EditableText contentKey="home.guide.back" defaultValue="← Revenir" />
             </button>
           </div>
         )}
@@ -165,7 +173,9 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
         {/* Step 3 — Budget */}
         {step === 2 && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">{questionTitles[2]}</h3>
+            <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
+              <EditableText contentKey="home.guide.q3" defaultValue={questionTitles[2]} />
+            </h3>
             <div className="space-y-2.5">
               {BUDGETS.map((b) => (
                 <button
@@ -182,7 +192,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
               ))}
             </div>
             <button onClick={() => setStep(1)} className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
-              ← Revenir
+              <EditableText contentKey="home.guide.back" defaultValue="← Revenir" />
             </button>
           </div>
         )}
@@ -195,7 +205,11 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
                 {matches.length > 0 ? `Voici ${matches.length} produit${matches.length > 1 ? "s" : ""} pour vous` : "Aucun résultat exact"}
               </h3>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-                {matches.length > 0 ? "Sélectionnés selon vos réponses" : "Essayez d'élargir vos critères — nous fabriquons aussi sur mesure."}
+                {matches.length > 0 ? (
+                  <EditableText contentKey="home.guide.result_found" defaultValue="Sélectionnés selon vos réponses" />
+                ) : (
+                  <EditableText contentKey="home.guide.result_empty" defaultValue="Essayez d'élargir vos critères — nous fabriquons aussi sur mesure." />
+                )}
               </p>
             </div>
 
@@ -209,10 +223,10 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Link href={ctaHref} className="inline-flex items-center gap-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] font-semibold px-8 py-3 text-base hover:bg-[#2A2A2A] transition-colors">
-                Voir toute la sélection <ArrowRight className="w-4 h-4" />
+                <EditableText contentKey="home.guide.cta" defaultValue="Voir toute la sélection" /> <ArrowRight className="w-4 h-4" />
               </Link>
               <button onClick={reset} className="inline-flex items-center gap-2 rounded-full border border-[var(--color-border-strong)] px-6 py-3 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors">
-                <RotateCcw className="w-4 h-4" /> Recommencer
+                <RotateCcw className="w-4 h-4" /> <EditableText contentKey="home.guide.reset" defaultValue="Recommencer" />
               </button>
             </div>
           </div>

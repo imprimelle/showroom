@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { COUNTRIES } from "@/lib/countries";
+import { EditableText } from "@/components/admin/content/EditableText";
 import type { ShowcaseReview, ReviewAggregate } from "@/types";
 
 const MAX_PHOTOS = 4;
@@ -355,9 +356,11 @@ export function ReviewSection({
       <div className="max-w-7xl mx-auto px-4 py-10 md:py-12">
         {/* Kicker orange + titre noir */}
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent-amber)]">Avis</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-accent-amber)]">
+            <EditableText contentKey="product.reviews.eyebrow" defaultValue="Avis" />
+          </p>
           <h2 className="mt-1.5 font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)]">
-            Vos retours comptent
+            <EditableText contentKey="product.reviews.title" defaultValue="Vos retours comptent" />
           </h2>
         </div>
 
@@ -398,7 +401,7 @@ export function ReviewSection({
             {!showForm && (
               <Button variant="whatsapp" size="lg" className="w-full" onClick={() => setShowForm(true)}>
                 <PenLine className="w-4 h-4 mr-2" />
-                Laisser un avis
+                <EditableText contentKey="product.reviews.cta" defaultValue="Laisser un avis" />
               </Button>
             )}
 
@@ -419,8 +422,12 @@ export function ReviewSection({
 
             {reviews.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-[var(--color-border-default)] p-8 text-center">
-                <p className="text-sm text-[var(--color-text-secondary)]">Aucun avis pour le moment.</p>
-                <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Soyez le premier à partager votre expérience !</p>
+                <p className="text-sm text-[var(--color-text-secondary)]">
+                  <EditableText contentKey="product.reviews.empty" defaultValue="Aucun avis pour le moment." />
+                </p>
+                <p className="text-xs text-[var(--color-text-tertiary)] mt-1">
+                  <EditableText contentKey="product.reviews.empty2" defaultValue="Soyez le premier à partager votre expérience !" />
+                </p>
               </div>
             ) : (
               <>

@@ -6,6 +6,7 @@ import { useFormatPrice } from "@/stores/currency";
 import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
 import { cn } from "@/lib/utils";
+import { EditableText } from "@/components/admin/content/EditableText";
 import type { RefObject } from "react";
 import type { ProductParameter, GroupageInfo } from "@/types";
 
@@ -144,7 +145,9 @@ export function GroupageCard({
               className="inline-flex h-6 items-center gap-1.5 rounded-full border border-[var(--color-border-strong)] bg-[var(--color-surface-card)] px-2.5 text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
             >
               <Info className="h-3.5 w-3.5" />
-              <span className="text-[11px] font-semibold leading-none">Plus d&apos;infos</span>
+              <span className="text-[11px] font-semibold leading-none">
+                <EditableText contentKey="groupage.more_info" defaultValue="Plus d'infos" />
+              </span>
             </motion.button>
           </div>
           {reductionPercent > 0 && (
@@ -178,7 +181,7 @@ export function GroupageCard({
         {visibleOptions.length > 0 && (
           <div className="mt-3 border-t border-[var(--color-border-default)] pt-3">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-text-tertiary)]">
-              Options
+              <EditableText contentKey="groupage.options" defaultValue="Options" />
             </p>
             <div className="mt-2 space-y-1.5">
               {visibleOptions.map(({ param, opt }) => {
@@ -197,7 +200,7 @@ export function GroupageCard({
                           </span>
                         </span>
                         <span className="shrink-0 text-[10px] font-semibold text-[var(--color-success)]">
-                          Inclus
+                          <EditableText contentKey="groupage.included" defaultValue="Inclus" />
                         </span>
                       </div>
                     );
@@ -328,7 +331,7 @@ export function GroupageCard({
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-success)] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#15803D]"
           >
             <Users className="h-4 w-4" />
-            Rejoindre le groupage
+            <EditableText contentKey="groupage.join" defaultValue="Rejoindre le groupage" />
             <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
             <span className="font-mono font-bold">{formatPrice(lineTotal)}</span>
           </motion.button>

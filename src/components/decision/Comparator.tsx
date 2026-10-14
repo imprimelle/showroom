@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EditableText } from "@/components/admin/content/EditableText";
 
 /**
  * Comparateur statique des principaux types d'enseignes.
@@ -25,10 +26,10 @@ export function Comparator() {
   return (
     <section className="mb-8">
       <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-1">
-        Comparer nos enseignes
+        <EditableText contentKey="categorie.comparator.title" defaultValue="Comparer nos enseignes" />
       </h2>
       <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-        Un doute entre deux types ? Ce tableau vous aide à choisir.
+        <EditableText contentKey="categorie.comparator.subtitle" defaultValue="Un doute entre deux types ? Ce tableau vous aide à choisir." />
       </p>
 
       <div className="overflow-x-auto rounded-2xl border border-[var(--color-border-default)]">
@@ -36,7 +37,7 @@ export function Comparator() {
           <thead>
             <tr className="bg-[var(--color-bg-secondary)]">
               <th className="text-left px-4 py-3 font-semibold text-[var(--color-text-tertiary)] align-bottom">
-                Critère
+                <EditableText contentKey="categorie.comparator.criteria" defaultValue="Critère" />
               </th>
               {COLUMNS.map((c) => (
                 <th key={c.id} className="px-3 py-3 text-center align-bottom">

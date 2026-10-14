@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Volume2, VolumeX, Play, Pause, ShoppingBag, X } from "lucide-react";
 import { imgProxyUrl } from "@/lib/images";
 import { useFormatPrice } from "@/stores/currency";
+import { EditableText } from "@/components/admin/content/EditableText";
 import type { IdeaDecoSlide } from "@/types";
 
 /**
@@ -64,10 +65,10 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
           {/* En-tête de section */}
           <div className="mb-5 md:mb-6">
             <p className="text-[11px] md:text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-accent-amber)]">
-              Idées décos
+              <EditableText contentKey="product.ideas.eyebrow" defaultValue="Idées décos" />
             </p>
             <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
-              Trouvez l&apos;inspiration
+              <EditableText contentKey="product.ideas.title" defaultValue="Trouvez l'inspiration" />
             </h2>
           </div>
 
@@ -112,7 +113,7 @@ export function IdeaDecoSlider({ videos }: { videos: IdeaDecoSlide[] }) {
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-default)]">
                 <h2 className="text-lg font-semibold font-display text-[var(--color-text-primary)] flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5" />
-                  Produits
+                  <EditableText contentKey="product.ideas.products" defaultValue="Produits" />
                   <span className="text-sm font-normal text-[var(--color-text-secondary)]">
                     ({openProducts.length})
                   </span>
