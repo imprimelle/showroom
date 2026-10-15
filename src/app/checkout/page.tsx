@@ -1,8 +1,10 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, ShoppingCart, Banknote, MessageCircle, ChevronDown, Lock, CheckCircle2, Package } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, ShoppingCart, Banknote, MessageCircle, ChevronDown, Lock } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useCheckoutStore } from "@/stores/checkout";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useFormatPrice, useCurrencyStore } from "@/stores/currency";
@@ -23,9 +25,12 @@ const METHOD_STYLE: Record<OnlinePaymentMethod, { bg: string; fg: string; short:
 };
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const formatPrice = useFormatPrice();
   const detectedCountry = useCurrencyStore((s) => s.country);
   const { items, getTotal, clearCart } = useCartStore();
+  const customer = useCheckoutStore((s) => s.customer);
+  const setCustomer = useCheckoutStore((s) => s.setCustomer);
   const total = getTotal();
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,10 +41,9 @@ export default function CheckoutPage() {
   const [paymentMethods, setPaymentMethods] = useState<OnlineMethodDef[]>(DEFAULT_ONLINE_METHODS);
   const [onlineEnabled, setOnlineEnabled] = useState(true);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
   const [country, setCountry] = useState<string>(() => {
-    const d = (detectedCountry || "").toUpperCase();
+    const d = (customer.country || detectedCountry || "").toUpperCase();
     return COUNTRIES.some((c) => c.code === d) ? d : "CI";
   });
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
@@ -65,6 +69,14 @@ export default function CheckoutPage() {
   // Le groupage exige un acompte en ligne → pas de cash à la livraison seul.
   const allowsCOD = !hasGroupage && items.every((i) => i.cash_on_delivery === true);
   const allowsOnline = items.every((i) => i.groupage || i.online_enabled === true);
+  const liveMethods = paymentMethods.filter((m) => m.live);
+
+  // Pré-sélection du mode de paiement (CTA jamais grisé).
+  useEffect(() => {
+    if (selectedMethod) return;
+    setSelectedMethod(allowsCOD ? "cod" : "talk_first");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowsCOD]);
 
   // Charge zones + méthodes de paiement + état FedaPay.
   useEffect(() => {
@@ -99,36 +111,7 @@ export default function CheckoutPage() {
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  // Écran de remerciement après commande (cash) : remplace l'écran « panier vide ».
-  if (placedOrderId) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-[var(--color-success-soft)] text-[var(--color-success)]">
-            <CheckCircle2 className="w-10 h-10" />
-          </div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] mb-2">
-            Commande effectuée !
-          </h1>
-          <p className="text-[var(--color-text-secondary)] mb-6">
-            Merci ! Nous vous contacterons sous 24h au numéro indiqué pour confirmer les détails.
-          </p>
-          <div className="p-4 rounded-xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-default)] mb-6">
-            <div className="flex items-center justify-center gap-2 text-sm text-[var(--color-text-secondary)]">
-              <Package className="w-4 h-4" />
-              <span>N° de commande</span>
-            </div>
-            <p className="text-lg font-bold font-mono text-[var(--color-text-primary)] mt-1">#{placedOrderId.slice(0, 8).toUpperCase()}</p>
-          </div>
-          <div className="space-y-3">
-            <Link href="/suivi"><Button variant="secondary" size="lg" className="w-full">Suivre ma commande</Button></Link>
-            <Link href="/collection"><Button variant="primary" size="lg" className="w-full">Continuer mes achats</Button></Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Écran « panier vide » (la confirmation est gérée par /confirmation, unifiée).
   if (items.length === 0) {
     return (
       <div className="max-w-lg mx-auto px-4 py-20 text-center">
@@ -235,7 +218,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Cash à la livraison.
+      // Cash à la livraison → redirection vers /confirmation (écran unifié).
       track("purchase", {
         order_id: data.order_id,
         value: total + shippingFee,
@@ -245,8 +228,8 @@ export default function CheckoutPage() {
         shipping_country: country,
         shipping_fee: shippingFee,
       });
-      setPlacedOrderId(data.order_id);
       clearCart();
+      router.push(`/confirmation?order=${data.order_id}`);
     } catch {
       setGlobalError("Erreur de connexion. Veuillez réessayer.");
     } finally {
@@ -254,7 +237,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const liveMethods = paymentMethods.filter((m) => m.live);
   const nextLabel = selectedMethod === "cod"
     ? "Confirmer la commande"
     : selectedMethod === "talk_first"
@@ -361,8 +343,8 @@ export default function CheckoutPage() {
         <section className="mb-8">
           <h2 className="font-display text-lg font-bold text-[var(--color-text-primary)] mb-4">Contact</h2>
           <div className="space-y-4">
-            <Input label="Téléphone" name="phone" required placeholder="+225 01 23 45 67" error={errors.phone} type="tel" autoComplete="tel" />
-            <Input label="Nom complet" name="name" required placeholder="Votre nom et prénom" error={errors.name} autoComplete="name" />
+            <Input label="Téléphone" name="phone" required placeholder="+225 01 23 45 67" error={errors.phone} type="tel" autoComplete="tel" defaultValue={customer.phone} onChange={(e) => setCustomer({ phone: e.target.value })} />
+            <Input label="Nom complet" name="name" required placeholder="Votre nom et prénom" error={errors.name} autoComplete="name" defaultValue={customer.name} onChange={(e) => setCustomer({ name: e.target.value })} />
           </div>
         </section>
 
@@ -376,7 +358,10 @@ export default function CheckoutPage() {
               </label>
               <select
                 value={country}
-                onChange={(e) => setCountry(e.target.value)}
+                onChange={(e) => {
+                  setCountry(e.target.value);
+                  setCustomer({ country: e.target.value });
+                }}
                 className="w-full h-12 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.15)] focus:outline-none"
               >
                 {countryOptions.map((c) => (
@@ -387,7 +372,7 @@ export default function CheckoutPage() {
                 <p className="text-xs text-[var(--color-text-tertiary)] mt-1">Livraison : {formatPrice(shippingFee)}</p>
               )}
             </div>
-            <Input label="Adresse de livraison" name="address" required placeholder="Rue, immeuble, point de repère" error={errors.address} autoComplete="street-address" />
+            <Input label="Adresse de livraison" name="address" required placeholder="Rue, immeuble, point de repère" error={errors.address} autoComplete="street-address" defaultValue={customer.address} onChange={(e) => setCustomer({ address: e.target.value })} />
           </div>
         </section>
 
@@ -410,46 +395,36 @@ export default function CheckoutPage() {
             </div>
           )}
           <div className="space-y-3">
-            {/* Payez en ligne */}
-            {allowsOnline && onlineEnabled && (
+            {/* Payez en ligne (méthodes « live » uniquement) */}
+            {allowsOnline && onlineEnabled && liveMethods.length > 0 && (
               <div>
                 <p className="text-sm font-semibold text-[var(--color-text-primary)] mb-2">Payez en ligne</p>
                 <div className="grid grid-cols-4 gap-2">
-                  {paymentMethods.map((m) => {
-                    const live = m.live;
+                  {liveMethods.map((m) => {
                     const active = selectedMethod === m.id;
                     const style = METHOD_STYLE[m.id];
                     return (
                       <button
                         key={m.id}
                         type="button"
-                        disabled={!live}
-                        onClick={() => live && setSelectedMethod(m.id)}
+                        onClick={() => setSelectedMethod(m.id)}
                         className={`flex flex-col items-center gap-1.5 rounded-xl border p-2.5 transition-colors ${
                           active
                             ? "border-[var(--color-text-primary)] bg-[var(--color-bg-secondary)]"
-                            : live
-                              ? "border-[var(--color-border-default)] hover:bg-[var(--color-bg-tertiary)]"
-                              : "border-[var(--color-border-default)] opacity-45 cursor-not-allowed"
+                            : "border-[var(--color-border-default)] hover:bg-[var(--color-bg-tertiary)]"
                         }`}
                       >
                         <span
                           className="w-10 h-7 rounded flex items-center justify-center text-[10px] font-bold"
-                          style={{ backgroundColor: live ? style.bg : "#e5e7eb", color: live ? style.fg : "#9ca3af" }}
+                          style={{ backgroundColor: style.bg, color: style.fg }}
                         >
                           {style.short}
                         </span>
                         <span className="text-[10px] leading-tight text-center text-[var(--color-text-secondary)]">{m.label}</span>
-                        {!live && <span className="text-[9px] uppercase tracking-wide text-[var(--color-text-tertiary)]">Bientôt</span>}
                       </button>
                     );
                   })}
                 </div>
-                {liveMethods.length === 0 && (
-                  <p className="text-xs text-[var(--color-text-tertiary)] mt-2">
-                    Le paiement en ligne sera bientôt disponible.
-                  </p>
-                )}
               </div>
             )}
 

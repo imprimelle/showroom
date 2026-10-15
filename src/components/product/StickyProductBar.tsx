@@ -1,6 +1,7 @@
 "use client";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
+import { Button } from "@/components/ui/Button";
 
 interface StickyProductBarProps {
   name: string;
@@ -9,14 +10,18 @@ interface StickyProductBarProps {
   /** Image du produit (recadrée en 4:3). */
   image: string | null;
   visible: boolean;
+  /** CTA « Commander » (commande directe via le slide). */
+  onBuyNow?: () => void;
+  /** Le bouton est-il actif (variante sélectionnée / groupage valide) ? */
+  buyEnabled?: boolean;
 }
 
 /**
  * Barre fine fixée en haut de page, affichée quand l'image principale
  * sort du viewport. Remplace visuellement la TopNav (masquée via
- * `body[data-sticky-product]` dans globals.css).
+ * `body[data-sticky-product]` dans globals.css). Intègre un CTA « Commander ».
  */
-export function StickyProductBar({ name, priceLabel, image, visible }: StickyProductBarProps) {
+export function StickyProductBar({ name, priceLabel, image, visible, onBuyNow, buyEnabled = true }: StickyProductBarProps) {
   return (
     <div
       className={cn(
@@ -43,10 +48,23 @@ export function StickyProductBar({ name, priceLabel, image, visible }: StickyPro
             {name}
           </span>
 
-          {/* Prix à droite */}
+          {/* Prix */}
           <span className="shrink-0 font-mono text-sm font-bold text-[var(--color-text-primary)]">
             {priceLabel}
           </span>
+
+          {/* CTA Commander */}
+          {onBuyNow && (
+            <Button
+              variant="success"
+              size="sm"
+              className="shrink-0 !px-3.5 !min-h-[34px]"
+              onClick={onBuyNow}
+              disabled={!buyEnabled}
+            >
+              Commander
+            </Button>
+          )}
         </div>
       </div>
     </div>

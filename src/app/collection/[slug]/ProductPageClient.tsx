@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCartStore } from "@/stores/cart";
+import { useCheckoutStore } from "@/stores/checkout";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
 import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
 import { useFormatPrice } from "@/stores/currency";
@@ -153,6 +154,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [openParam, setOpenParam] = useState<string | null>(null);
   const [activeFaq, setActiveFaq] = useState<FaqPill | null>(null);
   const addItem = useCartStore((s) => s.addItem);
+  const openCheckout = useCheckoutStore((s) => s.open);
 
   // Tracking `view_item` (une seule fois par fiche produit).
   useEffect(() => {
@@ -439,7 +441,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   // (contrôle spécifique désactivé), et uniquement si le produit dispose réellement d'une vue 360°.
   const showSticky360Button = show360Btn && has360 && !!threeSixtyStickyButtonEnabled;
 
-  const handleAddToCart = () => {
+  // Ajoute la variante + options sélectionnées au panier (sans ouvrir de surface).
+  const addCurrentToCart = () => {
     if (!selectedVariant || selectedVariant.price == null) return;
     const key = `${product.id}:${selectedVariant.sku}:${selectedOptionsList
       .map((o) => `${o.param_id}.${o.option_id}`)
@@ -459,11 +462,21 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       online_enabled: !!product.showcase?.payment?.online_enabled,
       cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
     });
+  };
+
+  const handleAddToCart = () => {
+    addCurrentToCart();
     setCartOpen(true);
   };
 
-  // Rejoindre le groupage : ajoute une place au panier (prix groupé + options) puis ouvre le panier.
-  const handleJoinGroupage = () => {
+  // « Commander maintenant » : ajoute puis ouvre directement le slide de commande.
+  const handleBuyNow = () => {
+    addCurrentToCart();
+    openCheckout();
+  };
+
+  // Ajoute une place de groupage au panier (sans ouvrir de surface).
+  const addGroupageToCart = () => {
     if (!groupageConfig || groupPrice == null || groupageTotal == null) return;
     addItem({
       key: `${product.id}:GROUPAGE:${groupageOptionsList
@@ -486,7 +499,24 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       online_enabled: true,
       cash_on_delivery: false,
     });
+  };
+
+  // Rejoindre le groupage : ajoute une place au panier puis ouvre le panier.
+  const handleJoinGroupage = () => {
+    addGroupageToCart();
     setCartOpen(true);
+  };
+
+  // « Commander » groupage : ajoute puis ouvre directement le slide de commande.
+  const handleBuyNowGroupage = () => {
+    addGroupageToCart();
+    openCheckout();
+  };
+
+  // Commande directe selon la sélection courante (classique ou groupage).
+  const handleQuickOrder = () => {
+    if (groupageSelected) handleBuyNowGroupage();
+    else handleBuyNow();
   };
 
   // Incrémente le compteur de partage (fire-and-forget).
@@ -544,7 +574,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       );
     }
     if (variants.length > 0 && currentPrice != null) {
-      return (
+      const addToCartButton = (
         <Button
           variant="success"
           size={compact ? "md" : "lg"}
@@ -569,6 +599,56 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
           )}
         </Button>
+      );
+
+      if (compact) {
+        // Barre sticky : « Commander » directement (intention d'achat immédiate).
+        return (
+          <Button
+            variant="success"
+            size="md"
+            className="flex-1 px-4!"
+            onClick={handleBuyNow}
+            disabled={!selectedSku}
+          >
+            {selectedSku ? (
+              <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+                <Zap className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">
+                  <EditableText contentKey="product.cta.buy_now" defaultValue="Commander" />
+                </span>
+                <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
+                <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
+              </span>
+            ) : (
+              <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
+            )}
+          </Button>
+        );
+      }
+
+      return (
+        <div className="space-y-2.5">
+          {addToCartButton}
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+            onClick={handleBuyNow}
+            disabled={!selectedSku}
+          >
+            {selectedSku ? (
+              <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+                <Zap className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">
+                  <EditableText contentKey="product.cta.buy_now" defaultValue="Commander maintenant" />
+                </span>
+              </span>
+            ) : (
+              <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
+            )}
+          </Button>
+        </div>
       );
     }
     return (
@@ -1248,6 +1328,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         priceLabel={priceLabel}
         image={variantImage ?? product.main_image_url}
         visible={stickyBarVisible}
+        onBuyNow={handleQuickOrder}
+        buyEnabled={groupageSelected ? groupPrice != null : !!selectedSku}
       />
 
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />

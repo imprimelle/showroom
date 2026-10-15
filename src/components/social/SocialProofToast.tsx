@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { imgProxyUrl } from "@/lib/images";
 import type { SocialProofEntry } from "@/types";
@@ -53,6 +53,34 @@ export function SocialProofToast({
   displaySeconds,
 }: SocialProofToastProps) {
   const [toast, setToast] = useState<ActiveToast | null>(null);
+  const realEventsRef = useRef<ActiveToast[]>([]);
+
+  // Récupère les commandes réelles récentes (preuve sociale authentique) et les
+  // apparie aux produits publiés (pour l'image + le lien de la fiche).
+  useEffect(() => {
+    if (!enabled) return;
+    let active = true;
+    fetch("/api/social-proof")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!active || !Array.isArray(d?.orders)) return;
+        const events: ActiveToast[] = [];
+        for (const o of d.orders) {
+          const product = products.find((p) => p.name === o.product_name);
+          if (!product) continue;
+          events.push({
+            entry: { name: o.name, country: o.country, flag: o.flag },
+            product,
+            action: "commande",
+          });
+        }
+        realEventsRef.current = events;
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [enabled, products]);
 
   useEffect(() => {
     if (!enabled || entries.length === 0 || products.length === 0) return;
@@ -81,12 +109,18 @@ export function SocialProofToast({
       const delay = first ? firstDelaySeconds * 1000 : randomDelayMs();
       showTimer = setTimeout(() => {
         if (cancelled) return;
-        const product = products[Math.floor(Math.random() * products.length)];
-        const entry = entries[Math.floor(Math.random() * entries.length)];
-        // Message groupage uniquement pour les produits éligibles (50 %).
-        const action: ToastAction =
-          product.has_groupage && Math.random() < 0.5 ? "groupage" : "commande";
-        setToast({ entry, product, action });
+        // Priorise une commande réelle si disponible (60 % des cas).
+        if (realEventsRef.current.length > 0 && Math.random() < 0.6) {
+          const ev = realEventsRef.current[Math.floor(Math.random() * realEventsRef.current.length)];
+          setToast(ev);
+        } else {
+          const product = products[Math.floor(Math.random() * products.length)];
+          const entry = entries[Math.floor(Math.random() * entries.length)];
+          // Message groupage uniquement pour les produits éligibles (50 %).
+          const action: ToastAction =
+            product.has_groupage && Math.random() < 0.5 ? "groupage" : "commande";
+          setToast({ entry, product, action });
+        }
         hideTimer = setTimeout(() => {
           if (cancelled) return;
           setToast(null);

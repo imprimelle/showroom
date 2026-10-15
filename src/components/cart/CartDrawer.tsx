@@ -1,12 +1,13 @@
 "use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, ShoppingCart, Minus, Plus, Trash2, Users } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useCheckoutStore } from "@/stores/checkout";
 import { Button } from "@/components/ui/Button";
 import { imgProxyUrl } from "@/lib/images";
-import { useFormatPrice } from "@/stores/currency";
+import { useFormatPrice, useCurrencyStore } from "@/stores/currency";
+import { shippingFeeForCountry, DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { GroupageShareButton } from "@/components/product/GroupageShareButton";
 
 interface CartDrawerProps {
@@ -16,9 +17,11 @@ interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const formatPrice = useFormatPrice();
+  const detectedCountry = useCurrencyStore((s) => s.country);
   const { items, removeItem, updateQuantity, getTotal } = useCartStore();
-  const router = useRouter();
+  const openCheckout = useCheckoutStore((s) => s.open);
   const total = getTotal();
+  const shippingFee = shippingFeeForCountry(detectedCountry, { zones: DEFAULT_SHIPPING_ZONES });
 
   // Prevent body scroll when open
   useEffect(() => {
@@ -32,7 +35,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const handleCheckout = () => {
     onClose();
-    router.push("/checkout");
+    openCheckout();
   };
 
   return (
@@ -176,12 +179,14 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <span className="font-mono">{formatPrice(total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-[var(--color-success)]">Livraison</span>
-                  <span className="text-[var(--color-success)] font-medium">Gratuite</span>
+                  <span className="text-[var(--color-text-secondary)]">Livraison</span>
+                  <span className={shippingFee === 0 ? "text-[var(--color-success)] font-medium" : "font-medium"}>
+                    {shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-lg font-bold text-[var(--color-text-primary)] pt-2 border-t border-[var(--color-border-default)]">
                   <span>Total</span>
-                  <span className="font-mono">{formatPrice(total)}</span>
+                  <span className="font-mono">{formatPrice(total + shippingFee)}</span>
                 </div>
                 <Button variant="primary" size="lg" className="w-full" onClick={handleCheckout}>
                   Commander
