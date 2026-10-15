@@ -6,22 +6,33 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShoppingCart, X } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useUiStore } from "@/stores/ui";
 
 const DISMISS_KEY = "showroom_cart_reminder_dismissed";
 
 /**
  * Rappel de panier en attente : si le visiteur revient avec des articles
  * (panier persistant) sans être déjà sur le panier/checkout, affiche une
- * bulle discrète après quelques secondes. Une seule fois par session.
+ * bulle discrète après quelques secondes. Masqué dès qu'une barre sticky
+ * (haut/bas) est visible, pour ne jamais entrer en conflit. Une fois par session.
  */
 export function CartReminder() {
   const pathname = usePathname();
   const items = useCartStore((s) => s.items);
+  const hasStickyBar = useUiStore((s) => s.hasStickyBar);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (items.length === 0) return;
-    if (pathname.startsWith("/panier") || pathname.startsWith("/checkout")) return;
+    // Masque dès qu'une barre sticky est visible, ou si rien à rappeler.
+    if (
+      items.length === 0 ||
+      pathname.startsWith("/panier") ||
+      pathname.startsWith("/checkout") ||
+      hasStickyBar
+    ) {
+      setShow(false);
+      return;
+    }
     try {
       if (sessionStorage.getItem(DISMISS_KEY)) return;
     } catch {
@@ -29,7 +40,7 @@ export function CartReminder() {
     }
     const t = setTimeout(() => setShow(true), 3500);
     return () => clearTimeout(t);
-  }, [items.length, pathname]);
+  }, [items.length, pathname, hasStickyBar]);
 
   const dismiss = () => {
     setShow(false);

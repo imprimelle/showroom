@@ -7,6 +7,7 @@ import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Spinner } from "@/components/ui/Spinner";
 import { useFormatPrice, useCurrencyStore } from "@/stores/currency";
 import { createOrderSchema } from "@/schemas/order";
 import { track } from "@/lib/analytics";
@@ -473,7 +474,14 @@ export default function CheckoutPage() {
         </label>
 
         <Button variant="primary" size="lg" className="w-full" type="submit" disabled={loading || !selectedMethod}>
-          {loading ? "Envoi en cours..." : nextLabel}
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Spinner size={18} />
+              Envoi en cours...
+            </span>
+          ) : (
+            nextLabel
+          )}
         </Button>
 
         <p className="flex items-center justify-center gap-1.5 text-xs text-center text-[var(--color-text-tertiary)] mt-3">

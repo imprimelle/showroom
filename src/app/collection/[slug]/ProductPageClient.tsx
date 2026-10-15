@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
+import { useUiStore } from "@/stores/ui";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
 import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
 import { useFormatPrice } from "@/stores/currency";
@@ -153,6 +154,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [activeFaq, setActiveFaq] = useState<FaqPill | null>(null);
   const addItem = useCartStore((s) => s.addItem);
   const openCheckout = useCheckoutStore((s) => s.open);
+  const setHasStickyBar = useUiStore((s) => s.setHasStickyBar);
 
   // Tracking `view_item` (une seule fois par fiche produit).
   useEffect(() => {
@@ -167,6 +169,12 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       currency: "XOF",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.slug]);
+
+  // Remonte toujours en haut de page à chaque changement de produit
+  // (clic sur une miniature / carte produit).
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, [product.slug]);
 
   // === Groupage (achat groupé) : config produit + statut live (jauge de places) ===
@@ -278,6 +286,12 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     observer.observe(el);
     return () => observer.disconnect();
   }, [groupageSelected]);
+
+  // Signale qu'une barre sticky (haut ou bas) est visible → masque les éléments flottants.
+  useEffect(() => {
+    setHasStickyBar(stickyBarVisible || bottomBarVisible);
+    return () => setHasStickyBar(false);
+  }, [stickyBarVisible, bottomBarVisible, setHasStickyBar]);
 
   // Masque la TopNav quand la barre produit est visible (cf. globals.css)
   useEffect(() => {
