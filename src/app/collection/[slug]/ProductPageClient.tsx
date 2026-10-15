@@ -24,7 +24,6 @@ import { ProductMediaViewer, type ProductMediaViewerHandle } from "@/components/
 import { StickyProductBar } from "@/components/product/StickyProductBar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { CartDrawer } from "@/components/cart/CartDrawer";
 import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
@@ -148,7 +147,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const [selectedSku, setSelectedSku] = useState<string | null>(
     preselectGroupage ? null : product.variants?.[0]?.sku ?? null
   );
-  const [cartOpen, setCartOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string[]>>({});
   const [openParam, setOpenParam] = useState<string | null>(null);
@@ -464,13 +462,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     });
   };
 
+  // « Ajouter au panier » : ajoute puis ouvre directement le slide de commande.
   const handleAddToCart = () => {
-    addCurrentToCart();
-    setCartOpen(true);
-  };
-
-  // « Commander maintenant » : ajoute puis ouvre directement le slide de commande.
-  const handleBuyNow = () => {
     addCurrentToCart();
     openCheckout();
   };
@@ -501,22 +494,16 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     });
   };
 
-  // Rejoindre le groupage : ajoute une place au panier puis ouvre le panier.
+  // Rejoindre le groupage : ajoute une place puis ouvre le slide de commande.
   const handleJoinGroupage = () => {
-    addGroupageToCart();
-    setCartOpen(true);
-  };
-
-  // « Commander » groupage : ajoute puis ouvre directement le slide de commande.
-  const handleBuyNowGroupage = () => {
     addGroupageToCart();
     openCheckout();
   };
 
   // Commande directe selon la sélection courante (classique ou groupage).
   const handleQuickOrder = () => {
-    if (groupageSelected) handleBuyNowGroupage();
-    else handleBuyNow();
+    if (groupageSelected) handleJoinGroupage();
+    else handleAddToCart();
   };
 
   // Incrémente le compteur de partage (fire-and-forget).
@@ -574,15 +561,37 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       );
     }
     if (variants.length > 0 && currentPrice != null) {
-      const addToCartButton = (
+      if (compact) {
+        // Barre sticky : « Commander » → ouvre le slide de commande.
+        return (
+          <Button
+            variant="success"
+            size="md"
+            className="flex-1 px-4!"
+            onClick={handleAddToCart}
+            disabled={!selectedSku}
+          >
+            {selectedSku ? (
+              <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
+                <CartPlusIcon className="h-5 w-5 shrink-0" />
+                <span className="font-semibold">
+                  <EditableText contentKey="product.cta.buy_now" defaultValue="Commander" />
+                </span>
+                <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
+                <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
+              </span>
+            ) : (
+              <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
+            )}
+          </Button>
+        );
+      }
+
+      return (
         <Button
           variant="success"
-          size={compact ? "md" : "lg"}
-          className={cn(
-            compact
-              ? "flex-1 px-4!"
-              : "w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-          )}
+          size="lg"
+          className="w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           onClick={handleAddToCart}
           disabled={!selectedSku}
         >
@@ -599,56 +608,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
             <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
           )}
         </Button>
-      );
-
-      if (compact) {
-        // Barre sticky : « Commander » directement (intention d'achat immédiate).
-        return (
-          <Button
-            variant="success"
-            size="md"
-            className="flex-1 px-4!"
-            onClick={handleBuyNow}
-            disabled={!selectedSku}
-          >
-            {selectedSku ? (
-              <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
-                <Zap className="h-5 w-5 shrink-0" />
-                <span className="font-semibold">
-                  <EditableText contentKey="product.cta.buy_now" defaultValue="Commander" />
-                </span>
-                <span className="text-[7px] font-bold leading-none" aria-hidden="true">•</span>
-                <span className="font-mono font-bold">{formatPrice(lineTotal ?? 0)}</span>
-              </span>
-            ) : (
-              <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
-            )}
-          </Button>
-        );
-      }
-
-      return (
-        <div className="space-y-2.5">
-          {addToCartButton}
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-full px-4! sm:px-8! shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-            onClick={handleBuyNow}
-            disabled={!selectedSku}
-          >
-            {selectedSku ? (
-              <span className="flex w-full items-center justify-center gap-2 whitespace-nowrap text-sm">
-                <Zap className="h-5 w-5 shrink-0" />
-                <span className="font-semibold">
-                  <EditableText contentKey="product.cta.buy_now" defaultValue="Commander maintenant" />
-                </span>
-              </span>
-            ) : (
-              <EditableText contentKey="product.cta.select_size" defaultValue="Sélectionnez une taille" />
-            )}
-          </Button>
-        </div>
       );
     }
     return (
@@ -1331,8 +1290,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
         onBuyNow={handleQuickOrder}
         buyEnabled={groupageSelected ? groupPrice != null : !!selectedSku}
       />
-
-      <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 }

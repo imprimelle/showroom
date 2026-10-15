@@ -9,6 +9,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Banknote,
   MessageCircle,
   Lock,
@@ -30,6 +31,7 @@ import {
 } from "@/lib/payment";
 import { computeDepositBalance } from "@/lib/groupage";
 import { createOrderSchema } from "@/schemas/order";
+import { cn } from "@/lib/utils";
 import type { PaymentMethod, OnlinePaymentMethod } from "@/types";
 
 const METHOD_STYLE: Record<OnlinePaymentMethod, { bg: string; fg: string; short: string }> = {
@@ -45,6 +47,9 @@ const STEPS = [
   { label: "Livraison" },
   { label: "Paiement" },
 ];
+
+/** Dégradé « groupage » réutilisé pour la barre de progression. */
+const STEP_GRADIENT = "linear-gradient(90deg, #FFA500, #F97316, #F59E0B, #22C55E, #0EA5E9)";
 
 /** Validation simple du numéro (cohérente avec le schéma Zod côté serveur). */
 function isValidPhone(phone: string): boolean {
@@ -71,6 +76,8 @@ export function ExpressCheckoutSlide() {
   const [paymentMethods, setPaymentMethods] = useState<OnlineMethodDef[]>(DEFAULT_ONLINE_METHODS);
   const [onlineEnabled, setOnlineEnabled] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  // Bon de commande dépliable : ouvert à l'étape « Panier », replié ensuite.
+  const [summaryOpen, setSummaryOpen] = useState(true);
 
   const country = customer.country || "CI";
   const shippingFee = shippingFeeForCountry(country, { zones });
@@ -142,21 +149,27 @@ export function ExpressCheckoutSlide() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // Replie le bon de commande dès qu'on quitte l'étape « Panier ».
+  useEffect(() => {
+    setSummaryOpen(step === 0);
+  }, [step]);
+
   const handleClose = () => {
     if (loading) return;
     close();
   };
 
-  const validateStep = (target: number): boolean => {
+  // Valide les champs de l'étape COURANTE avant de passer à la suivante.
+  const validateStep = (current: number): boolean => {
     setErrors({});
-    if (target === 1) {
+    if (current === 1) {
       const e: Record<string, string> = {};
       if (!customer.phone || !isValidPhone(customer.phone)) e.phone = "Numéro invalide";
       if (!customer.name || customer.name.trim().length < 2) e.name = "Nom requis (2 caractères min)";
       setErrors(e);
       return Object.keys(e).length === 0;
     }
-    if (target === 2) {
+    if (current === 2) {
       const e: Record<string, string> = {};
       if (!customer.address || customer.address.trim().length < 5)
         e.address = "Adresse requise (5 caractères min)";
@@ -167,7 +180,7 @@ export function ExpressCheckoutSlide() {
   };
 
   const handleNext = () => {
-    if (validateStep(step + 1)) next();
+    if (validateStep(step)) next();
   };
 
   const submitOrder = async () => {
@@ -287,7 +300,9 @@ export function ExpressCheckoutSlide() {
         : selectedMethod === "talk_first"
           ? "Discuter sur WhatsApp"
           : "Payer en ligne"
-    : "Continuer";
+    : step === 0
+      ? "Commander"
+      : "Continuer";
 
   // Panier vidé pendant que le slide est ouvert → état vide.
   const empty = items.length === 0;
@@ -331,24 +346,66 @@ export function ExpressCheckoutSlide() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {/* Barre de progression */}
-              <div className="flex items-center gap-1 mt-1">
-                {STEPS.map((s, i) => (
-                  <div key={s.label} className="flex-1 flex flex-col gap-1">
+
+              {/* Barre de progression numérotée */}
+              <div className="flex items-start mt-2">
+                {STEPS.map((s, i) => {
+                  const completed = i < step;
+                  const current = i === step;
+                  const isLast = i === STEPS.length - 1;
+                  return (
                     <div
-                      className={`h-1 rounded-full transition-colors ${
-                        i <= step ? "bg-[var(--color-text-primary)]" : "bg-[var(--color-border-strong)]"
-                      }`}
-                    />
-                    <span
-                      className={`text-[10px] leading-none ${
-                        i <= step ? "text-[var(--color-text-primary)] font-semibold" : "text-[var(--color-text-tertiary)]"
-                      }`}
+                      key={s.label}
+                      className="flex items-start"
+                      style={{ flex: isLast ? "0 0 auto" : "1 1 0%" }}
                     >
-                      {s.label}
-                    </span>
-                  </div>
-                ))}
+                      {/* Nœud : pastille numérotée + libellé */}
+                      <div className="flex w-11 shrink-0 flex-col items-center gap-1">
+                        <div
+                          className={cn(
+                            "flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold transition-all duration-300",
+                            completed || current
+                              ? "text-white shadow-sm"
+                              : "border border-[var(--color-border-strong)] text-[var(--color-text-tertiary)]"
+                          )}
+                          style={completed || current ? { background: STEP_GRADIENT } : undefined}
+                        >
+                          {completed ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : i + 1}
+                        </div>
+                        <span
+                          className={cn(
+                            "whitespace-nowrap text-[10px] leading-none",
+                            completed || current
+                              ? "font-semibold text-[var(--color-text-primary)]"
+                              : "text-[var(--color-text-tertiary)]"
+                          )}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+
+                      {/* Connecteur animé vers l'étape suivante */}
+                      {!isLast && (
+                        <div className="relative mt-[13px] h-[3px] flex-1 overflow-hidden rounded-full bg-[var(--color-border-strong)]">
+                          <motion.div
+                            className="h-full"
+                            style={{ background: STEP_GRADIENT }}
+                            initial={false}
+                            animate={{ width: completed ? "100%" : "0%" }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                          />
+                          {completed && (
+                            <motion.span
+                              className="absolute inset-y-0 w-8 bg-white/40 blur-[2px]"
+                              animate={{ x: ["-150%", "450%"] }}
+                              transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -370,81 +427,113 @@ export function ExpressCheckoutSlide() {
                     </div>
                   )}
 
-                  {/* === Étape 0 — Récap panier === */}
-                  {step === 0 && (
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-[var(--color-text-primary)]">
-                        Récapitulatif ({itemCount} article{itemCount > 1 ? "s" : ""})
-                      </p>
-                      <ul className="divide-y divide-[var(--color-border-default)]">
-                        {items.map((item) => (
-                          <li key={item.key} className="flex items-center gap-3 py-3">
-                            <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)] shrink-0">
-                              {item.image_url ? (
-                                <img src={imgProxyUrl(item.image_url, 80, 107)} alt={item.product_name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)]">
-                                  <ShoppingCart className="w-5 h-5" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
-                                {item.product_name}
-                              </p>
-                              <p className="text-xs text-[var(--color-text-secondary)] truncate">{item.variant_label}</p>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(item.key, item.quantity - 1)}
-                                  className="w-6 h-6 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </button>
-                                <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(item.key, item.quantity + 1)}
-                                  className="w-6 h-6 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
+                  {/* === Bon de commande (persistant + dépliable) === */}
+                  <div className="mb-4 overflow-hidden rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
+                    <button
+                      type="button"
+                      onClick={() => setSummaryOpen((v) => !v)}
+                      className="flex w-full items-center justify-between gap-3 px-4 py-3"
+                      aria-expanded={summaryOpen}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+                        <ShoppingCart className="h-4 w-4" />
+                        Bon de commande
+                        <span className="text-xs font-normal text-[var(--color-text-secondary)]">
+                          ({itemCount})
+                        </span>
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-[var(--color-text-primary)]">
+                          {formatPrice(total + shippingFee)}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 text-[var(--color-text-tertiary)] transition-transform ${summaryOpen ? "rotate-180" : ""}`}
+                        />
+                      </span>
+                    </button>
+
+                    {summaryOpen && (
+                      <div className="border-t border-[var(--color-border-default)]">
+                        <ul className="divide-y divide-[var(--color-border-default)]">
+                          {items.map((item) => (
+                            <li key={item.key} className="flex items-center gap-3 px-4 py-3">
+                              <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)] shrink-0">
+                                {item.image_url ? (
+                                  <img src={imgProxyUrl(item.image_url, 80, 107)} alt={item.product_name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)]">
+                                    <ShoppingCart className="w-5 h-5" />
+                                  </div>
+                                )}
+                                <span className="absolute top-0 right-0 min-w-[18px] h-[18px] px-0.5 flex items-center justify-center text-[10px] font-bold bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] rounded-bl-lg">
+                                  {item.quantity}
+                                </span>
                               </div>
-                            </div>
-                            <span className="text-sm font-mono font-semibold text-[var(--color-text-primary)] shrink-0">
-                              {formatPrice(item.unit_price_fcfa * item.quantity)}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">
+                                  {item.product_name}
+                                </p>
+                                <p className="text-xs text-[var(--color-text-secondary)] truncate">{item.variant_label}</p>
+                                <div className="flex items-center gap-2 mt-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateQuantity(item.key, item.quantity - 1)}
+                                    className="w-6 h-6 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateQuantity(item.key, item.quantity + 1)}
+                                    className="w-6 h-6 flex items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                              <span className="text-sm font-mono font-semibold text-[var(--color-text-primary)] shrink-0">
+                                {formatPrice(item.unit_price_fcfa * item.quantity)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        {hasGroupage && groupageBalance > 0 && (
+                          <div className="border-t border-[var(--color-border-default)] bg-[var(--color-cream)] px-4 py-3">
+                            <p className="text-sm font-semibold text-[var(--color-text-primary)]">Paiement groupage</p>
+                            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                              <span className="font-semibold">{formatPrice(depositNow)}</span> maintenant ·{" "}
+                              <span className="font-semibold">{formatPrice(groupageBalance)}</span> à la livraison
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="space-y-1.5 border-t border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] px-4 py-3">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[var(--color-text-secondary)]">Sous-total</span>
+                            <span className="font-mono text-[var(--color-text-primary)]">{formatPrice(total)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[var(--color-text-secondary)]">Livraison</span>
+                            <span className={shippingFee === 0 ? "text-[var(--color-success)]" : "text-[var(--color-text-primary)]"}>
+                              {shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}
                             </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {hasGroupage && groupageBalance > 0 && (
-                        <div className="rounded-xl border border-[var(--color-accent-amber)] bg-[var(--color-cream)] p-3">
-                          <p className="text-sm font-semibold text-[var(--color-text-primary)]">Paiement groupage</p>
-                          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                            <span className="font-semibold">{formatPrice(depositNow)}</span> maintenant ·{" "}
-                            <span className="font-semibold">{formatPrice(groupageBalance)}</span> à la livraison
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="space-y-1.5 rounded-xl bg-[var(--color-bg-secondary)] p-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[var(--color-text-secondary)]">Sous-total</span>
-                          <span className="font-mono text-[var(--color-text-primary)]">{formatPrice(total)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-[var(--color-text-secondary)]">Livraison</span>
-                          <span className={shippingFee === 0 ? "text-[var(--color-success)]" : "text-[var(--color-text-primary)]"}>
-                            {shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-base font-bold pt-1.5 border-t border-[var(--color-border-default)]">
-                          <span>Total</span>
-                          <span className="font-mono">{formatPrice(total + shippingFee)}</span>
+                          </div>
+                          <div className="flex justify-between text-base font-bold pt-1.5 border-t border-[var(--color-border-default)]">
+                            <span className="text-[var(--color-text-primary)]">Total</span>
+                            <span className="font-mono">{formatPrice(total + shippingFee)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
+                  </div>
+
+                  {/* === Étape 0 — Récap (le bon de commande ci-dessus est déplié) === */}
+                  {step === 0 && (
+                    <p className="text-center text-xs text-[var(--color-text-tertiary)]">
+                      Vérifiez votre commande, puis continuez.
+                    </p>
                   )}
 
                   {/* === Étape 1 — Contact === */}
