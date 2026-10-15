@@ -14,6 +14,11 @@ const reviewSchema = z.object({
   photos: z.array(z.string().url().max(500)).max(4).optional().nullable(),
 });
 
+/** Retire les chevrons `<` `>` (interdits dans un avis) et normalise les espaces. */
+function stripAngleBrackets(value: string): string {
+  return value.replace(/[<>]/g, "").trim();
+}
+
 // Rate limiting simple en mémoire (par IP).
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
@@ -71,13 +76,13 @@ export async function POST(request: NextRequest) {
       .insert({
         product_slug,
         product_name: (product as { name: string }).name,
-        author_name: author_name.trim(),
+        author_name: stripAngleBrackets(author_name.trim()),
         rating,
-        title: title?.trim() || null,
-        content: content.trim(),
+        title: title ? stripAngleBrackets(title) : null,
+        content: stripAngleBrackets(content),
         verified,
         order_number: verified ? orderRef : null,
-        country: country?.trim() || null,
+        country: country ? stripAngleBrackets(country) : null,
         photos: photos?.length ? photos : null,
       })
       .select("*")

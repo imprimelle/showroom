@@ -23,6 +23,7 @@ const getAllReviewsCached = unstable_cache(
     const { data, error } = await supabase
       .from("showcase_reviews")
       .select("*")
+      .eq("hidden", false)
       .order("created_at", { ascending: false })
       .limit(limit);
 

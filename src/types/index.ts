@@ -183,6 +183,10 @@ export interface ShowcaseReview {
   /** Photos du client (URLs publiques Supabase Storage), jusqu'à 4. */
   photos?: string[] | null;
   created_at: string;
+  /** Masqué côté admin : exclu du site public tout en restant en base. */
+  hidden?: boolean;
+  /** Dernière modification (édit admin). */
+  updated_at?: string | null;
 }
 
 /** Agrégat d'avis d'un produit (note moyenne + répartition). */
