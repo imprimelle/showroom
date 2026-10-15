@@ -298,7 +298,7 @@ export function ExpressCheckoutSlide() {
       : selectedMethod === "cod"
         ? "Confirmer la commande"
         : selectedMethod === "talk_first"
-          ? "Discuter sur WhatsApp"
+          ? "Finaliser sur WhatsApp"
           : "Payer en ligne"
     : step === 0
       ? "Commander"
@@ -548,6 +548,14 @@ export function ExpressCheckoutSlide() {
                     </div>
                   )}
 
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={step}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -12 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                    >
                   {/* === Étape 0 — Récap (le bon de commande est déplié dans le header) === */}
                   {step === 0 && (
                     <p className="text-center text-xs text-[var(--color-text-tertiary)]">
@@ -569,7 +577,6 @@ export function ExpressCheckoutSlide() {
                         value={customer.phone}
                         onChange={(e) => setCustomer({ phone: e.target.value })}
                         error={errors.phone}
-                        autoFocus
                       />
                       <Input
                         label="Nom complet"
@@ -731,6 +738,8 @@ export function ExpressCheckoutSlide() {
                       </p>
                     </div>
                   )}
+                    </motion.div>
+                  </AnimatePresence>
                 </>
               )}
             </div>
