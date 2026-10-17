@@ -8,33 +8,109 @@ import {
   FileText,
   ShoppingCart,
   TrendingUp,
+  Percent,
+  Share2,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-const PERIODS = [
-  { days: 7, label: "7 jours" },
-  { days: 30, label: "30 jours" },
-  { days: 90, label: "90 jours" },
-] as const;
+type Period = "today" | "week" | "month" | "year";
+
+const PERIODS: { id: Period; label: string }[] = [
+  { id: "today", label: "Aujourd'hui" },
+  { id: "week", label: "Semaine" },
+  { id: "month", label: "Mois" },
+  { id: "year", label: "Année" },
+];
+
+const MONTHS_SHORT = [
+  "janv.", "févr.", "mars", "avr.", "mai", "juin",
+  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+];
 
 type EventRow = {
   event: string;
   path: string | null;
   session_id: string;
   product_slug: string | null;
+  referrer: string | null;
   created_at: string;
 };
 
-async function getAnalytics(days: number) {
+type SeriesPoint = { key: string; label: string; count: number };
+
+/** Début de période (UTC = fuseau Abidjan). */
+function periodStart(period: Period): Date {
+  const d = new Date();
+  if (period === "today") d.setUTCHours(0, 0, 0, 0);
+  else if (period === "week") d.setUTCDate(d.getUTCDate() - 7);
+  else if (period === "month") d.setUTCDate(d.getUTCDate() - 30);
+  else d.setUTCDate(d.getUTCDate() - 365);
+  return d;
+}
+
+/** Clé de bucket temporel (cohérente avec les buckets générés). */
+function bucketKey(created_at: string, period: Period): string {
+  if (period === "today") return created_at.slice(11, 13); // "HH" (heure UTC)
+  if (period === "year") return created_at.slice(0, 7); // "YYYY-MM"
+  return created_at.slice(0, 10); // "YYYY-MM-DD"
+}
+
+/** Série temporelle adaptative : heures (aujourd'hui) / jours (semaine, mois) / mois (année). */
+function buildSeries(period: Period, pageViews: EventRow[]): SeriesPoint[] {
+  const counts = new Map<string, number>();
+  for (const p of pageViews) {
+    const k = bucketKey(p.created_at, period);
+    counts.set(k, (counts.get(k) || 0) + 1);
+  }
+
+  if (period === "today") {
+    const buckets: SeriesPoint[] = [];
+    for (let h = 0; h < 24; h++) {
+      const key = String(h).padStart(2, "0");
+      buckets.push({ key, label: `${h}h`, count: counts.get(key) || 0 });
+    }
+    return buckets;
+  }
+
+  if (period === "year") {
+    const buckets: SeriesPoint[] = [];
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const key = d.toISOString().slice(0, 7);
+      buckets.push({ key, label: MONTHS_SHORT[d.getUTCMonth()], count: counts.get(key) || 0 });
+    }
+    return buckets;
+  }
+
+  const days = period === "week" ? 7 : 30;
+  const buckets: SeriesPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+    buckets.push({ key, label, count: counts.get(key) || 0 });
+  }
+  return buckets;
+}
+
+function hostOf(referrer: string): string {
+  try {
+    return new URL(referrer).hostname.replace(/^www\./, "");
+  } catch {
+    return referrer;
+  }
+}
+
+async function getAnalytics(period: Period) {
   const admin = createAdminClient();
-  const since = new Date();
-  since.setDate(since.getDate() - (days - 1));
-  since.setHours(0, 0, 0, 0);
+  const since = periodStart(period);
 
   const { data } = await admin
     .from("showroom_events")
-    .select("event, path, session_id, product_slug, created_at")
+    .select("event, path, session_id, product_slug, referrer, created_at")
     .gte("created_at", since.toISOString())
     .order("created_at", { ascending: false })
     .limit(20000);
@@ -77,7 +153,8 @@ async function getAnalytics(days: number) {
     .map(([event, count]) => ({ event, count }));
 
   // Funnel (sessions uniques par étape)
-  const unique = (ev: string) => new Set(rows.filter((r) => r.event === ev).map((r) => r.session_id)).size;
+  const unique = (ev: string) =>
+    new Set(rows.filter((r) => r.event === ev).map((r) => r.session_id)).size;
   const funnel = [
     { step: "Vue produit", event: "view_item", count: unique("view_item") },
     { step: "Ajout panier", event: "add_to_cart", count: unique("add_to_cart") },
@@ -85,48 +162,70 @@ async function getAnalytics(days: number) {
     { step: "Commande", event: "purchase", count: unique("purchase") },
   ];
 
-  // Série temporelle (pages vues / jour)
-  const byDay = new Map<string, number>();
-  for (const p of pageViews) {
-    const date = (p.created_at || "").slice(0, 10);
-    byDay.set(date, (byDay.get(date) || 0) + 1);
-  }
-  const series: { date: string; label: string; count: number }[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const date = d.toISOString().slice(0, 10);
-    series.push({
-      date,
-      label: d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-      count: byDay.get(date) || 0,
-    });
-  }
+  // Taux de conversion (sessions avec achat / sessions)
+  const purchaseSessions = funnel[3].count;
+  const conversionRate = sessions > 0 ? (purchaseSessions / sessions) * 100 : 0;
 
-  return { sessions, totalEvents, pageViews: pageViews.length, pagesPerSession, topPages, topProducts, eventsBreakdown, funnel, series };
+  // Sources de trafic (référents, sessions uniques par domaine)
+  const referrerSessions = new Map<string, Set<string>>();
+  for (const r of rows) {
+    if (r.event === "page_view" && r.referrer) {
+      const host = hostOf(r.referrer);
+      if (!referrerSessions.has(host)) referrerSessions.set(host, new Set());
+      referrerSessions.get(host)!.add(r.session_id);
+    }
+  }
+  const topReferrers = [...referrerSessions.entries()]
+    .map(([host, s]) => ({ host, count: s.size }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const series = buildSeries(period, pageViews);
+
+  return {
+    sessions,
+    totalEvents,
+    pageViews: pageViews.length,
+    pagesPerSession,
+    conversionRate,
+    topPages,
+    topProducts,
+    topReferrers,
+    eventsBreakdown,
+    funnel,
+    series,
+  };
 }
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
+const fmtPct = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ days?: string }>;
+  searchParams: Promise<{ period?: string }>;
 }) {
-  const { days: daysParam } = await searchParams;
-  const days = PERIODS.some((p) => p.days === Number(daysParam)) ? Number(daysParam) : 30;
-  const stats = await getAnalytics(days);
+  const { period: periodParam } = await searchParams;
+  const period: Period = PERIODS.some((p) => p.id === periodParam)
+    ? (periodParam as Period)
+    : "month";
+  const stats = await getAnalytics(period);
 
   const maxSeries = Math.max(1, ...stats.series.map((d) => d.count));
   const maxPage = Math.max(1, ...stats.topPages.map((p) => p.count));
   const maxProduct = Math.max(1, ...stats.topProducts.map((p) => p.count));
+  const maxReferrer = Math.max(1, ...stats.topReferrers.map((r) => r.count));
   const funnelBase = Math.max(1, stats.funnel[0]?.count || 1);
+
+  const seriesUnit =
+    period === "today" ? "par heure" : period === "year" ? "par mois" : "par jour";
 
   const kpis = [
     { label: "Visites", value: fmt(stats.sessions), icon: Users },
     { label: "Pages vues", value: fmt(stats.pageViews), icon: Eye },
     { label: "Événements", value: fmt(stats.totalEvents), icon: MousePointerClick },
     { label: "Pages / visite", value: stats.pagesPerSession.toFixed(1), icon: TrendingUp },
+    { label: "Conversion", value: `${fmtPct(stats.conversionRate)} %`, icon: Percent },
   ];
 
   return (
@@ -138,10 +237,10 @@ export default async function AnalyticsPage({
         <div className="flex gap-1 bg-[var(--color-bg-tertiary)] rounded-lg p-1">
           {PERIODS.map((p) => (
             <Link
-              key={p.days}
-              href={`/admin/analytics?days=${p.days}`}
+              key={p.id}
+              href={`/admin/analytics?period=${p.id}`}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                days === p.days
+                period === p.id
                   ? "bg-[var(--color-surface-card)] text-[var(--color-text-primary)] shadow-sm"
                   : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
@@ -164,7 +263,7 @@ export default async function AnalyticsPage({
       ) : (
         <>
           {/* KPIs */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
             {kpis.map((k) => (
               <div key={k.label} className="p-4 rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)]">
                 <div className="flex items-center justify-between">
@@ -179,11 +278,11 @@ export default async function AnalyticsPage({
           {/* Série temporelle */}
           <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4 mb-6">
             <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-              <Eye className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Pages vues par jour
+              <Eye className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Pages vues {seriesUnit}
             </h2>
             <div className="flex items-end gap-[3px] h-28">
               {stats.series.map((d) => (
-                <div key={d.date} title={`${d.label} — ${d.count}`} className="flex-1 flex flex-col items-center gap-1">
+                <div key={d.key} title={`${d.label} — ${d.count}`} className="flex-1 flex flex-col items-center gap-1">
                   <div
                     className="w-full rounded-t transition-opacity hover:opacity-70"
                     style={{
@@ -286,18 +385,42 @@ export default async function AnalyticsPage({
                 </ul>
               )}
             </div>
-          </div>
 
-          {/* Événements */}
-          <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4 mt-6">
-            <h2 className="font-semibold text-[var(--color-text-primary)] mb-4">Répartition des événements</h2>
-            <div className="flex flex-wrap gap-2">
-              {stats.eventsBreakdown.map((e) => (
-                <span key={e.event} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)]">
-                  <span className="font-mono text-xs text-[var(--color-text-tertiary)]">{e.event}</span>
-                  <span className="font-mono font-bold">{fmt(e.count)}</span>
-                </span>
-              ))}
+            {/* Sources de trafic */}
+            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
+              <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Sources de trafic
+              </h2>
+              {stats.topReferrers.length === 0 ? (
+                <p className="text-sm text-[var(--color-text-tertiary)]">Aucun référent enregistré.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {stats.topReferrers.map((r) => (
+                    <li key={r.host} className="text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[var(--color-text-primary)] truncate font-mono text-xs">{r.host}</span>
+                        <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(r.count)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1 overflow-hidden">
+                        <div className="h-full rounded-full bg-[var(--color-success)]" style={{ width: `${Math.round((r.count / maxReferrer) * 100)}%` }} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Événements */}
+            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
+              <h2 className="font-semibold text-[var(--color-text-primary)] mb-4">Répartition des événements</h2>
+              <div className="flex flex-wrap gap-2">
+                {stats.eventsBreakdown.map((e) => (
+                  <span key={e.event} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)]">
+                    <span className="font-mono text-xs text-[var(--color-text-tertiary)]">{e.event}</span>
+                    <span className="font-mono font-bold">{fmt(e.count)}</span>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </>
