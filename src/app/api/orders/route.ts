@@ -13,6 +13,7 @@ import {
   groupageReductionAmount,
   type GroupageConfig,
 } from "@/lib/groupage";
+import { createFactureFromShowroomOrder } from "@/lib/facture-link";
 import type { ProductParameter } from "@/types";
 
 // In-memory rate limiting
@@ -81,6 +82,8 @@ export async function POST(request: NextRequest) {
 
     // Map product_id → slug (pour les liens produit du message WhatsApp).
     const slugById = new Map<string, string>();
+    // Map product_id → main_image_url (pour les miniatures de la facture matérialisée).
+    const imageById = new Map<string, string | null>();
     // Config + prix groupage validés par produit (pour l'étape de join).
     const groupageConfig = new Map<string, GroupageConfig>();
     const groupagePriceMap = new Map<string, number>();
@@ -89,7 +92,7 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const { data: product, error } = await admin
         .from("products")
-        .select("slug, variants, showcase")
+        .select("slug, variants, showcase, main_image_url")
         .eq("id", item.product_id)
         .single();
 
@@ -98,6 +101,7 @@ export async function POST(request: NextRequest) {
       }
 
       if ((product as any).slug) slugById.set(item.product_id, (product as any).slug);
+      imageById.set(item.product_id, (product as any).main_image_url ?? null);
 
       const sc = (product as any).showcase;
       const variants = (Array.isArray(sc?.variants) ? sc.variants : (product as any).variants) as
@@ -317,6 +321,38 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       console.error("Order insert error:", insertError);
       return NextResponse.json({ error: "Erreur lors de la création de la commande" }, { status: 500 });
+    }
+
+    // === Pont Showroom → FactureBuilder (Option C) : matérialise une facture dans `messages` ===
+    // Best-effort : un échec ici ne bloque JAMAIS la commande showroom (déjà créée).
+    try {
+      await createFactureFromShowroomOrder(admin, {
+        orderId: order.id,
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerEmail: customer.email || null,
+        customerAddress: customer.address,
+        items: items.map((i) => ({
+          product_name: i.product_name,
+          variant_label: i.variant_label,
+          quantity: i.quantity,
+          unit_price_fcfa: i.unit_price_fcfa,
+          subtotal_fcfa: i.subtotal_fcfa,
+          groupage: !!i.groupage,
+          image_url: imageById.get(i.product_id) ?? null,
+        })),
+        totalAmount: total_amount,
+        notes: notes || null,
+        paymentMethod: payment_method,
+        paymentStatus: isOnline ? "pending" : null,
+        shippingCountry: shipping_country,
+        shippingFeeFcfa: shipping_fee_fcfa,
+        totalWithShipping: total_with_shipping,
+        depositFcfa: deposit_fcfa,
+        balanceFcfa: balance_fcfa,
+      });
+    } catch (e) {
+      console.error("Facture link (showroom → messages) failed:", e);
     }
 
     // Fire-and-forget WhatsApp notification (timeout 5s)
