@@ -14,7 +14,15 @@ import {
   type GroupageConfig,
 } from "@/lib/groupage";
 import { createFactureFromShowroomOrder } from "@/lib/facture-link";
-import type { ProductParameter } from "@/types";
+import {
+  normalizeCode,
+  resolveAffiliateByRef,
+  resolveAffiliateByPromo,
+  computeCommission,
+  computePromoDiscount,
+  commissionRateFor,
+} from "@/lib/resellers";
+import type { ProductParameter, Reseller } from "@/types";
 
 // In-memory rate limiting
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -56,7 +64,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { customer, items, total_amount, notes, payment_method, shipping_country, shipping_fee_fcfa } =
+    const { customer, items, total_amount, notes, payment_method, shipping_country, shipping_fee_fcfa, ref_code, promo_code } =
       parsed.data;
 
     // Server-side price verification (variante + options de paramètres + groupage)
@@ -238,7 +246,47 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Frais de port incorrects" }, { status: 400 });
     }
 
-    const total_with_shipping = total_amount + shipping_fee_fcfa;
+    // === Affiliation / revente — résolution serveur (anti-falsification, best-effort) ===
+    // 1) Attribution par code ref (?ref=CODE) ou code promo (saisi au checkout).
+    // 2) Remise du code promo : appliquée UNIQUEMENT hors groupage (le groupage a déjà sa réduction).
+    // 3) Commission : taux figé × assiette HT (hors livraison), hors remise promo.
+    // Un code invalide n'attribue rien et ne bloque jamais la commande.
+    const refCode = normalizeCode(ref_code);
+    const promoCode = normalizeCode(promo_code);
+
+    let reseller: Reseller | null = null;
+    let promoDiscount = 0;
+    let appliedPromoCode: string | null = null;
+
+    if (refCode) {
+      reseller = await resolveAffiliateByRef(admin, refCode);
+    }
+
+    if (promoCode) {
+      const promoReseller = await resolveAffiliateByPromo(admin, promoCode);
+      if (promoReseller) {
+        // Le code promo porte aussi l'affiliation si aucun ref n'a été fourni.
+        if (!reseller) reseller = promoReseller;
+        const pct = Number(promoReseller.promo_discount_percent);
+        if (!hasGroupage && Number.isFinite(pct) && pct > 0 && pct <= 100) {
+          promoDiscount = computePromoDiscount(total_amount, pct);
+          appliedPromoCode = promoReseller.promo_code ?? promoCode;
+        }
+      }
+    }
+
+    let commissionFcfa: number | null = null;
+    let commissionRate: number | null = null;
+    if (reseller) {
+      commissionRate = commissionRateFor(
+        reseller.level,
+        settingsRow?.data?.affiliation?.rates as { standard?: number; performance?: number; vip?: number } | undefined
+      );
+      const base = Math.max(0, total_amount - promoDiscount);
+      commissionFcfa = computeCommission(base, commissionRate);
+    }
+
+    const total_with_shipping = total_amount + shipping_fee_fcfa - promoDiscount;
 
     // === Rejoint les groupages (atomique) + calcule acompte / solde ===
     let groupageBalance = 0;
@@ -314,6 +362,13 @@ export async function POST(request: NextRequest) {
         balance_fcfa,
         ip_address: ip,
         user_agent: request.headers.get("user-agent") || null,
+        reseller_id: reseller?.id ?? null,
+        ref_code: refCode || null,
+        promo_code: appliedPromoCode,
+        promo_discount_fcfa: promoDiscount > 0 ? promoDiscount : null,
+        commission_rate: commissionRate,
+        commission_fcfa: commissionFcfa,
+        commission_status: commissionFcfa != null ? "pending" : null,
       })
       .select("id")
       .single();

@@ -41,6 +41,9 @@ export const createOrderSchema = z.object({
   payment_method: z.enum(['orange', 'mtn', 'wave', 'card', 'cod', 'talk_first']),
   shipping_country: z.string().length(2).regex(/^[A-Z]{2}$/),
   shipping_fee_fcfa: z.number().int().min(0),
+  // Affiliation / revente (optionnel)
+  ref_code: z.string().max(60).optional(),
+  promo_code: z.string().max(60).optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

@@ -218,6 +218,85 @@ export interface GroupageInfo {
   sections: GroupageInfoSection[];
 }
 
+/** Type de revendeur : affilié digital ou point de vente physique. */
+export type ResellerType = "affiliate" | "store";
+
+/** Statut de revendeur. */
+export type ResellerStatus = "pending" | "active" | "suspended" | "rejected";
+
+/** Niveau de commission d'un affilié. */
+export type ResellerLevel = "standard" | "performance" | "vip";
+
+/** Modèle de partenariat d'un point de vente physique. */
+export type StoreModel = "showroom" | "b2b" | "corner";
+
+/** Cycle de vie d'une commission attachée à une commande. */
+export type CommissionStatus = "pending" | "earned" | "paid" | "cancelled";
+
+/** Revendeur (affilié ou point de vente). */
+export interface Reseller {
+  id: string;
+  type: ResellerType;
+  status: ResellerStatus;
+  name: string;
+  contact_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  /** Slug du lien `?ref=` (affilié uniquement). */
+  ref_code?: string | null;
+  /** Code promo personnalisé (affilié). */
+  promo_code?: string | null;
+  /** Remise % appliquée par le code promo. */
+  promo_discount_percent?: number | null;
+  /** Taux de commission par défaut (%). */
+  commission_rate: number;
+  level?: ResellerLevel | null;
+  store_model?: StoreModel | null;
+  city?: string | null;
+  country?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  website?: string | null;
+  social?: string | null;
+  is_published: boolean;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Point de vente exposé publiquement (carte) — champs non sensibles uniquement. */
+export interface PublicStore {
+  id: string;
+  name: string;
+  city?: string | null;
+  country?: string | null;
+  address?: string | null;
+  lat: number | null;
+  lng: number | null;
+  store_model?: StoreModel | null;
+  website?: string | null;
+}
+
+/** Statistiques agrégées d'un affilié (mini-dashboard). */
+export interface AffiliateStats {
+  ref_code: string;
+  name: string;
+  promo_code: string | null;
+  promo_discount_percent: number | null;
+  commission_rate: number;
+  /** Nombre de commandes attribuées. */
+  order_count: number;
+  /** CA généré (hors livraison), FCFA. */
+  revenue_fcfa: number;
+  /** Commissions en attente (pending). */
+  pending_fcfa: number;
+  /** Commissions acquises (earned), non encore versées. */
+  earned_fcfa: number;
+  /** Commissions versées (paid). */
+  paid_fcfa: number;
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -278,5 +357,18 @@ export interface ShowcaseSettings {
     enabled?: boolean;
     /** Affiche le bouton flottant « Voir le produit en 360° » de la barre sticky. */
     sticky_button_enabled?: boolean;
+  };
+  /** Réglages du programme d'affiliation & revente (Réglages → Revendeurs). */
+  affiliation?: {
+    /** Taux de commission par niveau (%). */
+    rates?: {
+      standard?: number;
+      performance?: number;
+      vip?: number;
+    };
+    /** Seuil minimum de versement (FCFA). */
+    payout_min_fcfa?: number;
+    /** Durée d'attribution du cookie (jours). */
+    cookie_days?: number;
   };
 }

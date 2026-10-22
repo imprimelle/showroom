@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ShoppingCart, Banknote, MessageCircle, ChevronDown, Lock } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
+import { getStoredRef } from "@/components/referral/ReferralCapture";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -43,6 +44,11 @@ export default function CheckoutPage() {
   const [onlineEnabled, setOnlineEnabled] = useState(true);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
+  // Code promo d'affiliation (optionnel).
+  const [promoCode, setPromoCode] = useState("");
+  const [promoState, setPromoState] = useState<{ valid: boolean; percent: number; discount: number } | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoChecking, setPromoChecking] = useState(false);
   const [country, setCountry] = useState<string>(() => {
     const d = (customer.country || detectedCountry || "").toUpperCase();
     return COUNTRIES.some((c) => c.code === d) ? d : "CI";
@@ -65,6 +71,10 @@ export default function CheckoutPage() {
     groupageDepositConfigured
   );
   const depositNow = groupageDeposit + (total - groupageFull) + shippingFee;
+
+  // Remise code promo validé (affichage uniquement — le serveur recalcule la remise).
+  const promoDiscount = promoState?.discount ?? 0;
+  const grandTotal = total + shippingFee - promoDiscount;
 
   // Éligibilités (tous les articles doivent autoriser).
   // Le groupage exige un acompte en ligne → pas de cash à la livraison seul.
@@ -124,6 +134,36 @@ export default function CheckoutPage() {
     );
   }
 
+  const applyPromo = async () => {
+    const code = promoCode.trim();
+    if (!code) {
+      setPromoState(null);
+      setPromoError("");
+      return;
+    }
+    setPromoChecking(true);
+    setPromoError("");
+    setPromoState(null);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.valid) {
+        const discount = Math.floor((total * Number(data.percent)) / 100);
+        setPromoState({ valid: true, percent: Number(data.percent), discount });
+      } else {
+        setPromoError("Code promo invalide ou expiré.");
+      }
+    } catch {
+      setPromoError("Impossible de vérifier ce code pour le moment.");
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -160,6 +200,8 @@ export default function CheckoutPage() {
       payment_method: selectedMethod,
       shipping_country: country,
       shipping_fee_fcfa: shippingFee,
+      ref_code: getStoredRef() || undefined,
+      promo_code: promoState?.valid ? promoCode.trim().toUpperCase() : undefined,
     };
 
     const result = createOrderSchema.safeParse(payload);
@@ -182,7 +224,7 @@ export default function CheckoutPage() {
       track("add_payment_info", {
         payment_method: selectedMethod,
         currency: "XOF",
-        value: total + shippingFee,
+        value: grandTotal,
       });
 
       const res = await fetch("/api/orders", {
@@ -207,7 +249,7 @@ export default function CheckoutPage() {
       if (data.whatsapp_url) {
         track("purchase", {
           order_id: data.order_id,
-          value: total + shippingFee,
+          value: grandTotal,
           currency: "XOF",
           num_items: items.length,
           payment_method: "talk_first",
@@ -222,7 +264,7 @@ export default function CheckoutPage() {
       // Cash à la livraison → redirection vers /confirmation (écran unifié).
       track("purchase", {
         order_id: data.order_id,
-        value: total + shippingFee,
+        value: grandTotal,
         currency: "XOF",
         num_items: items.length,
         payment_method: "cod",
@@ -279,7 +321,7 @@ export default function CheckoutPage() {
                     : `Résumé (${itemCount} article${itemCount > 1 ? "s" : ""})`}
               </span>
               <span className="flex items-center gap-2">
-                <span className="font-mono font-bold text-base text-[var(--color-text-primary)]">{formatPrice(total + shippingFee)}</span>
+                <span className="font-mono font-bold text-base text-[var(--color-text-primary)]">{formatPrice(grandTotal)}</span>
                 <ChevronDown className={`w-4 h-4 text-[var(--color-text-tertiary)] transition-transform md:hidden ${summaryOpen ? "rotate-180" : ""}`} />
               </span>
             </button>
@@ -323,9 +365,15 @@ export default function CheckoutPage() {
                       {shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}
                     </span>
                   </div>
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[var(--color-text-secondary)]">Code promo</span>
+                      <span className="font-mono text-[var(--color-success)]">−{formatPrice(promoDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-base font-bold pt-1.5 border-t border-[var(--color-border-default)]">
                     <span className="text-[var(--color-text-primary)]">Total</span>
-                    <span className="font-mono">{formatPrice(total + shippingFee)}</span>
+                    <span className="font-mono">{formatPrice(grandTotal)}</span>
                   </div>
                 </div>
               </div>
@@ -376,6 +424,43 @@ export default function CheckoutPage() {
             <Input label="Adresse de livraison" name="address" required placeholder="Rue, immeuble, point de repère" error={errors.address} autoComplete="street-address" defaultValue={customer.address} onChange={(e) => setCustomer({ address: e.target.value })} />
           </div>
         </section>
+
+        {/* ===== SECTION CODE PROMO ===== */}
+        {!hasGroupage && (
+          <section className="mb-8">
+            <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] p-3.5">
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">
+                Code promo (affiliation)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value);
+                    if (promoState) setPromoState(null);
+                    if (promoError) setPromoError("");
+                  }}
+                  placeholder="Ex : SOPHIE5"
+                  className="flex-1 h-11 px-3.5 text-base uppercase rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={applyPromo}
+                  disabled={promoChecking || !promoCode.trim()}
+                  className="px-4 h-11 rounded-xl border border-[var(--color-border-strong)] text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-50"
+                >
+                  {promoChecking ? "…" : "Appliquer"}
+                </button>
+              </div>
+              {promoError && <p className="mt-1.5 text-xs text-[var(--color-error)]">{promoError}</p>}
+              {promoState?.valid && (
+                <p className="mt-1.5 text-xs text-[var(--color-success)]">
+                  Code appliqué : −{promoState.percent}% (−{formatPrice(promoState.discount)})
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* ===== SECTION PAIEMENT ===== */}
         <section className="mb-8">

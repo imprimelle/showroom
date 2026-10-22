@@ -50,6 +50,15 @@ export async function GET(request: NextRequest) {
       .update({ payment_status: status, payment_reference: String(fedapayId) })
       .eq("id", orderId);
 
+    // Commission d'affiliation : acquise (earned) dès que le paiement est confirmé.
+    if (paid) {
+      await admin
+        .from("showcase_orders")
+        .update({ commission_status: "earned" })
+        .eq("id", orderId)
+        .eq("commission_status", "pending");
+    }
+
     const total = order.total_with_shipping ?? order.total_amount ?? 0;
     const pm = order.payment_method || "";
     return redirect(status, `&pm=${encodeURIComponent(pm)}&total=${encodeURIComponent(total)}`);

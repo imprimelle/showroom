@@ -14,6 +14,7 @@ import { ToastContainer } from "@/components/ui/Toast";
 import { SocialProofToast } from "@/components/social/SocialProofToast";
 import { ExpressCheckoutSlide } from "@/components/checkout/ExpressCheckoutSlide";
 import { CartReminder } from "@/components/cart/CartReminder";
+import { ReferralCapture } from "@/components/referral/ReferralCapture";
 import { getShowcaseSettings } from "@/lib/settings";
 import { getContentMap } from "@/lib/content";
 import { getPublishedProducts } from "@/lib/products";
@@ -125,6 +126,7 @@ export default async function RootLayout({
           />
           <ExpressCheckoutSlide />
           <CartReminder />
+          <ReferralCapture />
         </Providers>
         </ContentEditProvider>
       </body>

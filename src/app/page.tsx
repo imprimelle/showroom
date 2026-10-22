@@ -18,6 +18,7 @@ import type { MediaItem } from "@/types";
 import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
+import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,37 @@ export default async function HomePage() {
       {/* ===== 1.5 Groupages en cours (juste sous le héro) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
-      {/* ===== 2. Catégories (focus familles) ===== */}
+      {/* ===== 2. Produits en vedette (remontés sous le groupage) ===== */}
+      {featured.length > 0 && (
+        <section className="py-12 md:py-16">
+          <div className="max-w-7xl mx-auto px-4">
+            <SectionHeader
+              align="left"
+              eyebrow="Sélection"
+              title="Nos produits vedettes"
+              subtitle="Les plus appréciés par nos clients"
+              eyebrowKey="home.featured.eyebrow"
+              titleKey="home.featured.title"
+              subtitleKey="home.featured.subtitle"
+              action={
+                <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline">
+                  <EditableText contentKey="home.featured.see_all" defaultValue="Voir tout →" />
+                </Link>
+              }
+            />
+            <ProductSlider products={featured} />
+            <div className="mt-6 text-center md:hidden">
+              <Link href="/collection">
+                <Button variant="secondary" size="sm">
+                  <EditableText contentKey="home.featured.see_all_mobile" defaultValue="Voir tout le catalogue" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== 3. Catégories (focus familles) ===== */}
       <section className="bg-[var(--color-bg-secondary)] pt-8 pb-12 md:pt-10 md:pb-16">
         <div className="max-w-7xl mx-auto px-4">
           <SectionHeader
@@ -219,37 +250,10 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 3. Produits en vedette (slider interactif) ===== */}
-      {featured.length > 0 && (
-        <section className="py-12 md:py-16">
-          <div className="max-w-7xl mx-auto px-4">
-            <SectionHeader
-              align="left"
-              eyebrow="Sélection"
-              title="Nos produits vedettes"
-              subtitle="Les plus appréciés par nos clients"
-              eyebrowKey="home.featured.eyebrow"
-              titleKey="home.featured.title"
-              subtitleKey="home.featured.subtitle"
-              action={
-                <Link href="/collection" className="text-sm font-medium text-[var(--color-accent-blue)] hover:underline">
-                  <EditableText contentKey="home.featured.see_all" defaultValue="Voir tout →" />
-                </Link>
-              }
-            />
-            <ProductSlider products={featured} />
-            <div className="mt-6 text-center md:hidden">
-              <Link href="/collection">
-                <Button variant="secondary" size="sm">
-                  <EditableText contentKey="home.featured.see_all_mobile" defaultValue="Voir tout le catalogue" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* ===== 4. Devenir revendeur (après les catégories) ===== */}
+      <ResellerHomeSection />
 
-      {/* ===== 3.5 Guide de choix ===== */}
+      {/* ===== 5. Guide de choix ===== */}
       <ChoiceGuide products={products} />
 
       {/* ===== 4. Réassurance ===== */}
