@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -17,7 +17,7 @@ import { imgProxyUrl } from "@/lib/images";
 import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -31,6 +31,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "preuve", label: "Preuve sociale", icon: Megaphone },
   { id: "groupage", label: "Groupage", icon: Users },
   { id: "three_sixty", label: "360°", icon: Rotate3d },
+  { id: "revendeurs", label: "Revendeurs", icon: Store },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -335,6 +336,14 @@ export function SettingsClient({ initialData, products }: {
           ? {
               enabled: !!data.three_sixty.enabled,
               sticky_button_enabled: !!data.three_sixty.sticky_button_enabled,
+            }
+          : undefined,
+        resellers: data.resellers
+          ? {
+              hero_video_url: data.resellers.hero_video_url?.trim() || undefined,
+              hero_poster: data.resellers.hero_poster?.trim() || undefined,
+              hero_title: data.resellers.hero_title?.trim() || undefined,
+              hero_subtitle: data.resellers.hero_subtitle?.trim() || undefined,
             }
           : undefined,
       };
@@ -996,6 +1005,60 @@ export function SettingsClient({ initialData, products }: {
                 className="w-4 h-4 accent-[var(--color-accent-blue)]"
               />
             </label>
+          </div>
+        </section>
+      )}
+
+      {tab === "revendeurs" && (
+        <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+          <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Page revendeurs — Héro vidéo</h2>
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+            Vidéo affichée en haut de la page /revendeurs. Laissez vide pour garder le héro
+            texte simple. Format conseillé : MP4 16:9.
+          </p>
+          <MediaField
+            label="Vidéo du héro"
+            value={
+              data.resellers?.hero_video_url
+                ? { type: "video", url: data.resellers.hero_video_url }
+                : null
+            }
+            onChange={(m) =>
+              setData({ ...data, resellers: { ...data.resellers, hero_video_url: m?.url || "" } })
+            }
+            accept="video/*"
+            hint="MP4 recommandé (1920×1080 ou 1080×1350)."
+          />
+          <div className="mt-3">
+            <MediaField
+              label="Image d'affiche (poster)"
+              value={
+                data.resellers?.hero_poster
+                  ? { type: "image", url: data.resellers.hero_poster }
+                  : null
+              }
+              onChange={(m) =>
+                setData({ ...data, resellers: { ...data.resellers, hero_poster: m?.url || "" } })
+              }
+              accept="image/*"
+              hint="Affichée avant la lecture de la vidéo."
+            />
+          </div>
+          <div className="mt-3">
+            <Input
+              label="Titre du héro"
+              value={getVal("resellers.hero_title")}
+              onChange={(e) => update("resellers.hero_title", e.target.value)}
+              placeholder="Rejoignez le réseau Imprimelle"
+            />
+          </div>
+          <div className="mt-3">
+            <Input
+              label="Sous-titre du héro"
+              value={getVal("resellers.hero_subtitle")}
+              onChange={(e) => update("resellers.hero_subtitle", e.target.value)}
+              placeholder="Deux façons de collaborer…"
+            />
           </div>
         </section>
       )}

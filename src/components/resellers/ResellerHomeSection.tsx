@@ -55,7 +55,7 @@ export function ResellerHomeSection() {
               <li className="flex items-center gap-2"><Handshake className="w-4 h-4 text-[var(--color-accent-amber)]" /> Showroom Exposeur · B2B · Corner</li>
               <li className="flex items-center gap-2"><Wallet className="w-4 h-4 text-[var(--color-accent-amber)]" /> Commission 12–15 % ou remise B2B 25–35 %</li>
             </ul>
-            <Link href="/revendeurs#candidature" className="mt-auto pt-5 block">
+            <Link href="/revendeurs" className="mt-auto pt-5 block">
               <Button variant="primary" className="w-full">Devenir partenaire <ArrowRight className="w-4 h-4 ml-2" /></Button>
             </Link>
           </div>

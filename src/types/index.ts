@@ -371,4 +371,15 @@ export interface ShowcaseSettings {
     /** Durée d'attribution du cookie (jours). */
     cookie_days?: number;
   };
+  /** Contenu de la page revendeurs (/revendeurs). */
+  resellers?: {
+    /** Vidéo du hero (mp4). */
+    hero_video_url?: string;
+    /** Image d'affiche (poster) de la vidéo. */
+    hero_poster?: string;
+    /** Titre du hero (repli sur un défaut). */
+    hero_title?: string;
+    /** Sous-titre du hero. */
+    hero_subtitle?: string;
+  };
 }

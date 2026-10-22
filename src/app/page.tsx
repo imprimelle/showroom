@@ -19,6 +19,7 @@ import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
+import { StoreDirectory } from "@/components/resellers/StoreDirectory";
 
 export const dynamic = "force-dynamic";
 
@@ -357,6 +358,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ===== 8. Points de vente partenaires (tout en bas) ===== */}
+      <StoreDirectory />
     </div>
   );
 }

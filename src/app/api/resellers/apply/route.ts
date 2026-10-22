@@ -12,7 +12,6 @@ const applySchema = z.object({
   type: z.enum(["affiliate", "store"]),
   name: z.string().min(2).max(120),
   contact_name: z.string().min(2).max(120).optional(),
-  email: z.string().email().max(120).optional().or(z.literal("")),
   phone: z
     .string()
     .trim()
@@ -78,10 +77,9 @@ export async function POST(request: NextRequest) {
   try {
     const admin = createAdminClient();
 
-    // Anti-doublon : une candidature active/pending avec le même email ou téléphone
+    // Anti-doublon : une candidature active/pending avec le même téléphone
     // (même type) ne doit pas être re-soumise en boucle.
     const existingFilters: string[] = [];
-    if (d.email) existingFilters.push(`email.eq.${d.email}`);
     if (d.phone) existingFilters.push(`phone.eq.${d.phone}`);
 
     if (existingFilters.length > 0) {
@@ -104,7 +102,6 @@ export async function POST(request: NextRequest) {
       status: "pending",
       name: stripAngleBrackets(d.name),
       contact_name: d.contact_name ? stripAngleBrackets(d.contact_name) : null,
-      email: d.email || null,
       phone: d.phone,
       city: d.city ? stripAngleBrackets(d.city) : null,
       country: d.country ? stripAngleBrackets(d.country) : null,
@@ -141,7 +138,6 @@ export async function POST(request: NextRequest) {
             reseller_type: d.type,
             name: stripAngleBrackets(d.name),
             phone: d.phone,
-            email: d.email || null,
             city: d.city || null,
             message: d.message || null,
           }),
