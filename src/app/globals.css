@@ -64,6 +64,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* === Protection anti-téléchargement des médias (dissuasion) === */
+/* Empêche le glisser-déposer natif (img/video) et le menu contextuel iOS
+   « Enregistrer l'image » au long-press. Complément du composant
+   MediaProtection (blocage clic-droit / dragstart côté JS). */
+img,
+video {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* === Custom focus styles === */
 *:focus-visible {
   outline: 2px solid var(--color-accent-blue);

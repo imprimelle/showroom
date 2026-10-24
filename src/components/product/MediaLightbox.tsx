@@ -126,6 +126,8 @@ export function MediaLightbox({
                       muted
                       playsInline
                       preload="metadata"
+                      controlsList="nodownload"
+                      disablePictureInPicture
                       className="w-full h-auto rounded-xl bg-black"
                     />
                   ) : (

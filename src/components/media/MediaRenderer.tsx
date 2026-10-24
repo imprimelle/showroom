@@ -54,6 +54,8 @@ export function MediaRenderer({
         loop
         playsInline
         preload={videoPreload}
+        controlsList="nodownload"
+        disablePictureInPicture
       />
     );
   }
