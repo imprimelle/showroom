@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getFedaPayTransaction, isFedaPayPaid } from "@/lib/fedapay";
+import { siteUrl } from "@/lib/member/oauth";
 
 /**
  * URL de retour FedaPay (callback_url). Réinterroge le statut de la transaction
@@ -13,12 +14,12 @@ export async function GET(request: NextRequest) {
   const txId = searchParams.get("id") || "";
 
   const redirect = (status: string, extra = "") => {
-    const url = new URL(`/confirmation?order=${encodeURIComponent(orderId)}&status=${status}${extra}`, request.url);
+    const url = new URL(`/confirmation?order=${encodeURIComponent(orderId)}&status=${status}${extra}`, siteUrl());
     return NextResponse.redirect(url);
   };
 
   if (!orderId) {
-    const url = new URL("/confirmation?status=error", request.url);
+    const url = new URL("/confirmation?status=error", siteUrl());
     return NextResponse.redirect(url);
   }
 

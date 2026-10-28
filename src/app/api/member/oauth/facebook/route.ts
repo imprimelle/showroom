@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { facebookAuthUrl, facebookConfigured } from "@/lib/member/oauth";
+import { facebookAuthUrl, facebookConfigured, siteUrl } from "@/lib/member/oauth";
 
 export async function GET(request: NextRequest) {
   if (!facebookConfigured()) {
-    return NextResponse.redirect(new URL("/compte/connexion?error=oauth", request.url));
+    return NextResponse.redirect(new URL("/compte/connexion?error=oauth", siteUrl()));
   }
   const next = request.nextUrl.searchParams.get("next") || "/compte";
   const nonce = crypto.randomUUID();

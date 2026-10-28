@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { googleAuthUrl, googleConfigured } from "@/lib/member/oauth";
+import { googleAuthUrl, googleConfigured, siteUrl } from "@/lib/member/oauth";
 
 export async function GET(request: NextRequest) {
   if (!googleConfigured()) {
-    return NextResponse.redirect(new URL("/compte/connexion?error=oauth", request.url));
+    return NextResponse.redirect(new URL("/compte/connexion?error=oauth", siteUrl()));
   }
   const next = request.nextUrl.searchParams.get("next") || "/compte";
   const nonce = crypto.randomUUID();

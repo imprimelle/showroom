@@ -4,7 +4,7 @@
  * FACEBOOK_APP_ID/SECRET). Sans credentials, le bouton correspondant est masqué.
  */
 
-function siteUrl(): string {
+export function siteUrl(): string {
   return (process.env.SITE_URL || "https://imprimelle.com").replace(/\/+$/, "");
 }
 

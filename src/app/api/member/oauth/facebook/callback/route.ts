@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { exchangeFacebookCode, upsertOAuthMember } from "@/lib/member/oauth";
+import { exchangeFacebookCode, upsertOAuthMember, siteUrl } from "@/lib/member/oauth";
 import { signMemberToken } from "@/lib/member/auth";
 import { MEMBER_COOKIE } from "@/lib/member/secret";
 
 export async function GET(request: NextRequest) {
-  const fail = NextResponse.redirect(new URL("/compte/connexion?error=oauth", request.url));
+  const fail = NextResponse.redirect(new URL("/compte/connexion?error=oauth", siteUrl()));
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const token = await signMemberToken(memberId);
   const target = next && next.startsWith("/") ? next : "/compte";
-  const response = NextResponse.redirect(new URL(target, request.url));
+  const response = NextResponse.redirect(new URL(target, siteUrl()));
   response.cookies.set(MEMBER_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
