@@ -20,6 +20,9 @@ export const DEFAULT_COMMISSION_RATES = {
 
 export const DEFAULT_PROMO_PERCENT = 5;
 
+/** Taux de commission par défaut d'un point de vente (%). */
+export const DEFAULT_STORE_COMMISSION_RATE = 12;
+
 /** Durée d'attribution par défaut (jours) du cookie ref. */
 export const DEFAULT_COOKIE_DAYS = 30;
 
@@ -120,6 +123,55 @@ export async function resolveAffiliateByPromo(
   return data as Reseller;
 }
 
+/** Taux de commission effectif d'un point de vente. */
+export function storeCommissionRate(configured?: { store?: number }): number {
+  return configured?.store ?? DEFAULT_STORE_COMMISSION_RATE;
+}
+
+/**
+ * Résout un revendeur ACTIF (affilié OU point de vente) depuis son `ref_code`.
+ * Renvoie `null` si introuvable ou non-actif.
+ */
+export async function resolveResellerByRef(
+  supabase: ReturnType<typeof createServerClient>,
+  refCode: string
+): Promise<Reseller | null> {
+  const code = normalizeCode(refCode);
+  if (!code) return null;
+
+  const { data, error } = await supabase
+    .from("showcase_resellers")
+    .select("*")
+    .eq("status", "active")
+    .eq("ref_code", code)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as Reseller;
+}
+
+/**
+ * Résout un revendeur ACTIF depuis son `promo_code` (attribution possible pour
+ * les deux types si un code promo est défini — en pratique affilié).
+ */
+export async function resolveResellerByPromo(
+  supabase: ReturnType<typeof createServerClient>,
+  promoCode: string
+): Promise<Reseller | null> {
+  const code = normalizeCode(promoCode);
+  if (!code) return null;
+
+  const { data, error } = await supabase
+    .from("showcase_resellers")
+    .select("*")
+    .eq("status", "active")
+    .eq("promo_code", code)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as Reseller;
+}
+
 /** Calcule une commission (arrondie à l'entier inférieur) sur une assiette HT hors livraison. */
 export function computeCommission(amountHtFcfa: number, ratePercent: number): number {
   if (amountHtFcfa <= 0 || ratePercent <= 0) return 0;
@@ -142,10 +194,11 @@ export async function getAffiliateStats(
 
   const { data: orders } = await supabase
     .from("showcase_orders")
-    .select("total_amount, commission_fcfa, commission_status")
+    .select("total_amount, commission_fcfa, commission_status, status")
     .eq("reseller_id", affiliate.id);
 
-  const list = (orders as any[]) || [];
+  // Exclut les commandes annulées du CA / du compteur de ventes (et des buckets).
+  const list = ((orders as any[]) || []).filter((o) => o.status !== "cancelled");
   const order_count = list.length;
   const revenue_fcfa = list.reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
   let pending_fcfa = 0;
@@ -159,6 +212,15 @@ export async function getAffiliateStats(
     else if (o.commission_status === "pending" || !o.commission_status) pending_fcfa += amount;
   }
 
+  let clicks = 0;
+  if (affiliate.ref_code) {
+    const { count } = await supabase
+      .from("showcase_affiliate_clicks")
+      .select("id", { count: "exact", head: true })
+      .eq("ref_code", affiliate.ref_code);
+    clicks = count ?? 0;
+  }
+
   return {
     ref_code: affiliate.ref_code!,
     name: affiliate.name,
@@ -170,5 +232,6 @@ export async function getAffiliateStats(
     pending_fcfa,
     earned_fcfa,
     paid_fcfa,
+    clicks,
   };
 }

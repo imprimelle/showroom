@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { JWT_SECRET } from "@/lib/admin/secret";
+import { MEMBER_JWT_SECRET, MEMBER_COOKIE } from "@/lib/member/secret";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -37,6 +38,43 @@ export async function middleware(request: NextRequest) {
 
     try {
       await jwtVerify(token, JWT_SECRET);
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    } catch {
+      return NextResponse.json({ error: "Session expirée" }, { status: 401 });
+    }
+  }
+
+  // Protect member space (compte) — exclude login page.
+  if (pathname.startsWith("/compte") && !pathname.startsWith("/compte/connexion")) {
+    const token = request.cookies.get(MEMBER_COOKIE)?.value;
+    if (!token) {
+      return NextResponse.redirect(new URL("/compte/connexion", request.url));
+    }
+    try {
+      const { payload } = await jwtVerify(token, MEMBER_JWT_SECRET);
+      if (payload.role !== "member") throw new Error("bad role");
+      return NextResponse.next({ request: { headers: requestHeaders } });
+    } catch {
+      const response = NextResponse.redirect(new URL("/compte/connexion", request.url));
+      response.cookies.delete(MEMBER_COOKIE);
+      return response;
+    }
+  }
+
+  // Protect member API routes (exclude auth endpoints).
+  const memberAuthOpen =
+    pathname.startsWith("/api/member/request-otp") ||
+    pathname.startsWith("/api/member/verify-otp") ||
+    pathname.startsWith("/api/member/logout") ||
+    pathname.startsWith("/api/member/oauth/");
+  if (pathname.startsWith("/api/member/") && !memberAuthOpen) {
+    const token = request.cookies.get(MEMBER_COOKIE)?.value;
+    if (!token) {
+      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    }
+    try {
+      const { payload } = await jwtVerify(token, MEMBER_JWT_SECRET);
+      if (payload.role !== "member") throw new Error("bad role");
       return NextResponse.next({ request: { headers: requestHeaders } });
     } catch {
       return NextResponse.json({ error: "Session expirée" }, { status: 401 });

@@ -48,7 +48,7 @@ export default async function AdminCommissionsPage() {
     const amount = Number(c.commission_fcfa) || 0;
     if (c.commission_status === "paid") totals.paid_fcfa += amount;
     else if (c.commission_status === "earned") totals.earned_fcfa += amount;
-    else totals.pending_fcfa += amount;
+    else if (c.commission_status === "pending" || !c.commission_status) totals.pending_fcfa += amount;
   }
 
   return (

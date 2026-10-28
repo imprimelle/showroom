@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { geocodeAddress } from "@/lib/geocode";
+import { DEFAULT_STORE_COMMISSION_RATE } from "@/lib/resellers";
 
 /**
  * POST /api/resellers/apply — candidature revendeur (affilié ou point de vente).
@@ -27,6 +29,8 @@ const applySchema = z.object({
   website: z.string().max(200).optional().or(z.literal("")),
   social: z.string().max(200).optional().or(z.literal("")),
   message: z.string().max(1000).optional().or(z.literal("")),
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
 });
 
 function stripAngleBrackets(value: string): string {
@@ -97,24 +101,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { error } = await admin.from("showcase_resellers").insert({
-      type: d.type,
-      status: "pending",
-      name: stripAngleBrackets(d.name),
-      contact_name: d.contact_name ? stripAngleBrackets(d.contact_name) : null,
-      phone: d.phone,
-      city: d.city ? stripAngleBrackets(d.city) : null,
-      country: d.country ? stripAngleBrackets(d.country) : null,
-      address: d.address ? stripAngleBrackets(d.address) : null,
-      store_model: d.store_model ?? null,
-      website: d.website ? stripAngleBrackets(d.website) : null,
-      social: d.social ? stripAngleBrackets(d.social) : null,
-      notes: d.message ? stripAngleBrackets(d.message) : null,
-      // Par défaut : affilié standard 8 %, point de vente non publié.
-      commission_rate: 8,
-      level: "standard",
-      is_published: false,
-    });
+    const { data: created, error } = await admin
+      .from("showcase_resellers")
+      .insert({
+        type: d.type,
+        status: "pending",
+        name: stripAngleBrackets(d.name),
+        contact_name: d.contact_name ? stripAngleBrackets(d.contact_name) : null,
+        phone: d.phone,
+        city: d.city ? stripAngleBrackets(d.city) : null,
+        country: d.country ? stripAngleBrackets(d.country) : null,
+        address: d.address ? stripAngleBrackets(d.address) : null,
+        store_model: d.store_model ?? null,
+        website: d.website ? stripAngleBrackets(d.website) : null,
+        social: d.social ? stripAngleBrackets(d.social) : null,
+        notes: d.message ? stripAngleBrackets(d.message) : null,
+        lat: d.lat ?? null,
+        lng: d.lng ?? null,
+        // Point de vente : commission par défaut 12 % ; affilié : 8 %.
+        commission_rate: d.type === "store" ? DEFAULT_STORE_COMMISSION_RATE : 8,
+        level: "standard",
+        is_published: false,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       console.error("Reseller apply insert error:", error);
@@ -122,6 +132,21 @@ export async function POST(request: NextRequest) {
         { error: "Erreur lors de l'envoi de la candidature." },
         { status: 500 }
       );
+    }
+
+    // Géolocalisation auto (best-effort) pour un point de vente sans coordonnées.
+    if (d.type === "store" && created && (d.lat == null || d.lng == null)) {
+      try {
+        const geo = await geocodeAddress(d.address || "", d.city || "", d.country || "");
+        if (geo) {
+          await admin
+            .from("showcase_resellers")
+            .update({ lat: geo.lat, lng: geo.lng })
+            .eq("id", (created as { id: string }).id);
+        }
+      } catch {
+        /* best-effort */
+      }
     }
 
     // Notification WhatsApp (fire-and-forget, best-effort).

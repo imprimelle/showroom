@@ -28,9 +28,20 @@ export default async function AdminResellersPage() {
     ordersByReseller.set(o.reseller_id, cur);
   }
 
+  // Clics par code ref (portée).
+  const { data: clicks } = await admin
+    .from("showcase_affiliate_clicks")
+    .select("ref_code")
+    .limit(50000);
+  const clicksByRef = new Map<string, number>();
+  for (const c of (clicks as any[]) || []) {
+    clicksByRef.set(c.ref_code, (clicksByRef.get(c.ref_code) || 0) + 1);
+  }
+
   const enriched = list.map((r) => ({
     ...r,
     stats: ordersByReseller.get(r.id) || { count: 0, revenue: 0, earned: 0 },
+    clicks: r.ref_code ? clicksByRef.get(r.ref_code) ?? 0 : 0,
   }));
 
   return (

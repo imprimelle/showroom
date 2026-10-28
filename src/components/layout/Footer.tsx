@@ -83,6 +83,7 @@ export function Footer({
               { href: "/notre-histoire", label: "Notre histoire", contentKey: "footer.nav.histoire" },
               { href: "/comment-ca-marche", label: "Comment ça marche", contentKey: "footer.nav.how" },
               { href: "/revendeurs", label: "Devenir revendeur", contentKey: "footer.nav.revendeurs" },
+              { href: "/compte", label: "Espace membre", contentKey: "footer.nav.compte" },
               { href: "/faq", label: "FAQ", contentKey: "footer.nav.faq" },
             ].map((link) => (
               <li key={link.href}>

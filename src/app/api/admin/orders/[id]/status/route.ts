@@ -20,6 +20,17 @@ export async function PATCH(
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    // Vente confirmée par l'admin (talk_first / COD) → la commission devient « acquise ».
+    // Idempotent : ne touche que les commissions encore « pending » (le paiement en ligne
+    // les passe déjà à « earned » via le return FedaPay).
+    if (status === "confirmed" || status === "delivered") {
+      await admin
+        .from("showcase_orders")
+        .update({ commission_status: "earned" })
+        .eq("id", id)
+        .eq("commission_status", "pending");
+    }
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Erreur interne" }, { status: 500 });

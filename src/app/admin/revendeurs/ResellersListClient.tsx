@@ -11,12 +11,23 @@ import {
   Pencil,
   Trash2,
   RotateCcw,
+  Copy,
+  LocateFixed,
 } from "lucide-react";
 import { formatFCFA, cn } from "@/lib/utils";
 import type { Reseller } from "@/types";
 
 interface ResellerRow extends Reseller {
   stats: { count: number; revenue: number; earned: number };
+  clicks?: number;
+}
+
+const SITE = "https://imprimelle.com";
+
+/** Dérive un code ref non vide (repli aléatoire si le nom n'a pas d'alphanumériques). */
+function deriveRefCode(name: string): string {
+  const base = name.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
+  return base || `REF-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -174,13 +185,16 @@ export function ResellersListClient({ resellers }: { resellers: ResellerRow[] })
     setBusy(r.id);
     setError("");
     try {
+      const refCode = r.ref_code || deriveRefCode(r.name);
       if (r.type === "affiliate") {
         // Active + génère ref/promo à partir du nom si absents.
-        const refCode = r.ref_code || r.name.trim().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20);
         const promoCode = r.promo_code || `${refCode}5`;
         await patch(r.id, { status: "active", ref_code: refCode, promo_code: promoCode });
       } else {
-        await patch(r.id, { status: "active" });
+        // Point de vente : active + génère un code ref + commission 12 % (si absente).
+        const body: Record<string, unknown> = { status: "active", ref_code: refCode };
+        if (r.commission_rate == null) body.commission_rate = 12;
+        await patch(r.id, body);
       }
       router.refresh();
     } catch (e) {
@@ -198,6 +212,32 @@ export function ResellersListClient({ resellers }: { resellers: ResellerRow[] })
       router.refresh();
     } catch (e) {
       setError((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const [copied, setCopied] = useState(false);
+
+  const copyRef = async (r: ResellerRow) => {
+    if (!r.ref_code) return;
+    try {
+      await navigator.clipboard.writeText(`${SITE}/?ref=${r.ref_code}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
+  const geocode = async (r: ResellerRow) => {
+    setBusy(r.id);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/resellers/${r.id}/geocode`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) setError(data?.error || "Géocodage impossible.");
+      router.refresh();
+    } catch {
+      setError("Géocodage impossible.");
     } finally {
       setBusy(null);
     }
@@ -517,11 +557,42 @@ export function ResellersListClient({ resellers }: { resellers: ResellerRow[] })
               </div>
             )}
 
+            {/* Lien d'affiliation explicite + géolocalisation */}
+            {(r.ref_code || (r.type === "store" && (r.lat == null || r.lng == null))) && (
+              <div className="space-y-2 text-sm">
+                {r.ref_code && (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 truncate rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-default)] px-2.5 py-1.5 text-xs font-mono text-[var(--color-text-primary)]">
+                      {SITE}/?ref={r.ref_code}
+                    </code>
+                    <button
+                      onClick={() => copyRef(r)}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-[var(--color-border-strong)] px-2 py-1 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]"
+                    >
+                      {copied ? <Check className="w-3.5 h-3.5 text-[var(--color-success)]" /> : <Copy className="w-3.5 h-3.5" />} Copier
+                    </button>
+                  </div>
+                )}
+                {r.type === "store" && (r.lat == null || r.lng == null) && (
+                  <button
+                    onClick={() => geocode(r)}
+                    disabled={busy === r.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-border-strong)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-50"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" /> Géolocaliser depuis l'adresse
+                  </button>
+                )}
+              </div>
+            )}
+
             {/* Stats */}
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-[var(--color-text-tertiary)] border-t border-[var(--color-border-default)] pt-2">
               <span>Commandes : <strong className="text-[var(--color-text-primary)]">{r.stats.count}</strong></span>
               <span>CA généré : <strong className="text-[var(--color-text-primary)]">{formatFCFA(r.stats.revenue)}</strong></span>
               <span>Commissions payées : <strong className="text-[var(--color-success)]">{formatFCFA(r.stats.earned)}</strong></span>
+              {typeof r.clicks === "number" && (
+                <span>Clics : <strong className="text-[var(--color-text-primary)]">{r.clicks}</strong></span>
+              )}
             </div>
           </div>
         </div>

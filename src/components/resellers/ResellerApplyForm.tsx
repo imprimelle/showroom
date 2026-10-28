@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Spinner";
 import { COUNTRIES } from "@/lib/countries";
+import { LocationPicker } from "./LocationPicker";
 import type { ResellerType } from "@/types";
 
 /**
@@ -68,6 +69,12 @@ export function ResellerApplyForm({
       payload.store_model = String(fd.get("store_model") || "showroom");
       payload.website = String(fd.get("website") || "");
       payload.social = String(fd.get("social") || "");
+      const lat = Number(fd.get("lat") || "");
+      const lng = Number(fd.get("lng") || "");
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        payload.lat = lat;
+        payload.lng = lng;
+      }
     }
 
     try {
@@ -188,6 +195,13 @@ export function ResellerApplyForm({
                 className="mt-1.5 w-full h-11 px-3.5 text-base rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
               />
             </label>
+
+            <div className="space-y-1.5">
+              <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                Localisation<span className="text-[var(--color-text-tertiary)]"> (cliquez sur la carte)</span>
+              </span>
+              <LocationPicker />
+            </div>
 
             <label className="block">
               <span className="text-sm font-medium text-[var(--color-text-secondary)]">Modèle de partenariat</span>

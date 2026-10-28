@@ -295,6 +295,21 @@ export interface AffiliateStats {
   earned_fcfa: number;
   /** Commissions versées (paid). */
   paid_fcfa: number;
+  /** Nombre de clics sur le lien d'affiliation (portée). */
+  clicks: number;
+}
+
+/** Rôle d'un membre de l'espace client. */
+export type MemberRole = "client" | "affiliate" | "store";
+
+/** Profil membre (espace membre). */
+export interface MemberProfile {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  oauth_provider: string | null;
 }
 
 export interface ShowcaseSettings {

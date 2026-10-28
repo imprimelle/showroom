@@ -15,6 +15,7 @@ import {
   FileText,
   Sparkles,
   Handshake,
+  User,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, formatPhoneDisplay } from "@/lib/utils";
@@ -33,6 +34,7 @@ const links = [
   { href: "/faq", label: "FAQ", icon: HelpCircle, contentKey: "nav.links.faq" },
   { href: "/suivi", label: "Suivi", icon: FileText, contentKey: "nav.links.suivi" },
   { href: "/revendeurs", label: "Devenir revendeur", icon: Handshake, contentKey: "nav.links.revendeurs" },
+  { href: "/compte", label: "Espace membre", icon: User, contentKey: "nav.links.compte" },
 ];
 
 const legalLinks = [

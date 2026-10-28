@@ -5,7 +5,7 @@ import { resolveActiveParameters, DEFAULT_PRODUCT_PARAMETERS } from "@/lib/param
 import { shippingFeeForCountry } from "@/lib/shipping";
 import { createFedaPayTransaction } from "@/lib/fedapay";
 import { isOnlinePayment, DEFAULT_ONLINE_METHODS } from "@/lib/payment";
-import { getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
+import { getWhatsAppUrl, DEFAULT_WHATSAPP, normalizePhone } from "@/lib/utils";
 import { buildOrderMessage, productUrl } from "@/lib/whatsapp";
 import {
   resolveGroupageConfig,
@@ -16,8 +16,9 @@ import {
 import { createFactureFromShowroomOrder } from "@/lib/facture-link";
 import {
   normalizeCode,
-  resolveAffiliateByRef,
-  resolveAffiliateByPromo,
+  resolveResellerByRef,
+  resolveResellerByPromo,
+  storeCommissionRate,
   computeCommission,
   computePromoDiscount,
   commissionRateFor,
@@ -259,11 +260,11 @@ export async function POST(request: NextRequest) {
     let appliedPromoCode: string | null = null;
 
     if (refCode) {
-      reseller = await resolveAffiliateByRef(admin, refCode);
+      reseller = await resolveResellerByRef(admin, refCode);
     }
 
     if (promoCode) {
-      const promoReseller = await resolveAffiliateByPromo(admin, promoCode);
+      const promoReseller = await resolveResellerByPromo(admin, promoCode);
       if (promoReseller) {
         // Le code promo porte aussi l'affiliation si aucun ref n'a été fourni.
         if (!reseller) reseller = promoReseller;
@@ -278,10 +279,13 @@ export async function POST(request: NextRequest) {
     let commissionFcfa: number | null = null;
     let commissionRate: number | null = null;
     if (reseller) {
-      commissionRate = commissionRateFor(
-        reseller.level,
-        settingsRow?.data?.affiliation?.rates as { standard?: number; performance?: number; vip?: number } | undefined
-      );
+      const rates = settingsRow?.data?.affiliation?.rates as
+        | { standard?: number; performance?: number; vip?: number; store?: number }
+        | undefined;
+      commissionRate =
+        reseller.type === "store"
+          ? storeCommissionRate(rates)
+          : commissionRateFor(reseller.level, rates);
       const base = Math.max(0, total_amount - promoDiscount);
       commissionFcfa = computeCommission(base, commissionRate);
     }
@@ -339,6 +343,22 @@ export async function POST(request: NextRequest) {
     const isOnline = isOnlinePayment(payment_method);
     const orderGroupageId = groupageIdByProduct.size > 0 ? groupageIdByProduct.values().next().value : null;
 
+    // Liaison membre (client) par téléphone normalisé (best-effort).
+    let memberId: string | null = null;
+    try {
+      const phoneDigits = normalizePhone(customer.phone);
+      if (phoneDigits) {
+        const { data: memberRow } = await admin
+          .from("showroom_members")
+          .select("id")
+          .eq("phone", phoneDigits)
+          .maybeSingle();
+        memberId = (memberRow as { id?: string } | null)?.id ?? null;
+      }
+    } catch {
+      /* best-effort */
+    }
+
     const { data: order, error: insertError } = await admin
       .from("showcase_orders")
       .insert({
@@ -362,6 +382,7 @@ export async function POST(request: NextRequest) {
         balance_fcfa,
         ip_address: ip,
         user_agent: request.headers.get("user-agent") || null,
+        member_id: memberId,
         reseller_id: reseller?.id ?? null,
         ref_code: refCode || null,
         promo_code: appliedPromoCode,

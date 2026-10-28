@@ -104,6 +104,39 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // Notification WhatsApp au candidat (approbation / rejet) — best-effort.
+  if (d.status === "active" || d.status === "rejected") {
+    try {
+      const waUrl = process.env.WHATSAPP_QUEUE_URL;
+      const u = updated as Record<string, any> | null;
+      if (waUrl && u?.phone) {
+        const site = (process.env.SITE_URL || "https://imprimelle.com").replace(/\/+$/, "");
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        await fetch(waUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "reseller_decision",
+            phone: u.phone,
+            name: u.name,
+            decision: d.status,
+            reseller_type: u.type,
+            ref_code: u.ref_code ?? null,
+            promo_code: u.promo_code ?? null,
+            dashboard_url:
+              u.type === "affiliate" ? `${site}/compte/affiliation` : `${site}/compte/boutique`,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+      }
+    } catch {
+      /* best-effort */
+    }
+  }
+
   return NextResponse.json({ reseller: updated });
 }
 
