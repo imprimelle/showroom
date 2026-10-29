@@ -6,6 +6,7 @@ import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { DEFAULT_SOCIAL_PROOF_ENTRIES, SOCIAL_PROOF_DEFAULTS } from "@/lib/social-proof";
+import { DEFAULT_ANNOUNCEMENT_MESSAGES, DEFAULT_ANNOUNCEMENT_PERIOD_MS } from "@/lib/announcements";
 import type { ShowcaseSettings } from "@/types";
 import { SettingsClient } from "./SettingsClient";
 
@@ -64,6 +65,11 @@ export default async function AdminSettingsPage() {
         rawHome && rawHome.steps && rawHome.steps.length > 0
           ? rawHome.steps
           : DEFAULT_STEPS,
+    },
+    announcement: {
+      enabled: raw.announcement?.enabled !== false,
+      period_ms: raw.announcement?.period_ms ?? DEFAULT_ANNOUNCEMENT_PERIOD_MS,
+      messages: raw.announcement?.messages ?? DEFAULT_ANNOUNCEMENT_MESSAGES,
     },
   };
 

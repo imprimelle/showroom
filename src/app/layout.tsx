@@ -97,7 +97,7 @@ export default async function RootLayout({
       <body className="min-h-screen flex flex-col">
         <ContentEditProvider initialContent={contentMap}>
         <Providers categories={catalog}>
-          <TopNav whatsapp={whatsapp} phone={phone} />
+          <TopNav whatsapp={whatsapp} phone={phone} announcement={settings.announcement} />
           <main className="flex-1">{children}</main>
           <ChromeFooter social={settings.social} contact={settings.contact} whatsapp={whatsapp} />
           <CookieConsent />

@@ -4,20 +4,22 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { parseSocialProofEntries, serializeSocialProofEntries, SOCIAL_PROOF_COUNTRIES } from "@/lib/social-proof";
+import { DEFAULT_ANNOUNCEMENT_MESSAGES, DEFAULT_ANNOUNCEMENT_PERIOD_MS } from "@/lib/announcements";
 import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection } from "@/types";
+import { MentionTextInput } from "@/components/admin/MentionTextInput";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -32,6 +34,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "groupage", label: "Groupage", icon: Users },
   { id: "three_sixty", label: "360°", icon: Rotate3d },
   { id: "revendeurs", label: "Revendeurs", icon: Store },
+  { id: "annonces", label: "Annonces", icon: BellRing },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -264,6 +267,33 @@ export function SettingsClient({ initialData, products }: {
       groupage_info: { ...groupageInfo, sections: groupageInfo.sections.filter((_, idx) => idx !== i) },
     });
 
+  // === Bandeau d'annonce défilant (top bar) ===
+  const announcement = data.announcement || {};
+  const announcementMessages: AnnouncementMessage[] =
+    announcement.messages ?? DEFAULT_ANNOUNCEMENT_MESSAGES;
+  const announcementEnabled = announcement.enabled !== false;
+  const announcementPeriodMs =
+    typeof announcement.period_ms === "number" && announcement.period_ms >= 500
+      ? announcement.period_ms
+      : DEFAULT_ANNOUNCEMENT_PERIOD_MS;
+  const setAnnouncement = (patch: Partial<ShowcaseSettings["announcement"]>) =>
+    setData({ ...data, announcement: { ...announcement, ...patch } });
+  const setAnnouncementMessages = (next: AnnouncementMessage[]) =>
+    setData({ ...data, announcement: { ...announcement, messages: next } });
+  const updateAnnouncementMessage = (i: number, patch: Partial<AnnouncementMessage>) =>
+    setAnnouncementMessages(announcementMessages.map((m, idx) => (idx === i ? { ...m, ...patch } : m)));
+  const addAnnouncementMessage = () =>
+    setAnnouncementMessages([...announcementMessages, { id: genId(), text: "", duration_ms: null }]);
+  const removeAnnouncementMessage = (i: number) =>
+    setAnnouncementMessages(announcementMessages.filter((_, idx) => idx !== i));
+  const moveAnnouncementMessage = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= announcementMessages.length) return;
+    const next = [...announcementMessages];
+    [next[i], next[j]] = [next[j], next[i]];
+    setAnnouncementMessages(next);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -344,6 +374,19 @@ export function SettingsClient({ initialData, products }: {
               hero_poster: data.resellers.hero_poster?.trim() || undefined,
               hero_title: data.resellers.hero_title?.trim() || undefined,
               hero_subtitle: data.resellers.hero_subtitle?.trim() || undefined,
+            }
+          : undefined,
+        announcement: data.announcement
+          ? {
+              enabled: !!data.announcement.enabled,
+              period_ms: Number(data.announcement.period_ms) || DEFAULT_ANNOUNCEMENT_PERIOD_MS,
+              messages: (data.announcement.messages || [])
+                .filter((m) => m.text?.trim())
+                .map((m) => ({
+                  id: m.id || genId(),
+                  text: m.text.trim(),
+                  duration_ms: m.duration_ms ? Number(m.duration_ms) : null,
+                })),
             }
           : undefined,
       };
@@ -1007,6 +1050,107 @@ export function SettingsClient({ initialData, products }: {
             </label>
           </div>
         </section>
+      )}
+
+      {tab === "annonces" && (
+        <>
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Bandeau d&apos;annonce (top bar)</h2>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Barre fine affichée tout en haut du site, au-dessus de la navigation. Les messages
+              défilent verticalement (le texte sort vers le bas, le suivant entre par le haut), en
+              ambre. Format : <span className="font-mono">*gras*</span>,{" "}
+              <span className="font-mono">_souligné_</span>,{" "}
+              <span className="font-mono">[libellé](lien)</span>, et tapez{" "}
+              <span className="font-mono">@</span> pour lier un produit.
+            </p>
+
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors mb-3">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Afficher le bandeau</span>
+              <input
+                type="checkbox"
+                checked={announcementEnabled}
+                onChange={(e) => setAnnouncement({ enabled: e.target.checked })}
+                className="w-4 h-4 accent-[var(--color-accent-blue)]"
+              />
+            </label>
+
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Période d&apos;affichage par message (secondes)</label>
+              <input
+                type="number"
+                min={0.5}
+                step={0.5}
+                value={Math.round(announcementPeriodMs / 100) / 10}
+                onChange={(e) => setAnnouncement({ period_ms: Math.max(500, Math.round((Number(e.target.value) || 1) * 1000)) })}
+                className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+              />
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Messages</h2>
+              <button type="button" onClick={addAnnouncementMessage} className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Message
+              </button>
+            </div>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Ordre du défilement. Une durée par message est optionnelle (vide = période globale).
+            </p>
+
+            <div className="space-y-3">
+              {announcementMessages.map((m, i) => (
+                <div key={m.id} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-[var(--color-text-tertiary)] w-5 shrink-0 text-center">{i + 1}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button type="button" onClick={() => moveAnnouncementMessage(i, -1)} disabled={i === 0} aria-label="Monter" className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-tertiary)]">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => moveAnnouncementMessage(i, 1)} disabled={i === announcementMessages.length - 1} aria-label="Descendre" className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-tertiary)]">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <button type="button" onClick={() => removeAnnouncementMessage(i)} aria-label="Supprimer le message" className="ml-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <MentionTextInput
+                    value={m.text}
+                    onChange={(v) => updateAnnouncementMessage(i, { text: v })}
+                    products={products}
+                    placeholder="Texte… (*gras*, _souligné_, @produit)"
+                  />
+
+                  <div className="mt-2">
+                    <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Durée (secondes, optionnel)</label>
+                    <input
+                      type="number"
+                      min={0.5}
+                      step={0.5}
+                      value={m.duration_ms ? Math.round(m.duration_ms / 100) / 10 : ""}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        updateAnnouncementMessage(i, {
+                          duration_ms: v === "" ? null : Math.max(500, Math.round((Number(v) || 1) * 1000)),
+                        });
+                      }}
+                      placeholder="Global"
+                      className="w-40 h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+              {announcementMessages.length === 0 && (
+                <p className="text-sm text-[var(--color-text-tertiary)]">
+                  Aucun message — le bandeau sera masqué.
+                </p>
+              )}
+            </div>
+          </section>
+        </>
       )}
 
       {tab === "revendeurs" && (

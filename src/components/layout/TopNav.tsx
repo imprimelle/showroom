@@ -18,12 +18,15 @@ import {
   User,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
-import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, formatPhoneDisplay } from "@/lib/utils";
+import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
 import { generalInquiryMessage } from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
 import { CATEGORIES } from "@/lib/categories";
 import { SearchSuggest } from "@/components/search/SearchSuggest";
 import { EditableText } from "@/components/admin/content/EditableText";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { resolveAnnouncement } from "@/lib/announcements";
+import type { ShowcaseSettings } from "@/types";
 
 const links = [
   { href: "/", label: "Accueil", icon: House, contentKey: "nav.links.home" },
@@ -66,13 +69,19 @@ function BurgerSearchIcon({ className }: { className?: string }) {
   );
 }
 
-export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: string; phone?: string }) {
+export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
+  whatsapp?: string;
+  phone?: string;
+  announcement?: ShowcaseSettings["announcement"];
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const itemCount = useCartStore((s) => s.getItemCount());
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const announce = resolveAnnouncement(announcement);
 
   const isHero = pathname === "/" || pathname.startsWith("/collection/categorie/");
   const [scrolled, setScrolled] = useState(false);
@@ -134,22 +143,13 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
             : "bg-[var(--color-bg-primary)] border-b border-[var(--color-border-default)]"
         )}
       >
-        {/* === Barre fine orange d'annonce (toujours solide, jamais fondue dans le héro) === */}
-        <div className="bg-[var(--color-accent-orange)] text-white">
-          <div className="max-w-7xl mx-auto px-4 h-7 md:h-8 flex items-center justify-between text-[11px] md:text-xs">
-            <span className="font-semibold">
-              <EditableText contentKey="nav.announcement" defaultValue="Fièrement Ivoiriens 🇨🇮" />
-            </span>
-            {phone && (
-              <a
-                href={`tel:+${phone}`}
-                className="font-semibold tabular-nums tracking-wide hover:underline"
-              >
-                {formatPhoneDisplay(phone)}
-              </a>
-            )}
-          </div>
-        </div>
+        {/* === Bandeau d'annonce défilant (vertical, texte ambre) === */}
+        <AnnouncementBar
+          enabled={announce.enabled}
+          periodMs={announce.periodMs}
+          messages={announce.messages}
+          phone={phone}
+        />
 
         <div className="max-w-7xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo — à gauche */}

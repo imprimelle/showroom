@@ -312,6 +312,20 @@ export interface MemberProfile {
   oauth_provider: string | null;
 }
 
+/** Message du bandeau d'annonce défilant (top bar au-dessus de la nav). */
+export interface AnnouncementMessage {
+  id: string;
+  /**
+   * Texte avec mini-markdown :
+   *   *gras*            → texte en gras (chiffres/promo)
+   *   _souligné_        → texte souligné
+   *   [libellé](href)   → lien souligné (URL absolue, chemin interne, ou slug produit → /collection/{slug})
+   */
+  text: string;
+  /** Durée d'affichage de ce message (ms). null/0 = période globale. */
+  duration_ms?: number | null;
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -396,5 +410,14 @@ export interface ShowcaseSettings {
     hero_title?: string;
     /** Sous-titre du hero. */
     hero_subtitle?: string;
+  };
+  /** Bandeau d'annonce défilant (top bar au-dessus de la nav). */
+  announcement?: {
+    /** Interrupteur global du bandeau (true = affiché). */
+    enabled?: boolean;
+    /** Durée d'affichage par défaut d'un message (ms). */
+    period_ms?: number;
+    /** Liste des messages affichés en défilement vertical. */
+    messages?: AnnouncementMessage[];
   };
 }
