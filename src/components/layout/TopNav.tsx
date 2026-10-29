@@ -155,19 +155,26 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
           {/* Logo — à gauche */}
           <Link
             href="/"
-            className={cn("font-display font-bold text-lg tracking-tight", fg)}
+            className={cn("font-display font-bold text-xl tracking-tight", fg)}
           >
             Imprim<span className="text-[var(--color-accent-amber)]">elle</span>
           </Link>
 
-          {/* Panier + Burger — à droite (burger à l'extrême droite) */}
+          {/* Compte + Panier + Burger — à droite (burger à l'extrême droite) */}
           <div className="flex items-center gap-1">
+            <Link
+              href="/compte"
+              aria-label="Mon compte"
+              className={cn("relative p-2", fg)}
+            >
+              <User className="w-5 h-5" />
+            </Link>
             <Link
               href="/panier"
               aria-label="Panier"
               className={cn("relative p-2", fg)}
             >
-              <ShoppingCart className="w-6 h-6" />
+              <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (
                 <span
                   className={cn(
@@ -175,7 +182,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
                     transparent
                       ? "bg-white text-black"
                       : "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                  )}
+                  )
                 >
                   {itemCount > 9 ? "9+" : itemCount}
                 </span>
@@ -186,7 +193,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
               aria-label="Menu"
               className={cn("p-2", fg)}
             >
-              <BurgerSearchIcon className="w-6 h-6" />
+              <BurgerSearchIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
