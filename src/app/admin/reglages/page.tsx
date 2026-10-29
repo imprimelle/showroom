@@ -71,6 +71,7 @@ export default async function AdminSettingsPage() {
       period_ms: raw.announcement?.period_ms ?? DEFAULT_ANNOUNCEMENT_PERIOD_MS,
       messages: raw.announcement?.messages ?? DEFAULT_ANNOUNCEMENT_MESSAGES,
     },
+    remises: raw.remises || { surplus: { enabled: false, amount_fcfa: 0 }, rules: [] },
   };
 
   return (

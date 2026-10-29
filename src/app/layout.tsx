@@ -96,7 +96,7 @@ export default async function RootLayout({
     <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col">
         <ContentEditProvider initialContent={contentMap}>
-        <Providers categories={catalog}>
+        <Providers categories={catalog} remises={settings.remises}>
           <TopNav whatsapp={whatsapp} phone={phone} announcement={settings.announcement} />
           <main className="flex-1">{children}</main>
           <ChromeFooter social={settings.social} contact={settings.contact} whatsapp={whatsapp} />

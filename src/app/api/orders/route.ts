@@ -23,6 +23,7 @@ import {
   computePromoDiscount,
   commissionRateFor,
 } from "@/lib/resellers";
+import { resolveRemises, computePrice } from "@/lib/remises";
 import type { ProductParameter, Reseller } from "@/types";
 
 // In-memory rate limiting
@@ -86,6 +87,9 @@ export async function POST(request: NextRequest) {
         : DEFAULT_ONLINE_METHODS;
     const liveMethods = new Set(methodDefs.filter((m: any) => m?.live).map((m: any) => m.id));
     const whatsapp = settingsRow?.data?.contact?.whatsapp || DEFAULT_WHATSAPP;
+
+    // Remises & surplus (validation de prix cohérente avec le rendu client).
+    const remises = resolveRemises(settingsRow?.data?.remises);
 
     const hasGroupage = items.some((i) => i.groupage);
 
@@ -209,7 +213,15 @@ export async function POST(request: NextRequest) {
         optionsTotal += opt.price;
       }
 
-      const expectedUnitPrice = basePrice + optionsTotal;
+      const expectedUnitPrice = (() => {
+        // Remise / surplus appliquée au prix de base (les groupages gardent leur réduction propre).
+        const breakdown = computePrice(
+          basePrice,
+          { id: item.product_id, family: sc?.family, category: sc?.category },
+          remises
+        );
+        return breakdown.final + optionsTotal;
+      })();
       if (item.unit_price_fcfa !== expectedUnitPrice) {
         return NextResponse.json({ error: `Prix incorrect pour ${item.product_name}` }, { status: 400 });
       }

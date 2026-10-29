@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing, BadgePercent } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -16,10 +16,10 @@ import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { MentionTextInput } from "@/components/admin/MentionTextInput";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -35,6 +35,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "three_sixty", label: "360°", icon: Rotate3d },
   { id: "revendeurs", label: "Revendeurs", icon: Store },
   { id: "annonces", label: "Annonces", icon: BellRing },
+  { id: "remises", label: "Remises", icon: BadgePercent },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -294,6 +295,24 @@ export function SettingsClient({ initialData, products }: {
     setAnnouncementMessages(next);
   };
 
+  // === Remises & surplus ===
+  const remisesData = data.remises || {};
+  const remiseRules: RemiseRule[] = remisesData.rules || [];
+  const surplusEnabled = !!remisesData.surplus?.enabled;
+  const surplusAmount = Number(remisesData.surplus?.amount_fcfa) || 0;
+  const setSurplus = (patch: Partial<{ enabled: boolean; amount_fcfa: number }>) =>
+    setData({ ...data, remises: { ...remisesData, surplus: { ...(remisesData.surplus || {}), ...patch } } });
+  const setRemiseRules = (next: RemiseRule[]) =>
+    setData({ ...data, remises: { ...remisesData, rules: next } });
+  const addRemiseRule = () =>
+    setRemiseRules([
+      ...remiseRules,
+      { id: genId(), enabled: true, scope: "all", type: "percent", value: 0, category_id: null, product_id: null },
+    ]);
+  const updateRemiseRule = (i: number, patch: Partial<RemiseRule>) =>
+    setRemiseRules(remiseRules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const removeRemiseRule = (i: number) => setRemiseRules(remiseRules.filter((_, idx) => idx !== i));
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -386,6 +405,34 @@ export function SettingsClient({ initialData, products }: {
                   id: m.id || genId(),
                   text: m.text.trim(),
                   duration_ms: m.duration_ms ? Number(m.duration_ms) : null,
+                })),
+            }
+          : undefined,
+        remises: data.remises
+          ? {
+              surplus: {
+                enabled: !!data.remises.surplus?.enabled,
+                amount_fcfa: Number(data.remises.surplus?.amount_fcfa) || 0,
+              },
+              rules: (data.remises.rules || [])
+                .filter(
+                  (r) =>
+                    r.scope === "all" ||
+                    (r.scope === "category" && !!r.category_id) ||
+                    (r.scope === "product" && !!r.product_id)
+                )
+                .filter((r) => Number(r.value) > 0)
+                .map((r) => ({
+                  id: r.id || genId(),
+                  enabled: r.enabled !== false,
+                  scope: r.scope,
+                  category_id: r.scope === "category" ? r.category_id || null : null,
+                  product_id: r.scope === "product" ? r.product_id || null : null,
+                  type: r.type,
+                  value:
+                    r.type === "percent"
+                      ? Math.min(100, Math.max(0, Number(r.value)))
+                      : Math.max(0, Number(r.value)),
                 })),
             }
           : undefined,
@@ -1147,6 +1194,151 @@ export function SettingsClient({ initialData, products }: {
                 <p className="text-sm text-[var(--color-text-tertiary)]">
                   Aucun message — le bandeau sera masqué.
                 </p>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
+      {tab === "remises" && (
+        <>
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Surplus (prix de base artificiel)</h2>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Ajoute un montant fixe au prix de base de tous les produits, avant l&apos;application
+              d&apos;une remise éventuelle. Utile pour gonfler un prix de référence.
+            </p>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors mb-3">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Activer le surplus</span>
+              <input
+                type="checkbox"
+                checked={surplusEnabled}
+                onChange={(e) => setSurplus({ enabled: e.target.checked })}
+                className="w-4 h-4 accent-[var(--color-accent-blue)]"
+              />
+            </label>
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Montant du surplus (FCFA)</label>
+              <input
+                type="number"
+                min={0}
+                value={surplusAmount}
+                onChange={(e) => setSurplus({ amount_fcfa: Math.max(0, Number(e.target.value) || 0) })}
+                className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+              />
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Règles de remise</h2>
+              <button type="button" onClick={addRemiseRule} className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+                <Plus className="w-3.5 h-3.5" /> Règle
+              </button>
+            </div>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Remise en pourcentage ou en valeur fixe, sur tous les produits, une catégorie, ou un
+              produit précis. La règle la plus spécifique l&apos;emporte : produit &gt; catégorie &gt; tous.
+            </p>
+
+            <div className="space-y-3">
+              {remiseRules.map((r, i) => (
+                <div key={r.id} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-xs font-semibold text-[var(--color-text-tertiary)] w-5 shrink-0 text-center">{i + 1}</span>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={r.enabled !== false}
+                        onChange={(e) => updateRemiseRule(i, { enabled: e.target.checked })}
+                        className="w-4 h-4 accent-[var(--color-accent-blue)]"
+                      />
+                      <span className="text-xs text-[var(--color-text-secondary)]">Active</span>
+                    </label>
+                    <button type="button" onClick={() => removeRemiseRule(i)} aria-label="Supprimer la règle" className="ml-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Portée</label>
+                      <select
+                        value={r.scope}
+                        onChange={(e) => updateRemiseRule(i, { scope: e.target.value as RemiseRule["scope"], category_id: null, product_id: null })}
+                        className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                      >
+                        <option value="all">Toutes les catégories</option>
+                        <option value="category">Une catégorie</option>
+                        <option value="product">Un produit</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Type</label>
+                      <select
+                        value={r.type}
+                        onChange={(e) => updateRemiseRule(i, { type: e.target.value as RemiseRule["type"] })}
+                        className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                      >
+                        <option value="percent">Pourcentage (%)</option>
+                        <option value="fixed">Valeur fixe (FCFA)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {r.scope === "category" && (
+                    <div className="mt-2">
+                      <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Catégorie</label>
+                      <select
+                        value={r.category_id ?? ""}
+                        onChange={(e) => updateRemiseRule(i, { category_id: e.target.value || null })}
+                        className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                      >
+                        <option value="">Choisir une catégorie…</option>
+                        {CATEGORIES.map((fam) => (
+                          <optgroup key={fam.id} label={fam.name}>
+                            <option value={fam.id}>{fam.name} (tout l&apos;univers)</option>
+                            {fam.children.map((sub) => (
+                              <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {r.scope === "product" && (
+                    <div className="mt-2">
+                      <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Produit</label>
+                      <select
+                        value={r.product_id ?? ""}
+                        onChange={(e) => updateRemiseRule(i, { product_id: e.target.value || null })}
+                        className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                      >
+                        <option value="">Choisir un produit…</option>
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="mt-2">
+                    <label className="block text-xs text-[var(--color-text-secondary)] mb-1">
+                      Valeur {r.type === "percent" ? "(%)" : "(FCFA)"}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={Number(r.value) || 0}
+                      onChange={(e) => updateRemiseRule(i, { value: Math.max(0, Number(e.target.value) || 0) })}
+                      className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+              {remiseRules.length === 0 && (
+                <p className="text-sm text-[var(--color-text-tertiary)]">Aucune règle de remise.</p>
               )}
             </div>
           </section>

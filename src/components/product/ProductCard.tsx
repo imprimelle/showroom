@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { ShoppingCart, Clock, Zap } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useRemisesStore } from "@/stores/remises";
+import { computePrice } from "@/lib/remises";
 import { imgProxyUrl } from "@/lib/images";
 import { getMinPrice } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
@@ -23,8 +25,11 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
+  const remises = useRemisesStore((s) => s.config);
 
   const lowestPrice = getMinPrice(product.variants);
+  const priceRef = { id: product.id, family: product.showcase?.family, category: product.showcase?.category };
+  const lowestBreakdown = lowestPrice != null ? computePrice(lowestPrice, priceRef, remises) : null;
 
   const firstVariant = product.variants?.[0];
   const popularity = product.showcase?.popularity || 0;
@@ -36,6 +41,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
     e.preventDefault();
     e.stopPropagation();
     if (!firstVariant || firstVariant.price == null) return;
+    const quickBreakdown = computePrice(firstVariant.price, priceRef, remises);
     addItem({
       key: `${product.id}:${firstVariant.sku}`,
       product_id: product.id,
@@ -44,7 +50,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
       variant_label: firstVariant.name,
       variant_sku: firstVariant.sku,
       quantity: 1,
-      unit_price_fcfa: firstVariant.price,
+      unit_price_fcfa: quickBreakdown.final,
       image_url: product.main_image_url,
       options: [],
       online_enabled: !!product.showcase?.payment?.online_enabled,
@@ -137,9 +143,19 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
               <span className="block text-[10px] leading-none text-[var(--color-text-tertiary)] mb-1">
                 À partir de
               </span>
+              {lowestBreakdown?.discounted && (
+                <span className="block text-[11px] font-mono leading-none text-[var(--color-text-tertiary)] line-through mb-0.5">
+                  {formatPrice(lowestBreakdown.reference)}
+                </span>
+              )}
               <span className="text-[15px] font-semibold leading-none text-[var(--color-text-primary)]">
-                {formatPrice(lowestPrice)}
+                {formatPrice(lowestBreakdown?.final ?? lowestPrice)}
               </span>
+              {lowestBreakdown?.discounted && lowestBreakdown.rule?.type === "percent" && (
+                <span className="ml-1.5 text-[10px] font-bold leading-none text-[var(--color-success)]">
+                  −{Math.round(Number(lowestBreakdown.rule.value))}%
+                </span>
+              )}
             </div>
           ) : (
             <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">

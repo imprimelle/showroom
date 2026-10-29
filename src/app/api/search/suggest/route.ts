@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
     image: p.main_image_url,
     category: getCategoryLabel(p.showcase?.category),
     family: resolveFamily(p.showcase?.family, p.showcase?.category),
+    category_id: p.showcase?.category ?? null,
     price: getMinPrice(p.variants),
   }));
 

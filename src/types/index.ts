@@ -326,6 +326,26 @@ export interface AnnouncementMessage {
   duration_ms?: number | null;
 }
 
+/** Portée d'une règle de remise : tous les produits, une catégorie, ou un produit. */
+export type RemiseScope = "all" | "category" | "product";
+
+/** Type de remise : pourcentage ou valeur fixe (FCFA). */
+export type RemiseType = "percent" | "fixed";
+
+/** Règle de remise admin (onglet « Remises »). */
+export interface RemiseRule {
+  id: string;
+  enabled?: boolean;
+  scope: RemiseScope;
+  /** Id de catégorie (famille niveau 1 OU sous-catégorie niveau 2) — scope `category`. */
+  category_id?: string | null;
+  /** Id du produit ciblé — scope `product`. */
+  product_id?: string | null;
+  type: RemiseType;
+  /** Pourcentage (0-100) si type `percent`, montant FCFA si type `fixed`. */
+  value: number;
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -419,5 +439,15 @@ export interface ShowcaseSettings {
     period_ms?: number;
     /** Liste des messages affichés en défilement vertical. */
     messages?: AnnouncementMessage[];
+  };
+  /** Remises & surplus (onglet admin « Remises »). */
+  remises?: {
+    /** Surplus : montant fixe artificiel ajouté au prix de base des produits. */
+    surplus?: {
+      enabled?: boolean;
+      amount_fcfa?: number;
+    };
+    /** Règles de remise (les plus spécifiques priment : produit > catégorie > tous). */
+    rules?: RemiseRule[];
   };
 }

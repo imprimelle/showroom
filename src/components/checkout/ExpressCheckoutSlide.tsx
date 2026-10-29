@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
+import { getStoredRef } from "@/components/referral/ReferralCapture";
 import { useFormatPrice, useCurrencyStore } from "@/stores/currency";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -78,9 +79,18 @@ export function ExpressCheckoutSlide() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
   // Bon de commande dépliable : ouvert à l'étape « Panier », replié ensuite.
   const [summaryOpen, setSummaryOpen] = useState(true);
+  // Code promo d'affiliation (optionnel).
+  const [promoCode, setPromoCode] = useState("");
+  const [promoState, setPromoState] = useState<{ valid: boolean; percent: number; discount: number } | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [promoChecking, setPromoChecking] = useState(false);
 
   const country = customer.country || "CI";
   const shippingFee = shippingFeeForCountry(country, { zones });
+
+  // Remise code promo validée (affichage ; le serveur recalcule la remise).
+  const promoDiscount = promoState?.discount ?? 0;
+  const grandTotal = total + shippingFee - promoDiscount;
 
   // === Groupage : répartition montant de départ / solde (affichage) ===
   const hasGroupage = items.some((i) => i.groupage);
@@ -183,6 +193,36 @@ export function ExpressCheckoutSlide() {
     if (validateStep(step)) next();
   };
 
+  const applyPromo = async () => {
+    const code = promoCode.trim();
+    if (!code) {
+      setPromoState(null);
+      setPromoError("");
+      return;
+    }
+    setPromoChecking(true);
+    setPromoError("");
+    setPromoState(null);
+    try {
+      const res = await fetch("/api/promo/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.valid) {
+        const discount = Math.floor((total * Number(data.percent)) / 100);
+        setPromoState({ valid: true, percent: Number(data.percent), discount });
+      } else {
+        setPromoError("Code promo invalide ou expiré.");
+      }
+    } catch {
+      setPromoError("Impossible de vérifier ce code pour le moment.");
+    } finally {
+      setPromoChecking(false);
+    }
+  };
+
   const submitOrder = async () => {
     setGlobalError("");
     if (!selectedMethod) {
@@ -215,6 +255,8 @@ export function ExpressCheckoutSlide() {
       payment_method: selectedMethod,
       shipping_country: country,
       shipping_fee_fcfa: shippingFee,
+      ref_code: getStoredRef() || undefined,
+      promo_code: promoState?.valid ? promoCode.trim().toUpperCase() : undefined,
     };
 
     const result = createOrderSchema.safeParse(payload);
@@ -237,7 +279,7 @@ export function ExpressCheckoutSlide() {
       track("add_payment_info", {
         payment_method: selectedMethod,
         currency: "XOF",
-        value: total + shippingFee,
+        value: grandTotal,
       });
 
       const res = await fetch("/api/orders", {
@@ -260,7 +302,7 @@ export function ExpressCheckoutSlide() {
       if (data.whatsapp_url) {
         track("purchase", {
           order_id: data.order_id,
-          value: total + shippingFee,
+          value: grandTotal,
           currency: "XOF",
           num_items: items.length,
           payment_method: "talk_first",
@@ -275,7 +317,7 @@ export function ExpressCheckoutSlide() {
 
       track("purchase", {
         order_id: data.order_id,
-        value: total + shippingFee,
+        value: grandTotal,
         currency: "XOF",
         num_items: items.length,
         payment_method: "cod",
@@ -370,7 +412,7 @@ export function ExpressCheckoutSlide() {
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className="font-mono font-bold text-[var(--color-text-primary)]">
-                        {formatPrice(total + shippingFee)}
+                        {formatPrice(grandTotal)}
                       </span>
                       <ChevronDown
                         className={`h-4 w-4 text-[var(--color-text-tertiary)] transition-transform ${summaryOpen ? "rotate-180" : ""}`}
@@ -446,9 +488,15 @@ export function ExpressCheckoutSlide() {
                             {shippingFee === 0 ? "Gratuite" : formatPrice(shippingFee)}
                           </span>
                         </div>
+                        {promoDiscount > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-[var(--color-text-secondary)]">Code promo</span>
+                            <span className="font-mono text-[var(--color-success)]">−{formatPrice(promoDiscount)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between text-base font-bold pt-1.5 border-t border-[var(--color-border-default)]">
                           <span className="text-[var(--color-text-primary)]">Total</span>
-                          <span className="font-mono">{formatPrice(total + shippingFee)}</span>
+                          <span className="font-mono">{formatPrice(grandTotal)}</span>
                         </div>
                       </div>
                     </div>
@@ -714,6 +762,41 @@ export function ExpressCheckoutSlide() {
                           {selectedMethod === "talk_first" && <Check className="w-5 h-5 text-[var(--color-text-primary)] shrink-0" />}
                         </button>
                       </div>
+
+                      {/* Code promo (affiliation) — hors groupage */}
+                      {!hasGroupage && (
+                        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] p-3.5">
+                          <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5">
+                            Code promo (affiliation)
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              value={promoCode}
+                              onChange={(e) => {
+                                setPromoCode(e.target.value);
+                                if (promoState) setPromoState(null);
+                                if (promoError) setPromoError("");
+                              }}
+                              placeholder="Ex : SOPHIE5"
+                              className="flex-1 h-11 px-3.5 text-base uppercase rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-[var(--color-text-primary)] focus:border-[var(--color-accent-blue)] focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={applyPromo}
+                              disabled={promoChecking || !promoCode.trim()}
+                              className="px-4 h-11 rounded-xl border border-[var(--color-border-strong)] text-sm font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-50"
+                            >
+                              {promoChecking ? "…" : "Appliquer"}
+                            </button>
+                          </div>
+                          {promoError && <p className="mt-1.5 text-xs text-[var(--color-error)]">{promoError}</p>}
+                          {promoState?.valid && (
+                            <p className="mt-1.5 text-xs text-[var(--color-success)]">
+                              Code appliqué : −{promoState.percent}% (−{formatPrice(promoState.discount)})
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       {/* CGV */}
                       <label className="flex items-start gap-2 cursor-pointer">

@@ -5,6 +5,8 @@ import { ArrowRight, TrendingUp } from "lucide-react";
 import { CATEGORIES, type Category, type SubCategory } from "@/lib/categories";
 import { normalizeForSearch } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
+import { useRemisesStore } from "@/stores/remises";
+import { computePrice } from "@/lib/remises";
 import { imgProxyUrl } from "@/lib/images";
 
 interface SuggestionItem {
@@ -14,6 +16,7 @@ interface SuggestionItem {
   image: string | null;
   category: string;
   family?: string;
+  category_id?: string | null;
   price: number | null;
 }
 
@@ -37,6 +40,7 @@ interface SearchSuggestProps {
  */
 export function SearchSuggest({ query, family, onNavigate, variant = "page" }: SearchSuggestProps) {
   const formatPrice = useFormatPrice();
+  const remises = useRemisesStore((s) => s.config);
   const [items, setItems] = useState<SuggestionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -153,7 +157,11 @@ export function SearchSuggest({ query, family, onNavigate, variant = "page" }: S
         </div>
       ) : items.length > 0 ? (
         <ul className="space-y-0.5">
-          {items.map((it) => (
+          {items.map((it) => {
+            const bp = it.price != null
+              ? computePrice(it.price, { id: it.id, family: it.family, category: it.category_id }, remises)
+              : null;
+            return (
             <li key={it.id}>
               <Link href={`/collection/${it.slug}`} onClick={onNavigate} className={itemRow}>
                 <span className="w-11 h-14 shrink-0 rounded-lg overflow-hidden bg-[var(--color-bg-tertiary)]">
@@ -172,13 +180,19 @@ export function SearchSuggest({ query, family, onNavigate, variant = "page" }: S
                     {it.category}
                   </span>
                   <span className="block text-xs font-semibold text-[var(--color-text-primary)]">
-                    {it.price != null ? `À partir de ${formatPrice(it.price)}` : "Sur devis"}
+                    {it.price != null ? `À partir de ${formatPrice(bp?.final ?? it.price)}` : "Sur devis"}
                   </span>
+                  {bp?.discounted && (
+                    <span className="block text-[10px] font-mono text-[var(--color-text-tertiary)] line-through">
+                      {formatPrice(bp.reference)}
+                    </span>
+                  )}
                 </span>
                 <ArrowRight className="w-4 h-4 text-[var(--color-text-tertiary)] shrink-0" />
               </Link>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : !hasQuery ? (
         <div className="px-3 py-6 text-sm text-[var(--color-text-tertiary)] text-center">

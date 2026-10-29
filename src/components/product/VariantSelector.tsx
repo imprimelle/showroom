@@ -2,6 +2,7 @@
 import { Check, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
+import { computePrice, type RemisesResolved, type RemiseProductRef } from "@/lib/remises";
 
 interface Variant {
   id: string;
@@ -26,9 +27,13 @@ interface VariantSelectorProps {
   onSelect: (variant: Variant) => void;
   /** Carte groupage compacte affichée en 1re position du slider (optionnelle). */
   groupage?: VariantGroupageCard | null;
+  /** Config remises résolue (pour afficher les prix remisés). */
+  remises?: RemisesResolved;
+  /** Référence produit (id + famille + catégorie) pour le calcul de remise. */
+  product?: RemiseProductRef;
 }
 
-export function VariantSelector({ variants, selectedSku, onSelect, groupage }: VariantSelectorProps) {
+export function VariantSelector({ variants, selectedSku, onSelect, groupage, remises, product }: VariantSelectorProps) {
   const formatPrice = useFormatPrice();
   if (!variants.length) {
     return <p className="text-sm text-[var(--color-text-tertiary)]">Sur devis uniquement</p>;
@@ -79,6 +84,7 @@ export function VariantSelector({ variants, selectedSku, onSelect, groupage }: V
 
       {variants.map((variant) => {
         const isSelected = selectedSku === variant.sku;
+        const bp = variant.price != null && remises && product ? computePrice(variant.price, product, remises) : null;
         return (
           <button
             key={variant.id}
@@ -115,8 +121,13 @@ export function VariantSelector({ variants, selectedSku, onSelect, groupage }: V
                 isSelected ? "text-[var(--color-accent-amber)]" : "text-[var(--color-text-primary)]"
               )}
             >
-              {variant.price != null ? formatPrice(variant.price) : "Sur devis"}
+              {variant.price != null ? formatPrice(bp?.final ?? variant.price) : "Sur devis"}
             </span>
+            {bp?.discounted && (
+              <span className="mt-0.5 block text-[10px] font-mono leading-none line-through text-[var(--color-text-tertiary)]">
+                {formatPrice(bp.reference)}
+              </span>
+            )}
           </button>
         );
       })}

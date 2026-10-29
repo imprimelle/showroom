@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/Badge";
 import { useCartStore } from "@/stores/cart";
 import { useCheckoutStore } from "@/stores/checkout";
 import { useUiStore } from "@/stores/ui";
+import { useRemisesStore } from "@/stores/remises";
+import { computePrice } from "@/lib/remises";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
 import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
 import { useFormatPrice } from "@/stores/currency";
@@ -321,8 +323,12 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const remises = useRemisesStore((s) => s.config);
+  const priceRef = { id: product.id, family: product.showcase?.family, category: product.showcase?.category };
   const selectedVariant = product.variants?.find((v) => v.sku === selectedSku) || null;
   const currentPrice = selectedVariant?.price ?? null;
+  const currentBreakdown = currentPrice != null ? computePrice(currentPrice, priceRef, remises) : null;
+  const discountedBase = currentBreakdown?.final ?? currentPrice;
 
   // === Sélection des options de paramètres (single/multi) + coûts ===
   const toggleOption = (param: ProductParameter, optionId: string) => {
@@ -400,7 +406,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
       .filter((x): x is CartItemOption => Boolean(x));
   });
   const optionsTotal = selectedOptionsList.reduce((sum, o) => sum + o.price, 0);
-  const totalPrice = currentPrice != null ? currentPrice + optionsTotal : null;
+  const totalPrice = discountedBase != null ? discountedBase + optionsTotal : null;
   // Prix de la ligne = prix unitaire (variante + options) × quantité
   const lineTotal = totalPrice != null ? totalPrice * quantity : null;
   // Libellé prix pour la barre produit sticky (unitaire, options incluses)
@@ -724,9 +730,21 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                         <EditableText contentKey="product.price.from" defaultValue="À partir de" />
                       )}
                     </span>
+                    {currentBreakdown?.discounted && (
+                      <p className="text-sm text-[var(--color-text-tertiary)] font-mono line-through leading-tight">
+                        {formatPrice(currentBreakdown.reference + optionsTotal)}
+                      </p>
+                    )}
                     <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono">
                       {formatPrice(totalPrice ?? currentPrice)}
                     </p>
+                    {currentBreakdown?.discounted && (
+                      <p className="text-xs font-semibold text-[var(--color-success)] mt-0.5">
+                        {currentBreakdown.rule?.type === "percent"
+                          ? `−${Math.round(Number(currentBreakdown.rule.value))}%`
+                          : `−${formatPrice(currentBreakdown.discountAmount)}`}
+                      </p>
+                    )}
                     {optionsTotal > 0 && (
                       <p className="text-xs text-[var(--color-text-secondary)] mt-0.5">
                         dont options : +{formatPrice(optionsTotal)}
@@ -762,6 +780,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   <VariantSelector
                     variants={variants.map((v) => ({ id: v.id, sku: v.sku, name: v.name, price: v.price, dimensions: v.attributes?.dimensions }))}
                     selectedSku={selectedSku}
+                    remises={remises}
+                    product={priceRef}
                     onSelect={(v) => {
                       setGroupageSelected(false);
                       setSelectedSku(v.sku);
