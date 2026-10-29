@@ -16,7 +16,7 @@ import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { MentionTextInput } from "@/components/admin/MentionTextInput";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
 type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises";
@@ -299,8 +299,10 @@ export function SettingsClient({ initialData, products }: {
   const remisesData = data.remises || {};
   const remiseRules: RemiseRule[] = remisesData.rules || [];
   const surplusEnabled = !!remisesData.surplus?.enabled;
+  const surplusType: SurplusType = remisesData.surplus?.type === "percent" ? "percent" : "fixed";
   const surplusAmount = Number(remisesData.surplus?.amount_fcfa) || 0;
-  const setSurplus = (patch: Partial<{ enabled: boolean; amount_fcfa: number }>) =>
+  const surplusPercent = Number(remisesData.surplus?.percent) || 0;
+  const setSurplus = (patch: Partial<{ enabled: boolean; type: SurplusType; amount_fcfa: number; percent: number }>) =>
     setData({ ...data, remises: { ...remisesData, surplus: { ...(remisesData.surplus || {}), ...patch } } });
   const setRemiseRules = (next: RemiseRule[]) =>
     setData({ ...data, remises: { ...remisesData, rules: next } });
@@ -412,7 +414,9 @@ export function SettingsClient({ initialData, products }: {
           ? {
               surplus: {
                 enabled: !!data.remises.surplus?.enabled,
+                type: data.remises.surplus?.type === "percent" ? "percent" : "fixed",
                 amount_fcfa: Number(data.remises.surplus?.amount_fcfa) || 0,
+                percent: Math.min(100, Math.max(0, Number(data.remises.surplus?.percent) || 0)),
               },
               rules: (data.remises.rules || [])
                 .filter(
@@ -1205,8 +1209,8 @@ export function SettingsClient({ initialData, products }: {
           <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Surplus (prix de base artificiel)</h2>
             <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
-              Ajoute un montant fixe au prix de base de tous les produits, avant l&apos;application
-              d&apos;une remise éventuelle. Utile pour gonfler un prix de référence.
+              Ajoute un montant (fixe ou en pourcentage du prix de base) à tous les produits, avant
+              l&apos;application d&apos;une remise éventuelle. Utile pour gonfler un prix de référence.
             </p>
             <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors mb-3">
               <span className="text-sm font-medium text-[var(--color-text-primary)]">Activer le surplus</span>
@@ -1217,15 +1221,34 @@ export function SettingsClient({ initialData, products }: {
                 className="w-4 h-4 accent-[var(--color-accent-blue)]"
               />
             </label>
-            <div>
-              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Montant du surplus (FCFA)</label>
-              <input
-                type="number"
-                min={0}
-                value={surplusAmount}
-                onChange={(e) => setSurplus({ amount_fcfa: Math.max(0, Number(e.target.value) || 0) })}
-                className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Type de surplus</label>
+                <select
+                  value={surplusType}
+                  onChange={(e) => setSurplus({ type: e.target.value as SurplusType })}
+                  className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                >
+                  <option value="fixed">Valeur fixe (FCFA)</option>
+                  <option value="percent">Pourcentage (%)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--color-text-secondary)] mb-1">
+                  {surplusType === "percent" ? "Pourcentage du surplus (%)" : "Montant du surplus (FCFA)"}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={surplusType === "percent" ? surplusPercent : surplusAmount}
+                  onChange={(e) => {
+                    const v = Math.max(0, Number(e.target.value) || 0);
+                    if (surplusType === "percent") setSurplus({ percent: Math.min(100, v) });
+                    else setSurplus({ amount_fcfa: v });
+                  }}
+                  className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                />
+              </div>
             </div>
           </section>
 

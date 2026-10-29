@@ -332,6 +332,9 @@ export type RemiseScope = "all" | "category" | "product";
 /** Type de remise : pourcentage ou valeur fixe (FCFA). */
 export type RemiseType = "percent" | "fixed";
 
+/** Type de surplus : montant fixe (FCFA) ou pourcentage du prix de base. */
+export type SurplusType = "fixed" | "percent";
+
 /** Règle de remise admin (onglet « Remises »). */
 export interface RemiseRule {
   id: string;
@@ -442,10 +445,15 @@ export interface ShowcaseSettings {
   };
   /** Remises & surplus (onglet admin « Remises »). */
   remises?: {
-    /** Surplus : montant fixe artificiel ajouté au prix de base des produits. */
+    /** Surplus artificiel ajouté au prix de base des produits (avant remise). */
     surplus?: {
       enabled?: boolean;
+      /** `fixed` = montant FCFA, `percent` = pourcentage du prix de base. */
+      type?: SurplusType;
+      /** Montant fixe en FCFA (type `fixed`). */
       amount_fcfa?: number;
+      /** Pourcentage 0-100 du prix de base (type `percent`). */
+      percent?: number;
     };
     /** Règles de remise (les plus spécifiques priment : produit > catégorie > tous). */
     rules?: RemiseRule[];

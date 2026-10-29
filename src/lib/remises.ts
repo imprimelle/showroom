@@ -1,10 +1,11 @@
-import type { RemiseRule, ShowcaseSettings } from "@/types";
+import type { RemiseRule, ShowcaseSettings, SurplusType } from "@/types";
 import { resolveFamily } from "./categories";
 
 /**
  * Moteur de prix « remises & surplus » (onglet admin « Remises »).
  *
- * - Surplus : montant fixe artificiel ajouté au prix de base de TOUS les produits.
+ * - Surplus : montant artificiel ajouté au prix de base de TOUS les produits,
+ *   soit en valeur fixe (FCFA), soit en pourcentage du prix de base.
  * - Remises : règles scopées (tous / catégorie / produit), en % ou en valeur fixe.
  *   La règle la plus spécifique l'emporte : produit > catégorie > tous.
  *
@@ -21,7 +22,7 @@ export interface RemiseProductRef {
 
 /** Config résolue (défauts appliqués, règles désactivées filtrées). */
 export interface RemisesResolved {
-  surplus: { enabled: boolean; amountFcfa: number };
+  surplus: { enabled: boolean; type: SurplusType; amountFcfa: number; percent: number };
   rules: RemiseRule[];
 }
 
@@ -43,14 +44,18 @@ export interface PriceBreakdown {
 
 /** Règles par défaut (aucune remise). */
 export const DEFAULT_REMISES: RemisesResolved = {
-  surplus: { enabled: false, amountFcfa: 0 },
+  surplus: { enabled: false, type: "fixed", amountFcfa: 0, percent: 0 },
   rules: [],
 };
 
 /** Résout la config brute des remises (défauts + filtrage des règles désactivées/vides). */
 export function resolveRemises(config?: ShowcaseSettings["remises"]): RemisesResolved {
   const surplus = config?.surplus;
-  const amount = Number(surplus?.amount_fcfa) || 0;
+  const type: SurplusType = surplus?.type === "percent" ? "percent" : "fixed";
+  const amountFcfa = Number(surplus?.amount_fcfa) || 0;
+  const percent = Math.min(100, Math.max(0, Number(surplus?.percent) || 0));
+  // Valeur « active » selon le type : montant fixe OU pourcentage (détermine l'activation).
+  const activeValue = type === "percent" ? percent : amountFcfa;
   const rawRules = Array.isArray(config?.rules) ? config.rules : [];
   const rules: RemiseRule[] = rawRules
     .filter((r) => r && r.enabled !== false)
@@ -61,7 +66,7 @@ export function resolveRemises(config?: ShowcaseSettings["remises"]): RemisesRes
     })
     .filter((r) => Number.isFinite(Number(r.value)) && Number(r.value) > 0);
   return {
-    surplus: { enabled: !!surplus?.enabled && amount > 0, amountFcfa: amount },
+    surplus: { enabled: !!surplus?.enabled && activeValue > 0, type, amountFcfa, percent },
     rules,
   };
 }
@@ -89,13 +94,22 @@ export function matchRule(product: RemiseProductRef, rules: RemiseRule[]): Remis
   return byProduct ?? byCategory ?? byAll;
 }
 
+/** Montant de surplus à ajouter au prix de base, selon le type configuré. */
+export function surplusAmount(base: number, surplus: RemisesResolved["surplus"]): number {
+  if (!surplus.enabled) return 0;
+  if (surplus.type === "percent") {
+    return Math.round((base * surplus.percent) / 100);
+  }
+  return surplus.amountFcfa;
+}
+
 /** Applique le surplus puis la remise à un prix de base. */
 export function computePrice(
   base: number,
   product: RemiseProductRef,
   remises: RemisesResolved
 ): PriceBreakdown {
-  const reference = base + (remises.surplus.enabled ? remises.surplus.amountFcfa : 0);
+  const reference = base + surplusAmount(base, remises.surplus);
   const rule = matchRule(product, remises.rules);
   let final = reference;
   let discountAmount = 0;
