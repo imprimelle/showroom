@@ -10,7 +10,8 @@ import {
   tokenizeAnnouncement,
   type AnnouncementSegment,
 } from "@/lib/announcements";
-import { formatPhoneDisplay } from "@/lib/utils";
+import { formatLocalPhone, buildCallHref, detectCallerAbroad } from "@/lib/phone";
+import { Phone } from "lucide-react";
 
 /** Lien qui utilise `next/link` en interne et `<a>` en externe. */
 function SmartLink({
@@ -89,6 +90,18 @@ export function AnnouncementBar({
   phone?: string;
 }) {
   const [index, setIndex] = useState(0);
+  const [abroad, setAbroad] = useState(false);
+
+  // Détecte le pays via l'IP (une seule fois) pour décider d'ajouter +225 à l'appel.
+  useEffect(() => {
+    let mounted = true;
+    detectCallerAbroad().then((v) => {
+      if (mounted) setAbroad(v);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Avancement automatique : durée propre à chaque message, boucle infinie.
   useEffect(() => {
@@ -125,13 +138,15 @@ export function AnnouncementBar({
           </AnimatePresence>
         </div>
 
-        {/* Téléphone (statique, à droite) */}
+        {/* Téléphone (pilule verte, à droite) */}
         {phone && (
           <a
-            href={`tel:+${phone}`}
-            className="shrink-0 text-white/70 hover:text-white font-semibold tabular-nums tracking-wide text-[11px] md:text-xs"
+            href={buildCallHref(phone, abroad)}
+            aria-label={`Appeler le ${formatLocalPhone(phone)}`}
+            className="shrink-0 inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full bg-[#25D366] text-white font-semibold tabular-nums tracking-wide text-[11px] md:text-xs hover:opacity-90 transition-opacity"
           >
-            {formatPhoneDisplay(phone)}
+            <Phone className="w-3.5 h-3.5 shrink-0" />
+            <span>{formatLocalPhone(phone)}</span>
           </a>
         )}
       </div>

@@ -492,7 +492,7 @@ export function SettingsClient({ initialData, products }: {
           <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
             <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-3">Coordonnées</h2>
             <Input label="WhatsApp" value={getVal("contact.whatsapp")} onChange={(e) => update("contact.whatsapp", e.target.value)} placeholder="225XXXXXXXXX" />
-            <div className="mt-3"><Input label="Téléphone (barre du haut)" value={getVal("contact.phone")} onChange={(e) => update("contact.phone", e.target.value)} placeholder="225XXXXXXXXX" /></div>
+            <div className="mt-3"><Input label="Téléphone (barre du haut, sans +225)" value={getVal("contact.phone")} onChange={(e) => update("contact.phone", e.target.value)} placeholder="0102656626" /></div>
             <div className="mt-3"><Input label="Email" value={getVal("contact.email")} onChange={(e) => update("contact.email", e.target.value)} placeholder="contact@imprimelle.ci" /></div>
             <div className="mt-3"><Input label="Adresse" value={getVal("contact.address")} onChange={(e) => update("contact.address", e.target.value)} placeholder="Abidjan, Cocody..." /></div>
           </section>
