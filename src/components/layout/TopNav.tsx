@@ -151,7 +151,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 h-16 md:h-[72px] flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo — à gauche */}
           <Link
             href="/"
@@ -161,18 +161,18 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
           </Link>
 
           {/* Compte + Panier + Burger — à droite (burger à l'extrême droite) */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Link
               href="/compte"
               aria-label="Mon compte"
-              className={cn("relative p-2", fg)}
+              className={cn("relative p-1.5", fg)}
             >
               <User className="w-5 h-5" />
             </Link>
             <Link
               href="/panier"
               aria-label="Panier"
-              className={cn("relative p-2", fg)}
+              className={cn("relative p-1.5", fg)}
             >
               <ShoppingCart className="w-5 h-5" />
               {itemCount > 0 && (
@@ -191,7 +191,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Menu"
-              className={cn("p-2", fg)}
+              className={cn("p-1.5", fg)}
             >
               <BurgerSearchIcon className="w-5 h-5" />
             </button>
