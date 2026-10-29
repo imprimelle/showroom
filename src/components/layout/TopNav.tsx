@@ -182,7 +182,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone }: { whatsapp?: stri
                     transparent
                       ? "bg-white text-black"
                       : "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                  )
+                  )}
                 >
                   {itemCount > 9 ? "9+" : itemCount}
                 </span>
