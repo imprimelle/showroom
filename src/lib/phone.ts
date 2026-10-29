@@ -16,8 +16,8 @@ function digitsOnly(phone?: string | null): string {
 /** Numéro local (sans le préfixe 225), quelle que soit la forme fournie. */
 export function localPhoneDigits(phone?: string | null): string {
   const digits = digitsOnly(phone);
-  // 12 chiffres commençant par 225 → on retire le préfixe pays.
-  if (digits.length === 12 && digits.startsWith(CI_COUNTRY_CODE)) {
+  // « 225 + 10 chiffres » (13 au total) → on retire le préfixe pays (225).
+  if (digits.length > 10 && digits.startsWith(CI_COUNTRY_CODE)) {
     return digits.slice(CI_COUNTRY_CODE.length);
   }
   return digits;
