@@ -34,7 +34,7 @@ export function CategorySearch({ family, familyName, initialQuery }: CategorySea
   };
 
   return (
-    <div ref={wrapRef} className="relative mb-6">
+    <div ref={wrapRef} className="relative">
       <form onSubmit={submit}>
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)]" />
@@ -44,7 +44,7 @@ export function CategorySearch({ family, familyName, initialQuery }: CategorySea
             onFocus={() => setFocused(true)}
             onBlur={() => setTimeout(() => setFocused(false), 150)}
             placeholder={`Rechercher dans ${familyName}…`}
-            className="w-full h-12 pl-11 pr-4 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] shadow-sm focus:outline-none focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.12)]"
+            className="w-full h-10 pl-11 pr-4 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] shadow-sm focus:outline-none focus:border-[var(--color-accent-blue)] focus:ring-[3px] focus:ring-[rgba(37,99,235,0.12)]"
           />
         </div>
       </form>

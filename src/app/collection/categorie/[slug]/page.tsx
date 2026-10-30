@@ -9,14 +9,24 @@ import { Comparator } from "@/components/decision/Comparator";
 import { CategorySearch } from "@/components/search/CategorySearch";
 import { Button } from "@/components/ui/Button";
 import { EditableText } from "@/components/admin/content/EditableText";
-import { imgProxyUrl } from "@/lib/images";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch, getMinPrice } from "@/lib/utils";
+import { MediaRenderer } from "@/components/media/MediaRenderer";
 import { quoteMessage } from "@/lib/whatsapp";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import type { Metadata } from "next";
+import type { MediaItem } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+/** Pill de sous-catégorie compact (actif = plein, inactif = contour). */
+const chipClass = (active: boolean) =>
+  cn(
+    "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors border shrink-0",
+    active
+      ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] border-transparent"
+      : "bg-transparent text-[var(--color-text-secondary)] border-[var(--color-border-default)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-text-tertiary)]"
+  );
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -43,6 +53,11 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const settings = await getShowcaseSettings();
   const catTitle = settings.categories?.[cat.id]?.title || cat.name;
   const groupageItems = buildGroupageHomeItems(all, settings.product_parameters);
+
+  // Offset sticky de la barre recherche (sous la navbar fixe) : hauteur nav (56/64px)
+  // + bandeau d'annonce (32px) s'il est actif.
+  const announcementOn = !!(settings.announcement?.enabled && settings.announcement?.messages?.length);
+  const stickyTop = announcementOn ? "top-[88px] md:top-[96px]" : "top-[56px] md:top-[64px]";
 
   // « Prix dès » du comparateur (surplus + remises appliqués), par sous-catégorie.
   const remises = resolveRemises(settings.remises);
@@ -81,18 +96,34 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   }
 
   const firstImage = familyProducts.find((p) => p.main_image_url)?.main_image_url;
-  const bannerImage = firstImage ? imgProxyUrl(firstImage, 1200, 675) : cat.image;
+  const categoryMedia = settings.categories?.[cat.id]?.media;
+  const heroMedia: MediaItem | null = categoryMedia
+    ? categoryMedia
+    : firstImage
+      ? { type: "image", url: firstImage }
+      : cat.image
+        ? { type: "image", url: cat.image }
+        : null;
 
   return (
     <div>
-      {/* Bannière plein écran (sous la navbar transparente) */}
-      <div className="relative w-full h-[40vh] min-h-[260px] md:h-[46vh] md:min-h-[320px]">
-        {bannerImage ? (
-          <img src={bannerImage} alt={cat.name} className="w-full h-full object-cover" />
+      {/* Hero : vidéo (ou image) de la catégorie */}
+      <div className="relative w-full h-[40vh] min-h-[260px] md:h-[46vh] md:min-h-[320px] bg-[var(--color-bg-secondary)]">
+        {heroMedia ? (
+          <MediaRenderer
+            url={heroMedia.url}
+            type={heroMedia.type}
+            alt={cat.name}
+            imgWidth={1600}
+            imgHeight={900}
+            fetchPriority="high"
+            videoPreload="metadata"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${cat.color}`} />
+          <div className={`absolute inset-0 w-full h-full bg-gradient-to-br ${cat.color}`} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/20 pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 md:px-12 md:pb-10">
           <div className="max-w-7xl mx-auto">
             <h1 className="font-display text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
@@ -102,6 +133,31 @@ export default async function CategoryPage({ params, searchParams }: Props) {
               {products.length} produit{products.length > 1 ? "s" : ""}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Barre sticky : recherche + navigation sous-catégories */}
+      <div className={`sticky ${stickyTop} z-30 bg-[var(--color-bg-primary)] border-b border-[var(--color-border-default)]`}>
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <CategorySearch family={cat.id} familyName={catTitle} initialQuery={q} />
+
+          {/* Sous-catégories chips */}
+          {cat.children.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 mt-2.5">
+              <Link href={`/collection/categorie/${cat.id}`} className={chipClass(!sub)}>
+                <EditableText contentKey="categorie.chips.all" defaultValue="Tous" />
+              </Link>
+              {cat.children.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/collection/categorie/${cat.id}?sub=${s.id}`}
+                  className={chipClass(sub === s.id)}
+                >
+                  {s.icon} {s.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -119,40 +175,6 @@ export default async function CategoryPage({ params, searchParams }: Props) {
           <span className="mx-2">/</span>
           <span className="text-[var(--color-text-primary)]">{catTitle}</span>
         </nav>
-
-        {/* Recherche dans l'univers (suggestions + filtre) */}
-        <CategorySearch family={cat.id} familyName={catTitle} initialQuery={q} />
-
-      {/* Sous-catégories chips */}
-      {cat.children.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6 -mx-4 px-4">
-          <Link
-            href={`/collection/categorie/${cat.id}`}
-            className={cn(
-              "px-3.5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
-              !sub
-                ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                : "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-default)]"
-            )}
-          >
-            <EditableText contentKey="categorie.chips.all" defaultValue="Tous" />
-          </Link>
-          {cat.children.map((s) => (
-            <Link
-              key={s.id}
-              href={`/collection/categorie/${cat.id}?sub=${s.id}`}
-              className={cn(
-                "px-3.5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
-                sub === s.id
-                  ? "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
-                  : "bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-border-default)]"
-              )}
-            >
-              {s.icon} {s.name}
-            </Link>
-          ))}
-        </div>
-      )}
 
       {/* Comparateur (uniquement pour les enseignes) */}
       {cat.id === "enseignes-signaletique" && <Comparator prices={comparatorPrices} />}
