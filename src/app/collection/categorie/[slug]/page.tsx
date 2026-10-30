@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { getPublishedProducts } from "@/lib/products";
 import { getShowcaseSettings } from "@/lib/settings";
 import { getCategory, resolveFamily } from "@/lib/categories";
+import { resolveRemises, computePrice } from "@/lib/remises";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Comparator } from "@/components/decision/Comparator";
 import { CategorySearch } from "@/components/search/CategorySearch";
 import { Button } from "@/components/ui/Button";
 import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
-import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch } from "@/lib/utils";
+import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP, normalizeForSearch, getMinPrice } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
@@ -42,6 +43,26 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const settings = await getShowcaseSettings();
   const catTitle = settings.categories?.[cat.id]?.title || cat.name;
   const groupageItems = buildGroupageHomeItems(all, settings.product_parameters);
+
+  // « Prix dès » du comparateur (surplus + remises appliqués), par sous-catégorie.
+  const remises = resolveRemises(settings.remises);
+  const comparatorSubcats = ["caisson-lumineux", "enseigne-dibond", "lettres-3d", "enseigne-neon"];
+  const comparatorPrices: Record<string, number | null> = {};
+  for (const subId of comparatorSubcats) {
+    let minFinal: number | null = null;
+    for (const p of all) {
+      if (p.showcase?.category !== subId) continue;
+      const base = getMinPrice(p.variants);
+      if (base == null) continue;
+      const bp = computePrice(
+        base,
+        { id: p.id, family: p.showcase?.family, category: p.showcase?.category },
+        remises
+      );
+      if (minFinal == null || bp.final < minFinal) minFinal = bp.final;
+    }
+    comparatorPrices[subId] = minFinal;
+  }
   const familyProducts = all.filter(
     (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === cat.id
   );
@@ -134,7 +155,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
       )}
 
       {/* Comparateur (uniquement pour les enseignes) */}
-      {cat.id === "enseignes-signaletique" && <Comparator />}
+      {cat.id === "enseignes-signaletique" && <Comparator prices={comparatorPrices} />}
 
       {products.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">

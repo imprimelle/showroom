@@ -5,8 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Volume2, VolumeX, Play, Pause, ShoppingBag, X } from "lucide-react";
 import { imgProxyUrl } from "@/lib/images";
 import { useFormatPrice } from "@/stores/currency";
+import { useRemisesStore } from "@/stores/remises";
+import { computePrice } from "@/lib/remises";
 import { EditableText } from "@/components/admin/content/EditableText";
-import type { IdeaDecoSlide } from "@/types";
+import type { IdeaDecoSlide, IdeaDecoProductRef } from "@/types";
 
 /**
  * Slider « Idées décos » affiché en bas de fiche produit (après « Vous aimerez aussi »).
@@ -176,10 +178,19 @@ function ProductRow({
   product,
   onNavigate,
 }: {
-  product: { slug: string; name: string; image_url: string | null; price: number | null };
+  product: IdeaDecoProductRef;
   onNavigate: () => void;
 }) {
   const formatPrice = useFormatPrice();
+  const remises = useRemisesStore((s) => s.config);
+  const bp =
+    product.price != null
+      ? computePrice(
+          product.price,
+          { id: product.id, family: product.family, category: product.category },
+          remises
+        )
+      : null;
   return (
     <Link
       href={`/collection/${product.slug}`}
@@ -198,9 +209,12 @@ function ProductRow({
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-[var(--color-text-primary)] truncate">{product.name}</p>
-        {product.price != null && (
+        {bp && (
           <p className="text-xs font-mono text-[var(--color-text-secondary)] mt-0.5">
-            À partir de {formatPrice(product.price)}
+            {bp.discounted && (
+              <s className="mr-1 text-[var(--color-text-tertiary)]">{formatPrice(bp.reference)}</s>
+            )}
+            À partir de {formatPrice(bp.final)}
           </p>
         )}
       </div>

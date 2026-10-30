@@ -154,10 +154,13 @@ export interface IdeaDecoVideo {
 
 /** Produit résolu à afficher dans le bottom-sheet « Produits » d'une carte vidéo. */
 export interface IdeaDecoProductRef {
+  id: string;
   slug: string;
   name: string;
   image_url: string | null;
   price: number | null;
+  family?: string | null;
+  category?: string | null;
 }
 
 /** Vidéo « Idées décos » résolue pour le rendu front (produits dé-référencés). */

@@ -1076,18 +1076,30 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--color-border-default)]">
-                    {variants.map((v) => (
-                      <tr key={v.id} className="transition-colors hover:bg-[var(--color-bg-secondary)]">
-                        <td className="px-4 py-3 font-semibold text-[var(--color-text-primary)]">{v.name}</td>
-                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
-                        <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
-                        <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
-                          {v.price != null ? formatPrice(v.price) : (
-                            <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {variants.map((v) => {
+                      const bp = v.price != null ? computePrice(v.price, priceRef, remises) : null;
+                      return (
+                        <tr key={v.id} className="transition-colors hover:bg-[var(--color-bg-secondary)]">
+                          <td className="px-4 py-3 font-semibold text-[var(--color-text-primary)]">{v.name}</td>
+                          <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.dimensions || "—"}</td>
+                          <td className="px-4 py-3 text-[var(--color-text-secondary)]">{v.attributes?.materials || "—"}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-[var(--color-text-primary)] whitespace-nowrap">
+                            {bp ? (
+                              <div className="flex flex-col items-end gap-0.5">
+                                {bp.discounted && (
+                                  <span className="text-xs font-mono font-normal text-[var(--color-text-tertiary)] line-through">
+                                    {formatPrice(bp.reference)}
+                                  </span>
+                                )}
+                                <span>{formatPrice(bp.final)}</span>
+                              </div>
+                            ) : (
+                              <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -73,10 +73,13 @@ export default async function ProductPage({ params }: Props) {
         const p = slugMap.get(slug);
         if (!p) return null;
         return {
+          id: p.id,
           slug: p.slug,
           name: p.name,
           image_url: p.main_image_url,
           price: getMinPrice(p.variants),
+          family: p.showcase?.family ?? null,
+          category: p.showcase?.category ?? null,
         };
       })
       .filter((x): x is NonNullable<typeof x> => Boolean(x)),

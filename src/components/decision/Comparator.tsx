@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { formatFCFA } from "@/lib/utils";
 import { EditableText } from "@/components/admin/content/EditableText";
 
 /**
- * Comparateur statique des principaux types d'enseignes.
- * Données produit (prix, délai, usage) constatées en base le 16/09/2026.
- * Composant serveur (aucun state) — liens vers les sous-catégories filtrées.
+ * Comparateur des principaux types d'enseignes.
+ * Le « Prix dès » est désormais dynamique : calculé côté serveur à partir des
+ * produits publiés de chaque sous-catégorie (surplus + remises appliqués via
+ * `computePrice`). Composant serveur (aucun state) — liens vers les
+ * sous-catégories filtrées.
  */
 
 const COLUMNS = [
@@ -14,15 +17,22 @@ const COLUMNS = [
   { id: "enseigne-neon", name: "Enseigne néon", icon: "✨" },
 ];
 
-const ROWS: { label: string; values: string[] }[] = [
-  { label: "Prix dès", values: ["180 000 F", "50 000 F", "379 000 F", "129 000 F"] },
-  { label: "Lumineux", values: ["✅ Oui", "❌ Non", "✅ Oui", "✅ Oui"] },
-  { label: "Usage", values: ["Extérieur", "Int. & ext.", "Extérieur", "Intérieur"] },
-  { label: "Délai", values: ["7-10 j", "3-7 j", "10-14 j", "5-7 j"] },
-  { label: "Idéal pour", values: ["Vitrine visible de loin", "Façade sobre, plaque pro", "Logo premium en relief", "Déco & ambiance"] },
-];
+/**
+ * @param prices Prix « dès » par sous-catégorie (clé = id de colonne), déjà
+ *   surplus + remises appliqués. `null` = aucun produit → « Sur devis ».
+ */
+export function Comparator({ prices = {} }: { prices?: Record<string, number | null> }) {
+  const rows: { label: string; values: string[] }[] = [
+    {
+      label: "Prix dès",
+      values: COLUMNS.map((c) => (prices[c.id] != null ? formatFCFA(prices[c.id]!) : "Sur devis")),
+    },
+    { label: "Lumineux", values: ["✅ Oui", "❌ Non", "✅ Oui", "✅ Oui"] },
+    { label: "Usage", values: ["Extérieur", "Int. & ext.", "Extérieur", "Intérieur"] },
+    { label: "Délai", values: ["7-10 j", "3-7 j", "10-14 j", "5-7 j"] },
+    { label: "Idéal pour", values: ["Vitrine visible de loin", "Façade sobre, plaque pro", "Logo premium en relief", "Déco & ambiance"] },
+  ];
 
-export function Comparator() {
   return (
     <section className="mb-8">
       <h2 className="font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)] mb-1">
@@ -53,7 +63,7 @@ export function Comparator() {
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {rows.map((row, i) => (
               <tr key={row.label} className={i % 2 === 0 ? "bg-[var(--color-surface-card)]" : "bg-[var(--color-bg-primary)]"}>
                 <td className="px-4 py-3 font-medium text-[var(--color-text-secondary)]">{row.label}</td>
                 {row.values.map((v, j) => (
