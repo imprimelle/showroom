@@ -15,77 +15,13 @@ export function groupageProductUrl(slug?: string | null): string | null {
   return url ? `${url}?groupage=1` : null;
 }
 
-/** Phrase de fin de message selon le moyen de paiement choisi. */
-export function paymentMethodNote(method?: string | null): string {
-  switch (method) {
-    case "cod":
-      return "Je paierai à la livraison.";
-    case "talk_first":
-      return "Je souhaite être contacté(e) avant de finaliser le paiement.";
-    case "wave":
-      return "J'ai payé via Wave.";
-    case "orange":
-      return "J'ai payé via Orange Money.";
-    case "mtn":
-      return "J'ai payé via MTN MoMo.";
-    case "card":
-      return "J'ai payé par carte bancaire.";
-    default:
-      return "";
-  }
-}
-
-export interface OrderMessageItem {
-  name: string;
-  variant?: string | null;
-  quantity: number;
-  url?: string | null;
-  options?: { label: string; price: number }[];
-}
-
 /**
- * Message WhatsApp pré-rempli après commande (flux « nous parler avant de payer »).
- * Bien structuré : liste des produits (avec lien), options/personnalisation,
- * n° de commande, total, puis indication du moyen de paiement.
+ * Message WhatsApp court après commande (flux « nous parler avant de payer »).
+ * Volontairement minimal : le détail complet (articles, total, moyen de paiement)
+ * part déjà au vendeur via la notification bridge `new_order` (WHATSAPP_QUEUE_URL).
  */
-export function buildOrderMessage(opts: {
-  items: OrderMessageItem[];
-  orderId: string;
-  totalFcfa: number;
-  paymentMethod?: string | null;
-  /** Montant payé maintenant (acompte / montant de départ). */
-  depositFcfa?: number;
-  /** Solde à la livraison. */
-  balanceFcfa?: number;
-}): string {
-  const lines: string[] = ["Bonjour 👋, je viens de passer une commande sur votre site.", ""];
-
-  opts.items.forEach((item, idx) => {
-    const variant = item.variant ? ` — ${item.variant}` : "";
-    lines.push(`${idx + 1}) ${item.name}${variant} ×${item.quantity}`);
-    if (item.url) lines.push(`   🔗 ${item.url}`);
-    const opts = (item.options || []).filter((o) => o.label);
-    if (opts.length > 0) {
-      const optsStr = opts
-        .map((o) => `${o.label}${o.price > 0 ? ` (+${formatFCFA(o.price)})` : ""}`)
-        .join(", ");
-      lines.push(`   ⚙️ Personnalisation : ${optsStr}`);
-    }
-    lines.push("");
-  });
-
-  lines.push(`📦 N° de commande : ${opts.orderId}`);
-  lines.push(`💰 Total : ${formatFCFA(opts.totalFcfa)}`);
-
-  if (opts.depositFcfa != null && opts.balanceFcfa != null) {
-    lines.push(`💳 Acompte (à payer maintenant) : ${formatFCFA(opts.depositFcfa)}`);
-    lines.push(`🚚 Solde (à la livraison) : ${formatFCFA(opts.balanceFcfa)}`);
-  }
-
-  const note = paymentMethodNote(opts.paymentMethod);
-  if (note) lines.push("", `💳 ${note}`);
-
-  return lines.join("\n");
+export function buildOrderMessage(orderId: string): string {
+  return `Cc 👋🏽, J'ai passé cette commande sur votre site N° ${orderId}`;
 }
 
 /** Message d'intérêt pour une fiche produit (bouton « Demander un devis » / « Parler à un conseiller »). */

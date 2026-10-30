@@ -6,7 +6,7 @@ import { shippingFeeForCountry } from "@/lib/shipping";
 import { createFedaPayTransaction } from "@/lib/fedapay";
 import { isOnlinePayment, DEFAULT_ONLINE_METHODS } from "@/lib/payment";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, normalizePhone } from "@/lib/utils";
-import { buildOrderMessage, productUrl } from "@/lib/whatsapp";
+import { buildOrderMessage } from "@/lib/whatsapp";
 import {
   resolveGroupageConfig,
   groupagePrice,
@@ -93,8 +93,6 @@ export async function POST(request: NextRequest) {
 
     const hasGroupage = items.some((i) => i.groupage);
 
-    // Map product_id → slug (pour les liens produit du message WhatsApp).
-    const slugById = new Map<string, string>();
     // Map product_id → main_image_url (pour les miniatures de la facture matérialisée).
     const imageById = new Map<string, string | null>();
     // Config + prix groupage validés par produit (pour l'étape de join).
@@ -113,7 +111,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: `Produit introuvable: ${item.product_id}` }, { status: 400 });
       }
 
-      if ((product as any).slug) slugById.set(item.product_id, (product as any).slug);
       imageById.set(item.product_id, (product as any).main_image_url ?? null);
 
       const sc = (product as any).showcase;
@@ -472,20 +469,7 @@ export async function POST(request: NextRequest) {
 
     // « Nous parler avant de payer » : commande créée, redirection WhatsApp pré-remplie.
     if (payment_method === "talk_first") {
-      const message = buildOrderMessage({
-        items: items.map((i) => ({
-          name: i.product_name,
-          variant: i.groupage ? "Groupage" : i.variant_label,
-          quantity: i.quantity,
-          url: productUrl(slugById.get(i.product_id)),
-          options: (i.options || []).map((o) => ({ label: o.label, price: o.price })),
-        })),
-        orderId: order.id.slice(0, 8).toUpperCase(),
-        totalFcfa: total_with_shipping,
-        paymentMethod: payment_method,
-        depositFcfa: balance_fcfa != null && balance_fcfa > 0 ? deposit_fcfa ?? undefined : undefined,
-        balanceFcfa: balance_fcfa != null && balance_fcfa > 0 ? balance_fcfa : undefined,
-      });
+      const message = buildOrderMessage(order.id.slice(0, 8).toUpperCase());
       return NextResponse.json(
         { order_id: order.id, whatsapp_url: getWhatsAppUrl(whatsapp, message) },
         { status: 201 }
