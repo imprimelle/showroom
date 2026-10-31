@@ -4,13 +4,17 @@ import {
   BarChart3,
   Eye,
   Users,
+  UserCheck,
   MousePointerClick,
   FileText,
   ShoppingCart,
   TrendingUp,
-  Percent,
   Share2,
   CalendarDays,
+  Globe,
+  Target,
+  Activity,
+  ArrowDownRight,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -20,9 +24,9 @@ type Granularity = "hour" | "day" | "month";
 
 const PERIODS: { id: Period; label: string }[] = [
   { id: "today", label: "Aujourd'hui" },
-  { id: "week", label: "Semaine" },
-  { id: "month", label: "Mois" },
-  { id: "year", label: "Année" },
+  { id: "week", label: "7 jours" },
+  { id: "month", label: "30 jours" },
+  { id: "year", label: "12 mois" },
 ];
 
 const MONTHS_SHORT = [
@@ -30,16 +34,38 @@ const MONTHS_SHORT = [
   "juil.", "août", "sept.", "oct.", "nov.", "déc.",
 ];
 
-type EventRow = {
-  event: string;
-  path: string | null;
-  session_id: string;
-  product_slug: string | null;
-  referrer: string | null;
-  created_at: string;
+const EVENT_LABELS: Record<string, string> = {
+  page_view: "Page vue",
+  view_item: "Vue produit",
+  add_to_cart: "Ajout panier",
+  begin_checkout: "Début de checkout",
+  add_payment_info: "Info de paiement",
+  purchase: "Commande",
+  search: "Recherche",
+  lead: "Lead",
+  contact: "Contact",
 };
 
 type SeriesPoint = { key: string; label: string; count: number };
+
+type FunnelItem = { step: string; event: string; count: number };
+type TopEntry = { path?: string; slug?: string; host?: string; count: number };
+type BreakdownItem = { event: string; count: number };
+
+type AnalyticsResult = {
+  total_events: number;
+  page_views: number;
+  visitors: number;
+  visits: number;
+  purchase_visits: number;
+  bounces: number;
+  events_breakdown: BreakdownItem[];
+  funnel: FunnelItem[];
+  top_pages: TopEntry[];
+  top_products: TopEntry[];
+  top_referrers: TopEntry[];
+  series: Record<string, number>;
+};
 
 /** Valide une date `YYYY-MM-DD` et la retourne en Date UTC (minuit). */
 function parseDate(s: string): Date | null {
@@ -80,13 +106,6 @@ function chooseGranularity(period: Period, since: Date, until: Date): Granularit
   return "month";
 }
 
-/** Clé de bucket temporel (cohérente avec les buckets générés). */
-function bucketKey(created_at: string, granularity: Granularity): string {
-  if (granularity === "hour") return `${created_at.slice(0, 10)} ${created_at.slice(11, 13)}`;
-  if (granularity === "month") return created_at.slice(0, 7); // "YYYY-MM"
-  return created_at.slice(0, 10); // "YYYY-MM-DD"
-}
-
 /** Génère les buckets (heure/jour/mois) couvrant [since, until]. */
 function generateBuckets(granularity: Granularity, since: Date, until: Date): Omit<SeriesPoint, "count">[] {
   if (granularity === "hour") {
@@ -124,122 +143,15 @@ function generateBuckets(granularity: Granularity, since: Date, until: Date): Om
   return out;
 }
 
-function buildSeries(
-  granularity: Granularity,
-  since: Date,
-  until: Date,
-  pageViews: EventRow[]
-): SeriesPoint[] {
-  const counts = new Map<string, number>();
-  for (const p of pageViews) {
-    const k = bucketKey(p.created_at, granularity);
-    counts.set(k, (counts.get(k) || 0) + 1);
-  }
-  return generateBuckets(granularity, since, until).map((b) => ({
-    ...b,
-    count: counts.get(b.key) || 0,
-  }));
-}
-
-function hostOf(referrer: string): string {
-  try {
-    return new URL(referrer).hostname.replace(/^www\./, "");
-  } catch {
-    return referrer;
-  }
-}
-
-async function getAnalytics(since: Date, until: Date, granularity: Granularity) {
-  const admin = createAdminClient();
-
-  const { data } = await admin
-    .from("showroom_events")
-    .select("event, path, session_id, product_slug, referrer, created_at")
-    .gte("created_at", since.toISOString())
-    .lte("created_at", until.toISOString())
-    .order("created_at", { ascending: false })
-    .limit(20000);
-
-  const rows = (data || []) as EventRow[];
-
-  const pageViews = rows.filter((r) => r.event === "page_view");
-  const sessions = new Set(rows.map((r) => r.session_id)).size;
-  const totalEvents = rows.length;
-  const pagesPerSession = sessions > 0 ? pageViews.length / sessions : 0;
-
-  // Top pages
-  const pageCount = new Map<string, number>();
-  for (const p of pageViews) {
-    const path = p.path || "/";
-    pageCount.set(path, (pageCount.get(path) || 0) + 1);
-  }
-  const topPages = [...pageCount.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([path, count]) => ({ path, count }));
-
-  // Top produits (view_item)
-  const productCount = new Map<string, number>();
-  for (const r of rows) {
-    if (r.event === "view_item" && r.product_slug) {
-      productCount.set(r.product_slug, (productCount.get(r.product_slug) || 0) + 1);
-    }
-  }
-  const topProducts = [...productCount.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([slug, count]) => ({ slug, count }));
-
-  // Répartition par événement
-  const eventCount = new Map<string, number>();
-  for (const r of rows) eventCount.set(r.event, (eventCount.get(r.event) || 0) + 1);
-  const eventsBreakdown = [...eventCount.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([event, count]) => ({ event, count }));
-
-  // Funnel (sessions uniques par étape)
-  const unique = (ev: string) =>
-    new Set(rows.filter((r) => r.event === ev).map((r) => r.session_id)).size;
-  const funnel = [
-    { step: "Vue produit", event: "view_item", count: unique("view_item") },
-    { step: "Ajout panier", event: "add_to_cart", count: unique("add_to_cart") },
-    { step: "Checkout", event: "begin_checkout", count: unique("begin_checkout") },
-    { step: "Commande", event: "purchase", count: unique("purchase") },
-  ];
-
-  // Taux de conversion (sessions avec achat / sessions)
-  const purchaseSessions = funnel[3].count;
-  const conversionRate = sessions > 0 ? (purchaseSessions / sessions) * 100 : 0;
-
-  // Sources de trafic (référents, sessions uniques par domaine)
-  const referrerSessions = new Map<string, Set<string>>();
-  for (const r of rows) {
-    if (r.event === "page_view" && r.referrer) {
-      const host = hostOf(r.referrer);
-      if (!referrerSessions.has(host)) referrerSessions.set(host, new Set());
-      referrerSessions.get(host)!.add(r.session_id);
-    }
-  }
-  const topReferrers = [...referrerSessions.entries()]
-    .map(([host, s]) => ({ host, count: s.size }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  const series = buildSeries(granularity, since, until, pageViews);
-
-  return {
-    sessions,
-    totalEvents,
-    pageViews: pageViews.length,
-    pagesPerSession,
-    conversionRate,
-    topPages,
-    topProducts,
-    topReferrers,
-    eventsBreakdown,
-    funnel,
-    series,
-  };
+/** Classe un hostname de référent vers une source lisible. */
+function classifySource(host: string): { label: string; icon: string } {
+  if (host.includes("facebook") || host === "fb.com") return { label: "Facebook", icon: "facebook" };
+  if (host.includes("google")) return { label: "Google", icon: "google" };
+  if (host.includes("tiktok")) return { label: "TikTok", icon: "tiktok" };
+  if (host.includes("instagram")) return { label: "Instagram", icon: "instagram" };
+  if (host.includes("whatsapp")) return { label: "WhatsApp", icon: "whatsapp" };
+  if (host.includes("imprimelle.com") || host.includes("showroom.srv") || host.includes("hstgr")) return { label: "Interne", icon: "internal" };
+  return { label: host, icon: "site" };
 }
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
@@ -268,31 +180,99 @@ export default async function AnalyticsPage({
 
   const { since, until } = getRange(period, from, to);
   const granularity = chooseGranularity(period, since, until);
-  const stats = await getAnalytics(since, until, granularity);
 
-  const maxSeries = Math.max(1, ...stats.series.map((d) => d.count));
-  const maxPage = Math.max(1, ...stats.topPages.map((p) => p.count));
-  const maxProduct = Math.max(1, ...stats.topProducts.map((p) => p.count));
-  const maxReferrer = Math.max(1, ...stats.topReferrers.map((r) => r.count));
-  const funnelBase = Math.max(1, stats.funnel[0]?.count || 1);
+  // Agrégation exacte côté base (RPC) — pas de limite de lignes.
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("showroom_analytics", {
+    p_since: since.toISOString(),
+    p_until: until.toISOString(),
+    p_granularity: granularity,
+  });
+  if (error) {
+    return (
+      <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-10 text-center">
+        <p className="text-[var(--color-error)] font-medium">Erreur de lecture des analytics</p>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{error.message}</p>
+      </div>
+    );
+  }
 
+  const stats = (Array.isArray(data) ? (data[0] as AnalyticsResult | undefined) : (data as AnalyticsResult)) ?? {
+    total_events: 0,
+    page_views: 0,
+    visitors: 0,
+    visits: 0,
+    purchase_visits: 0,
+    bounces: 0,
+    events_breakdown: [],
+    funnel: [],
+    top_pages: [],
+    top_products: [],
+    top_referrers: [],
+    series: {},
+  };
+
+  const visits = stats.visits;
+  const pageViews = stats.page_views;
+  const totalEvents = stats.total_events;
+  const pagesPerVisit = visits > 0 ? pageViews / visits : 0;
+  const conversion = visits > 0 ? (stats.purchase_visits / visits) * 100 : 0;
+  const bounceRate = visits > 0 ? (stats.bounces / visits) * 100 : 0;
+
+  // Série temporelle : fusion buckets vides + comptages RPC.
+  const seriesMap = stats.series || {};
+  const series = generateBuckets(granularity, since, until).map((b) => ({
+    ...b,
+    count: seriesMap[b.key] ?? 0,
+  }));
+
+  // Funnel : Visites (baseline) → Vue produit → Panier → Checkout → Commande.
+  const funnelBase = visits > 0 ? visits : 1;
+  const funnel = [
+    { step: "Visites", event: "visits", count: visits },
+    ...(stats.funnel || []).map((f) => ({ step: f.step, event: f.event, count: f.count })),
+  ];
+
+  const hasData = totalEvents > 0;
   const seriesUnit =
     granularity === "hour" ? "par heure" : granularity === "month" ? "par mois" : "par jour";
 
   const kpis = [
-    { label: "Visites", value: fmt(stats.sessions), icon: Users },
-    { label: "Pages vues", value: fmt(stats.pageViews), icon: Eye },
-    { label: "Événements", value: fmt(stats.totalEvents), icon: MousePointerClick },
-    { label: "Pages / visite", value: stats.pagesPerSession.toFixed(1), icon: TrendingUp },
-    { label: "Conversion", value: `${fmtPct(stats.conversionRate)} %`, icon: Percent },
+    { label: "Visites", value: fmt(visits), sub: "sessions (30 min d'idle)", icon: Users, tone: "amber" },
+    { label: "Visiteurs uniques", value: fmt(stats.visitors), sub: "appareils distincts", icon: UserCheck, tone: "blue" },
+    { label: "Pages vues", value: fmt(pageViews), sub: "vues de page", icon: Eye, tone: "indigo" },
+    { label: "Pages / visite", value: pagesPerVisit.toFixed(1), sub: "profondeur", icon: TrendingUp, tone: "green" },
+    { label: "Taux de rebond", value: `${fmtPct(bounceRate)} %`, sub: "visites 1 page", icon: ArrowDownRight, tone: "orange" },
+    { label: "Conversion", value: `${fmtPct(conversion)} %`, sub: "visite → commande", icon: Target, tone: "emerald" },
   ];
 
+  const toneStyles: Record<string, string> = {
+    amber: "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]",
+    blue: "bg-[var(--color-info-soft)] text-[var(--color-info)]",
+    indigo: "bg-[var(--color-info-soft)] text-[var(--color-accent-blue)]",
+    green: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+    orange: "bg-[var(--color-warning-soft)] text-[var(--color-warning)]",
+    emerald: "bg-[var(--color-success-soft)] text-[var(--color-success)]",
+  };
+
   return (
-    <div>
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <h1 className="font-display text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-[var(--color-accent-amber)]" /> Analytics
-        </h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold text-[var(--color-text-primary)] flex items-center gap-2">
+            <BarChart3 className="w-6 h-6 text-[var(--color-accent-amber)]" /> Analytics
+          </h1>
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
+            Audience du showroom · données first-party (consentement « analytics »)
+          </p>
+        </div>
+        {hasData && (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)] text-xs font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-success)]" />
+            Collecte active
+          </span>
+        )}
       </div>
 
       {/* Filtres : période + plage de dates personnalisée */}
@@ -361,13 +341,13 @@ export default async function AnalyticsPage({
         <p className="mb-6 text-sm text-[var(--color-text-secondary)]">
           Période du <strong className="text-[var(--color-text-primary)]">{fmtDate(from!)}</strong> au{" "}
           <strong className="text-[var(--color-text-primary)]">{fmtDate(to!)}</strong> ·{" "}
-          {stats.totalEvents} événement{stats.totalEvents !== 1 ? "s" : ""}
+          {fmt(totalEvents)} événement{totalEvents !== 1 ? "s" : ""}
         </p>
       )}
 
-      {stats.totalEvents === 0 ? (
-        <div className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-10 text-center">
-          <BarChart3 className="w-10 h-10 text-[var(--color-text-tertiary)] mx-auto mb-3" />
+      {!hasData ? (
+        <div className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-12 text-center">
+          <BarChart3 className="w-12 h-12 text-[var(--color-text-tertiary)] mx-auto mb-4" />
           <p className="text-[var(--color-text-secondary)] font-medium">Aucune donnée pour le moment</p>
           <p className="text-sm text-[var(--color-text-tertiary)] mt-1 max-w-md mx-auto">
             Les événements apparaîtront ici dès que des visiteurs auront accepté les cookies
@@ -377,69 +357,65 @@ export default async function AnalyticsPage({
       ) : (
         <>
           {/* KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
             {kpis.map((k) => (
-              <div key={k.label} className="p-4 rounded-xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)]">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--color-text-tertiary)]">{k.label}</span>
-                  <k.icon className="w-4 h-4 text-[var(--color-text-tertiary)]" />
+              <div key={k.label} className="p-4 rounded-2xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-[var(--color-text-tertiary)]">{k.label}</span>
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${toneStyles[k.tone]}`}>
+                    <k.icon className="w-4 h-4" />
+                  </span>
                 </div>
-                <p className="text-2xl font-bold text-[var(--color-text-primary)] mt-1 font-mono">{k.value}</p>
+                <p className="text-2xl font-bold text-[var(--color-text-primary)] font-mono leading-none">{k.value}</p>
+                <p className="text-[11px] text-[var(--color-text-tertiary)] mt-1.5">{k.sub}</p>
               </div>
             ))}
           </div>
 
           {/* Série temporelle */}
-          <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4 mb-6">
-            <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-              <Eye className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Pages vues {seriesUnit}
-            </h2>
-            <div className="flex items-end gap-[3px] h-28">
-              {stats.series.map((d) => (
-                <div key={d.key} title={`${d.label} — ${d.count}`} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className="w-full rounded-t transition-opacity hover:opacity-70"
-                    style={{
-                      height: `${Math.max(3, Math.round((d.count / maxSeries) * 96))}px`,
-                      backgroundColor: d.count > 0 ? "var(--color-accent-amber)" : "var(--color-bg-tertiary)",
-                    }}
-                  />
-                </div>
-              ))}
+          <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[var(--color-accent-amber)]" /> Pages vues {seriesUnit}
+              </h2>
+              <span className="text-xs text-[var(--color-text-tertiary)] font-mono">{fmt(pageViews)} au total</span>
             </div>
-            <div className="flex justify-between text-[10px] text-[var(--color-text-tertiary)] mt-1">
-              <span>{stats.series[0]?.label}</span>
-              <span>{stats.series[stats.series.length - 1]?.label}</span>
-            </div>
+            <AreaChart points={series} />
           </div>
 
           {/* Funnel */}
-          <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4 mb-6">
-            <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Parcours de conversion
+          <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5 mb-6">
+            <h2 className="font-semibold text-[var(--color-text-primary)] mb-1 flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-[var(--color-accent-amber)]" /> Parcours de conversion
             </h2>
-            <div className="space-y-2">
-              {stats.funnel.map((f, i) => {
-                const pct = Math.round((f.count / funnelBase) * 100);
-                const prev = i > 0 ? stats.funnel[i - 1].count : f.count;
-                const dropPct = prev > 0 ? Math.round(((prev - f.count) / prev) * 100) : 0;
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-5">Sessions uniques ayant atteint chaque étape.</p>
+            <div className="space-y-3">
+              {funnel.map((f, i) => {
+                const pct = Math.min(100, Math.round((f.count / funnelBase) * 100));
+                const prev = i > 0 ? funnel[i - 1].count : f.count;
+                const stepConv = i > 0 ? (prev > 0 ? Math.round((f.count / prev) * 100) : 0) : null;
+                const isLast = i === funnel.length - 1;
                 return (
                   <div key={f.event}>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-[var(--color-text-secondary)]">{f.step}</span>
-                      <span className="font-mono text-[var(--color-text-primary)]">
+                    <div className="flex items-center justify-between text-sm mb-1.5">
+                      <span className="font-medium text-[var(--color-text-secondary)]">{f.step}</span>
+                      <span className="font-mono text-[var(--color-text-primary)] flex items-center gap-2">
                         {fmt(f.count)}
-                        {i > 0 && dropPct > 0 && (
-                          <span className="text-[var(--color-text-tertiary)] ml-2 text-xs">−{dropPct}%</span>
+                        {stepConv !== null && (
+                          <span className="text-[11px] text-[var(--color-text-tertiary)] font-sans">
+                            {stepConv}% de l'étape précédente
+                          </span>
                         )}
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
+                    <div className="h-3 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
                       <div
-                        className="h-full rounded-full"
+                        className="h-full rounded-full transition-all"
                         style={{
                           width: `${pct}%`,
-                          backgroundColor: i === 3 ? "var(--color-success)" : "var(--color-accent-blue)",
+                          background: isLast
+                            ? "var(--color-success)"
+                            : "linear-gradient(90deg, var(--color-accent-amber), var(--color-accent-blue))",
                         }}
                       />
                     </div>
@@ -451,94 +427,209 @@ export default async function AnalyticsPage({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top pages */}
-            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5">
               <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Pages les plus visitées
+                <FileText className="w-4 h-4 text-[var(--color-accent-blue)]" /> Pages les plus visitées
               </h2>
-              {stats.topPages.length === 0 ? (
+              {stats.top_pages.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-tertiary)]">Aucune page vue enregistrée.</p>
               ) : (
-                <ul className="space-y-2">
-                  {stats.topPages.map((p) => (
-                    <li key={p.path} className="text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[var(--color-text-primary)] truncate font-mono text-xs">{p.path}</span>
-                        <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(p.count)}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1 overflow-hidden">
-                        <div className="h-full rounded-full bg-[var(--color-accent-blue)]" style={{ width: `${Math.round((p.count / maxPage) * 100)}%` }} />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <RankList
+                  items={stats.top_pages.map((p) => ({ label: p.path || "/", value: p.count }))}
+                  href={(label) => label.startsWith("/") ? label : "/"}
+                  max={Math.max(1, ...stats.top_pages.map((p) => p.count))}
+                  color="var(--color-accent-blue)"
+                />
               )}
             </div>
 
             {/* Top produits */}
-            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5">
               <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Produits les plus consultés
+                <TrendingUp className="w-4 h-4 text-[var(--color-accent-amber)]" /> Produits les plus consultés
               </h2>
-              {stats.topProducts.length === 0 ? (
+              {stats.top_products.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-tertiary)]">Aucune vue produit enregistrée.</p>
               ) : (
-                <ul className="space-y-2">
-                  {stats.topProducts.map((p) => (
-                    <li key={p.slug} className="text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <Link href={`/collection/${p.slug}`} className="text-[var(--color-text-primary)] truncate hover:underline font-mono text-xs">
-                          {p.slug}
-                        </Link>
-                        <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(p.count)}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1 overflow-hidden">
-                        <div className="h-full rounded-full bg-[var(--color-accent-amber)]" style={{ width: `${Math.round((p.count / maxProduct) * 100)}%` }} />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <RankList
+                  items={stats.top_products.map((p) => ({ label: p.slug || "", value: p.count }))}
+                  href={(label) => `/collection/${label}`}
+                  max={Math.max(1, ...stats.top_products.map((p) => p.count))}
+                  color="var(--color-accent-amber)"
+                />
               )}
             </div>
 
             {/* Sources de trafic */}
-            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
+            <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5">
               <h2 className="font-semibold text-[var(--color-text-primary)] mb-4 flex items-center gap-2">
-                <Share2 className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Sources de trafic
+                <Share2 className="w-4 h-4 text-[var(--color-success)]" /> Sources de trafic
               </h2>
-              {stats.topReferrers.length === 0 ? (
+              {stats.top_referrers.length === 0 ? (
                 <p className="text-sm text-[var(--color-text-tertiary)]">Aucun référent enregistré.</p>
               ) : (
-                <ul className="space-y-2">
-                  {stats.topReferrers.map((r) => (
-                    <li key={r.host} className="text-sm">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[var(--color-text-primary)] truncate font-mono text-xs">{r.host}</span>
-                        <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(r.count)}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1 overflow-hidden">
-                        <div className="h-full rounded-full bg-[var(--color-success)]" style={{ width: `${Math.round((r.count / maxReferrer) * 100)}%` }} />
-                      </div>
-                    </li>
-                  ))}
+                <ul className="space-y-2.5">
+                  {stats.top_referrers.map((r) => {
+                    const src = classifySource(r.host || "");
+                    const max = Math.max(1, ...stats.top_referrers.map((x) => x.count));
+                    return (
+                      <li key={r.host}>
+                        <div className="flex items-center justify-between gap-2 text-sm">
+                          <span className="text-[var(--color-text-primary)] truncate flex items-center gap-2 min-w-0">
+                            <Globe className="w-3.5 h-3.5 text-[var(--color-text-tertiary)] shrink-0" />
+                            <span className="truncate">{src.label}</span>
+                            <span className="text-[var(--color-text-tertiary)] font-mono text-[11px] truncate">{r.host}</span>
+                          </span>
+                          <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(r.count)}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1.5 overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--color-success)]" style={{ width: `${Math.round((r.count / max) * 100)}%` }} />
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
 
             {/* Événements */}
-            <div className="bg-[var(--color-surface-card)] rounded-xl border border-[var(--color-border-default)] p-4">
-              <h2 className="font-semibold text-[var(--color-text-primary)] mb-4">Répartition des événements</h2>
-              <div className="flex flex-wrap gap-2">
-                {stats.eventsBreakdown.map((e) => (
-                  <span key={e.event} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--color-bg-tertiary)] text-sm text-[var(--color-text-primary)]">
-                    <span className="font-mono text-xs text-[var(--color-text-tertiary)]">{e.event}</span>
-                    <span className="font-mono font-bold">{fmt(e.count)}</span>
-                  </span>
-                ))}
+            <div className="bg-[var(--color-surface-card)] rounded-2xl border border-[var(--color-border-default)] shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold text-[var(--color-text-primary)] flex items-center gap-2">
+                  <MousePointerClick className="w-4 h-4 text-[var(--color-text-tertiary)]" /> Répartition des événements
+                </h2>
+                <span className="text-xs text-[var(--color-text-tertiary)] font-mono">{fmt(totalEvents)} au total</span>
               </div>
+              {stats.events_breakdown.length === 0 ? (
+                <p className="text-sm text-[var(--color-text-tertiary)]">Aucun événement enregistré.</p>
+              ) : (
+                <ul className="space-y-2.5">
+                  {stats.events_breakdown.map((e) => {
+                    const max = Math.max(1, ...stats.events_breakdown.map((x) => x.count));
+                    return (
+                      <li key={e.event}>
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="text-[var(--color-text-secondary)]">{EVENT_LABELS[e.event] ?? e.event}</span>
+                          <span className="font-mono text-[var(--color-text-primary)]">{fmt(e.count)}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
+                          <div className="h-full rounded-full bg-[var(--color-accent-blue)]" style={{ width: `${Math.round((e.count / max) * 100)}%` }} />
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
         </>
       )}
     </div>
+  );
+}
+
+/** Liste classée avec barres de progression + liens optionnels. */
+function RankList({
+  items,
+  href,
+  max,
+  color,
+}: {
+  items: { label: string; value: number }[];
+  href: (label: string) => string;
+  max: number;
+  color: string;
+}) {
+  return (
+    <ul className="space-y-2.5">
+      {items.map((it) => (
+        <li key={it.label}>
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <Link href={href(it.label)} className="text-[var(--color-text-primary)] truncate hover:underline font-mono text-xs min-w-0">
+              {it.label}
+            </Link>
+            <span className="text-[var(--color-text-secondary)] font-mono shrink-0">{fmt(it.value)}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] mt-1.5 overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${Math.round((it.value / max) * 100)}%`, backgroundColor: color }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Graphique en aires (SVG server-side, tooltip natif via <title>). */
+function AreaChart({ points }: { points: SeriesPoint[] }) {
+  if (points.length === 0) return null;
+
+  const W = 760;
+  const H = 240;
+  const PAD_X = 6;
+  const PAD_TOP = 16;
+  const PAD_BOTTOM = 30;
+
+  const max = Math.max(1, ...points.map((p) => p.count));
+  const n = points.length;
+  const innerW = W - PAD_X * 2;
+  const innerH = H - PAD_TOP - PAD_BOTTOM;
+
+  const x = (i: number) => (n === 1 ? PAD_X + innerW / 2 : PAD_X + (i / (n - 1)) * innerW);
+  const y = (v: number) => PAD_TOP + innerH - (v / max) * innerH;
+
+  const coords = points.map((p, i) => ({ x: x(i), y: y(p.count), ...p }));
+  const line = coords.map((c, i) => `${i === 0 ? "M" : "L"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+  const baseline = (PAD_TOP + innerH).toFixed(1);
+  const area = `${line} L${coords[coords.length - 1].x.toFixed(1)},${baseline} L${coords[0].x.toFixed(1)},${baseline} Z`;
+
+  const gridlines = [0.25, 0.5, 0.75, 1].map((f) => ({
+    gy: (PAD_TOP + innerH - f * innerH).toFixed(1),
+    label: Math.round(f * max),
+  }));
+
+  const labelIndices =
+    n <= 4 ? points.map((_, i) => i) : [0, Math.floor((n - 1) / 2), n - 1];
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Pages vues dans le temps">
+      <defs>
+        <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-accent-amber)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--color-accent-amber)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {gridlines.map((g, i) => (
+        <g key={i}>
+          <line x1={PAD_X} y1={g.gy} x2={W - PAD_X} y2={g.gy} stroke="var(--color-border-default)" strokeDasharray="3 4" />
+          <text x={W - PAD_X} y={Number(g.gy) - 3} textAnchor="end" fontSize="10" fill="var(--color-text-tertiary)" fontFamily="var(--font-mono)">
+            {g.label}
+          </text>
+        </g>
+      ))}
+
+      <path d={area} fill="url(#areaFill)" />
+      <path d={line} fill="none" stroke="var(--color-accent-amber)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+      {coords.map((c, i) => (
+        <circle key={i} cx={c.x.toFixed(1)} cy={c.y.toFixed(1)} r={c.count > 0 ? 3 : 0} fill="var(--color-accent-amber)" stroke="var(--color-surface-card)" strokeWidth="1.5">
+          <title>{`${c.label} — ${c.count} page${c.count > 1 ? "s" : ""}`}</title>
+        </circle>
+      ))}
+
+      {labelIndices.map((i) => (
+        <text
+          key={i}
+          x={coords[i].x.toFixed(1)}
+          y={H - 8}
+          textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}
+          fontSize="10"
+          fill="var(--color-text-tertiary)"
+          fontFamily="var(--font-mono)"
+        >
+          {coords[i].label}
+        </text>
+      ))}
+    </svg>
   );
 }

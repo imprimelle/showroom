@@ -158,7 +158,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const openCheckout = useCheckoutStore((s) => s.open);
   const setHasStickyBar = useUiStore((s) => s.setHasStickyBar);
 
-  // Tracking `view_item` (une seule fois par fiche produit).
+  // Tracking `view_item` (une seule fois par fiche produit, et une seule
+  // source d'émission — le doublon historique a été supprimé).
   useEffect(() => {
     const minPrice = product.variants?.reduce<number | null>(
       (min, v) => (v.price != null && (min == null || v.price < min) ? v.price : min),
@@ -166,6 +167,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     );
     track("view_item", {
       product_slug: product.slug,
+      product_id: product.id,
       product_name: product.name,
       value: minPrice ?? undefined,
       currency: "XOF",
@@ -312,16 +314,6 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     document.body.style.overflow = activeFaq ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [activeFaq]);
-
-  // Tracking analytics : vue produit (une fois au montage)
-  useEffect(() => {
-    track("view_item", {
-      product_id: product.id,
-      product_name: product.name,
-      price: product.variants?.[0]?.price ?? undefined,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const remises = useRemisesStore((s) => s.config);
   const priceRef = { id: product.id, family: product.showcase?.family, category: product.showcase?.category };
