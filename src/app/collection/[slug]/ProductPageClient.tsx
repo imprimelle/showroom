@@ -29,6 +29,7 @@ import { useCheckoutStore } from "@/stores/checkout";
 import { useUiStore } from "@/stores/ui";
 import { useRemisesStore } from "@/stores/remises";
 import { computePrice } from "@/lib/remises";
+import { optionCost } from "@/lib/parameters";
 import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn, isVideoUrl } from "@/lib/utils";
 import { productInquiryMessage, productUrl } from "@/lib/whatsapp";
 import { useFormatPrice } from "@/stores/currency";
@@ -364,7 +365,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               param_id: param.id,
               option_id: o.id,
               label: `${param.name} : ${o.label}`,
-              price: isIncluded ? 0 : o.price ?? 0,
+              price: isIncluded ? 0 : optionCost(o, originalPrice),
             };
           });
       })
@@ -376,7 +377,10 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
     ? parameters.flatMap((param) =>
         param.options
           .filter((o) => groupageConfig.included_option_ids.includes(o.id))
-          .map((o) => ({ id: o.id, label: o.label, price: o.price ?? null }))
+          .map((o) => {
+            const cost = optionCost(o, originalPrice);
+            return { id: o.id, label: o.label, price: cost > 0 ? cost : null };
+          })
       )
     : [];
   // Valeur catalogue totale des options incluses gratuitement (prix barré + économie affichée).
@@ -392,7 +396,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
           param_id: param.id,
           option_id: opt.id,
           label: `${param.name} : ${opt.label}`,
-          price: opt.price ?? 0,
+          price: optionCost(opt, currentPrice),
         };
       })
       .filter((x): x is CartItemOption => Boolean(x));
@@ -894,6 +898,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                             {param.options.map((opt) => {
                               const isSelected = selected.includes(opt.id);
+                              const cost = optionCost(opt, currentPrice);
                               return (
                                 <button
                                   key={opt.id}
@@ -919,8 +924,8 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                                     <span className="w-10 h-10 rounded-lg bg-[var(--color-bg-secondary)] flex items-center justify-center text-lg">✨</span>
                                   )}
                                   <span className="text-[11px] text-[var(--color-text-secondary)] leading-none text-center">{opt.label}</span>
-                                  {opt.price != null && opt.price > 0 && (
-                                    <span className="text-[10px] font-semibold text-[var(--color-accent-amber)] leading-none">+{formatPrice(opt.price)}</span>
+                                  {cost > 0 && (
+                                    <span className="text-[10px] font-semibold text-[var(--color-accent-amber)] leading-none">+{formatPrice(cost)}</span>
                                   )}
                                 </button>
                               );

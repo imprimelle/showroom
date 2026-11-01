@@ -146,7 +146,7 @@ export function SettingsClient({ initialData, products }: {
   const addOption = (pi: number) =>
     setParameters(
       parameters.map((p, idx) =>
-        idx === pi ? { ...p, options: [...p.options, { id: genId(), label: "", price: null }] } : p
+        idx === pi ? { ...p, options: [...p.options, { id: genId(), label: "", price: null, percent: null }] } : p
       )
     );
   const removeOption = (pi: number, oi: number) =>
@@ -814,7 +814,7 @@ export function SettingsClient({ initialData, products }: {
             </button>
           </div>
           <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
-            Créez des paramètres (couleur, options, revêtement…) réutilisables sur n'importe quel produit, avec miniatures et coûts. L'activation se fait dans la fiche de chaque produit.
+            Créez des paramètres (couleur, options, revêtement…) réutilisables sur n'importe quel produit, avec miniatures et coûts — montant fixe (FCFA) et/ou pourcentage du prix. L'activation se fait dans la fiche de chaque produit.
           </p>
 
           <div className="space-y-4">
@@ -838,6 +838,9 @@ export function SettingsClient({ initialData, products }: {
                       <Input value={opt.label} onChange={(e) => updateOption(pi, oi, { label: e.target.value })} placeholder="Libellé (ex : Chêne)" />
                       <div className="w-28 shrink-0">
                         <input type="number" min={0} value={opt.price == null ? "" : opt.price} onChange={(e) => updateOption(pi, oi, { price: e.target.value === "" ? null : Number(e.target.value) })} placeholder="Coût FCFA" className="w-full h-10 px-2 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
+                      </div>
+                      <div className="w-24 shrink-0">
+                        <input type="number" min={0} max={100} step="0.5" value={opt.percent == null ? "" : opt.percent} onChange={(e) => updateOption(pi, oi, { percent: e.target.value === "" ? null : Number(e.target.value) })} placeholder="% prix" className="w-full h-10 px-2 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm" />
                       </div>
                       <button type="button" onClick={() => removeOption(pi, oi)} aria-label="Supprimer l'option" className="h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors shrink-0">
                         <Trash2 className="w-4 h-4" />

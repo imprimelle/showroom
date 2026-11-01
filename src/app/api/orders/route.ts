@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOrderSchema } from "@/schemas/order";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { resolveActiveParameters, DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
+import { resolveActiveParameters, DEFAULT_PRODUCT_PARAMETERS, optionCost } from "@/lib/parameters";
 import { shippingFeeForCountry } from "@/lib/shipping";
 import { createFedaPayTransaction } from "@/lib/fedapay";
 import { isOnlinePayment, DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -9,6 +9,7 @@ import { getWhatsAppUrl, DEFAULT_WHATSAPP, normalizePhone } from "@/lib/utils";
 import { buildOrderMessage } from "@/lib/whatsapp";
 import {
   resolveGroupageConfig,
+  resolveGroupageVariant,
   groupagePrice,
   groupageReductionAmount,
   type GroupageConfig,
@@ -134,9 +135,10 @@ export async function POST(request: NextRequest) {
             { status: 400 }
           );
         }
-        // Valide les options : incluses = 0 FCFA, ajoutées = prix catalogue (aucune réduction).
+        // Valide les options : incluses = 0 FCFA, ajoutées = prix catalogue (fixe + % du prix d'origine).
         const activeParams = resolveActiveParameters(sc, catalog);
         const included = new Set(config.included_option_ids);
+        const groupageOriginalPrice = resolveGroupageVariant(config, variants)?.price ?? null;
         let optionsTotal = 0;
         for (const opt of item.options || []) {
           const param = activeParams.find((p) => p.id === opt.param_id);
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
           if (!option) {
             return NextResponse.json({ error: `Option invalide pour ${item.product_name}` }, { status: 400 });
           }
-          const expectedPrice = included.has(opt.option_id) ? 0 : option.price ?? 0;
+          const expectedPrice = included.has(opt.option_id) ? 0 : optionCost(option, groupageOriginalPrice);
           if (opt.price !== expectedPrice) {
             return NextResponse.json({ error: `Prix d'option incorrect pour ${item.product_name}` }, { status: 400 });
           }
@@ -204,7 +206,7 @@ export async function POST(request: NextRequest) {
         if (!option) {
           return NextResponse.json({ error: `Option invalide pour ${item.product_name}` }, { status: 400 });
         }
-        if ((option.price ?? 0) !== opt.price) {
+        if (optionCost(option, basePrice) !== opt.price) {
           return NextResponse.json({ error: `Prix d'option incorrect pour ${item.product_name}` }, { status: 400 });
         }
         optionsTotal += opt.price;

@@ -9,6 +9,8 @@ export interface ProductParameterOption {
   color?: string;
   /** Coût additionnel en FCFA (null = 0). */
   price: number | null;
+  /** Surcharge en % du prix de base du produit (null = 0). S'ajoute à `price`. */
+  percent?: number | null;
 }
 
 export interface ProductParameter {

@@ -58,7 +58,7 @@ export function OrderDetailClient({ order }: { order: any }) {
       {/* Status */}
       <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
         <div className="flex items-center gap-2 mb-3">
-          <Badge variant={order.status as any}>{order.status}</Badge>
+          <Badge variant={order.status as any} />
         </div>
         {transitions.length > 0 && (
           <div className="flex flex-wrap gap-2">

@@ -90,3 +90,20 @@ export function findOption(
 export function optionPrice(option: ProductParameterOption | undefined): number {
   return option?.price ?? 0;
 }
+
+/**
+ * Coût total d'une option = surcharge fixe (FCFA) + % du prix de base du produit.
+ * `percent` (ex. 10) ajoute 10 % de `basePrice`. Les deux s'additionnent.
+ * Arrondi à l'entier FCFA pour rester cohérent client / serveur.
+ */
+export function optionCost(
+  option: ProductParameterOption | undefined,
+  basePrice: number | null | undefined
+): number {
+  if (!option) return 0;
+  const fixed = option.price ?? 0;
+  const pct = option.percent ?? 0;
+  const base = typeof basePrice === "number" && basePrice > 0 ? basePrice : 0;
+  const percentAmount = pct > 0 ? Math.round((base * pct) / 100) : 0;
+  return fixed + percentAmount;
+}

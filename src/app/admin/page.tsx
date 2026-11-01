@@ -142,7 +142,7 @@ export default async function AdminDashboardPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-sm font-mono font-bold">{order.total_amount.toLocaleString()} FCFA</span>
+                  <span className="text-sm font-mono font-bold">{formatFCFA(order.total_amount)}</span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--color-warning-soft)] text-[var(--color-warning)]">
                     {statusLabels[order.status] || order.status}
                   </span>

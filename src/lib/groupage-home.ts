@@ -6,7 +6,7 @@ import {
   groupagePrice,
   groupageReductionAmount,
 } from "./groupage";
-import { resolveActiveParameters } from "./parameters";
+import { resolveActiveParameters, optionCost } from "./parameters";
 
 /**
  * Donnée d'un produit groupable, résolue côté serveur pour le slider « groupage »
@@ -54,7 +54,10 @@ export function buildGroupageHomeItems(
       const includedOptions = params.flatMap((param) =>
         param.options
           .filter((o) => config.included_option_ids.includes(o.id))
-          .map((o) => ({ id: o.id, label: o.label, price: o.price ?? null }))
+          .map((o) => {
+            const cost = optionCost(o, originalPrice);
+            return { id: o.id, label: o.label, price: cost > 0 ? cost : null };
+          })
       );
       const includedTotal = includedOptions.reduce((s, o) => s + (o.price ?? 0), 0);
       const reductionFcfa = groupageReductionAmount(config, p.variants) ?? 0;

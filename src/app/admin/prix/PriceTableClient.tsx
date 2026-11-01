@@ -224,9 +224,14 @@ export function PriceTableClient({ products, parameters }: PriceTableClientProps
                       ) : (
                         <div className="flex flex-wrap gap-1 max-w-[300px]">
                           {activeParams.map((prm) => {
-                            const paid = prm.options.filter((o) => (o.price ?? 0) > 0).length;
+                            const paid = prm.options.filter((o) => (o.price ?? 0) > 0 || (o.percent ?? 0) > 0).length;
                             const tooltip = prm.options
-                              .map((o) => `${o.label}${(o.price ?? 0) > 0 ? ` (+${o.price})` : ""}`)
+                              .map((o) => {
+                                const parts: string[] = [];
+                                if ((o.price ?? 0) > 0) parts.push(`+${o.price} FCFA`);
+                                if ((o.percent ?? 0) > 0) parts.push(`+${o.percent}%`);
+                                return `${o.label}${parts.length ? ` (${parts.join(" ")})` : ""}`;
+                              })
                               .join(" · ");
                             return (
                               <Link

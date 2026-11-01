@@ -5,6 +5,7 @@ import { Users, Check, Minus, Plus, Clock, MapPin, Shield, Info, X } from "lucid
 import { useFormatPrice } from "@/stores/currency";
 import { GroupageShareSection } from "./GroupageShareSection";
 import { computeDepositBalance } from "@/lib/groupage";
+import { optionCost } from "@/lib/parameters";
 import { cn } from "@/lib/utils";
 import { EditableText } from "@/components/admin/content/EditableText";
 import type { RefObject } from "react";
@@ -94,7 +95,7 @@ export function GroupageCard({
       ids.reduce((s, id) => {
         const opt = param.options.find((o) => o.id === id);
         if (!opt || includedOptionIds.includes(id)) return s;
-        return s + (opt.price ?? 0);
+        return s + optionCost(opt, originalPrice);
       }, 0)
     );
   }, 0);
@@ -104,7 +105,7 @@ export function GroupageCard({
       sum +
       param.options
         .filter((o) => includedOptionIds.includes(o.id))
-        .reduce((s, o) => s + (o.price ?? 0), 0)
+        .reduce((s, o) => s + optionCost(o, originalPrice), 0)
     );
   }, 0);
   const total = groupPrice + additionalTotal;
@@ -220,11 +221,14 @@ export function GroupageCard({
                       <span className="min-w-0 text-xs leading-snug text-[var(--color-text-primary)]">
                         {opt.label}
                       </span>
-                      {opt.price != null && opt.price > 0 && (
-                        <span className="shrink-0 text-[10px] font-semibold text-[var(--color-accent-amber)]">
-                          +{formatPrice(opt.price)}
-                        </span>
-                      )}
+                      {(() => {
+                        const cost = optionCost(opt, originalPrice);
+                        return cost > 0 ? (
+                          <span className="shrink-0 text-[10px] font-semibold text-[var(--color-accent-amber)]">
+                            +{formatPrice(cost)}
+                          </span>
+                        ) : null;
+                      })()}
                     </button>
                   );
                 })}
