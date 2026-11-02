@@ -50,6 +50,9 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
       {/* Dégradés : haut sombre (nav) + bas sombre (texte) */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70 pointer-events-none" />
 
+      {/* Transition bas : fondu du héro vers le fond de la page (pas de coupure nette) */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 md:h-40 bg-gradient-to-b from-transparent to-[var(--color-bg-primary)] pointer-events-none" />
+
       {/* Contenu bas-gauche */}
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-6 md:px-12 md:pb-10">
         <div className="max-w-7xl mx-auto">
@@ -89,7 +92,7 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
               onClick={() => setActive(i)}
               aria-label={`Image ${i + 1}`}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === active ? "w-6 bg-white" : "w-1.5 bg-white/50 hover:bg-white/80"
+                i === active ? "w-6 bg-black/60" : "w-1.5 bg-black/30 hover:bg-black/50"
               }`}
             />
           ))}
