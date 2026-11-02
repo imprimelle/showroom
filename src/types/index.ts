@@ -354,6 +354,21 @@ export interface RemiseRule {
   value: number;
 }
 
+/** Bouton du slider de recherche accueil : sous-catégorie OU page personnalisée. */
+export type HomeSearchQuickLink =
+  | { type: "subcategory"; id: string }
+  | { type: "page"; name: string; href: string; image?: string | null; icon?: string };
+
+/** Section « recherche » de la page d'accueil (barre animée + slider de liens rapides). */
+export interface HomeSearchSettings {
+  /** Affiche/masque la section (true par défaut). */
+  enabled?: boolean;
+  /** Question affichée par l'animation d'écriture (défaut « Que cherchez-vous ? »). */
+  question?: string;
+  /** Liens rapides du slider. undefined/vide = toutes les sous-catégories en alternance. */
+  quick_links?: HomeSearchQuickLink[];
+}
+
 export interface ShowcaseSettings {
   contact?: { whatsapp?: string; phone?: string; email?: string; address?: string };
   meta?: { site_name?: string; domain?: string; default_title?: string; default_description?: string };
@@ -463,4 +478,6 @@ export interface ShowcaseSettings {
     /** Règles de remise (les plus spécifiques priment : produit > catégorie > tous). */
     rules?: RemiseRule[];
   };
+  /** Section « recherche » de la page d'accueil (barre animée + liens rapides). */
+  home_search?: HomeSearchSettings;
 }

@@ -18,6 +18,7 @@ import {
   User,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useUiStore } from "@/stores/ui";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
 import { generalInquiryMessage } from "@/lib/whatsapp";
 import { track } from "@/lib/analytics";
@@ -77,9 +78,12 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
   const pathname = usePathname();
   const router = useRouter();
   const itemCount = useCartStore((s) => s.getItemCount());
-  const [menuOpen, setMenuOpen] = useState(false);
   const [searchQ, setSearchQ] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const menuOpen = useUiStore((s) => s.menuOpen);
+  const searchOpen = useUiStore((s) => s.searchOpen);
+  const openMenu = useUiStore((s) => s.openMenu);
+  const closeMenuStore = useUiStore((s) => s.closeMenu);
+  const setSearchOpen = useUiStore((s) => s.setSearchOpen);
 
   const announce = resolveAnnouncement(announcement);
 
@@ -113,8 +117,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
   }, [hideNav]);
 
   const closeMenu = () => {
-    setMenuOpen(false);
-    setSearchOpen(false);
+    closeMenuStore();
     setSearchQ("");
   };
 
@@ -189,7 +192,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
               )}
             </Link>
             <button
-              onClick={() => setMenuOpen(true)}
+              onClick={openMenu}
               aria-label="Menu"
               className={cn("p-1.5", fg)}
             >
@@ -258,7 +261,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => closeMenuStore()}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                     isActive
@@ -282,7 +285,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
               <Link
                 key={fam.id}
                 href={`/collection/categorie/${fam.id}`}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => closeMenuStore()}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
               >
                 <span className="text-base">{fam.icon}</span>
@@ -321,7 +324,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
                 <Link
                   key={link.href}
                   href={link.href}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => closeMenuStore()}
                   className="hover:text-[var(--color-text-secondary)] transition-colors"
                 >
                   <EditableText contentKey={link.contentKey} defaultValue={link.label} />
@@ -337,14 +340,14 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
         <div className="flex items-center justify-between px-6 py-4 border-t border-[var(--color-border-default)] shrink-0">
           <Link
             href="/"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => closeMenuStore()}
             className="font-display font-bold text-lg text-[var(--color-text-primary)]"
           >
             Imprim<span className="text-[var(--color-accent-amber)]">elle</span>
           </Link>
           <Link
             href="/panier"
-            onClick={() => setMenuOpen(false)}
+            onClick={() => closeMenuStore()}
             aria-label="Panier"
             className="relative p-2 text-[var(--color-text-primary)]"
           >

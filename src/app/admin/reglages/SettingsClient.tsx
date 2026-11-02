@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
 import { SaveBar } from "@/components/admin/SaveBar";
-import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing, BadgePercent } from "lucide-react";
+import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing, BadgePercent, Search, Link2 } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
 import { DEFAULT_SHIPPING_ZONES } from "@/lib/shipping";
 import { DEFAULT_ONLINE_METHODS } from "@/lib/payment";
@@ -12,14 +12,15 @@ import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { parseSocialProofEntries, serializeSocialProofEntries, SOCIAL_PROOF_COUNTRIES } from "@/lib/social-proof";
 import { DEFAULT_ANNOUNCEMENT_MESSAGES, DEFAULT_ANNOUNCEMENT_PERIOD_MS } from "@/lib/announcements";
+import { DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
 import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { MentionTextInput } from "@/components/admin/MentionTextInput";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType, HomeSearchQuickLink } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
-type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises";
+type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises" | "home_search";
 
 const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "coordonnees", label: "Coordonnées & SEO", icon: Settings },
@@ -36,6 +37,7 @@ const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "revendeurs", label: "Revendeurs", icon: Store },
   { id: "annonces", label: "Annonces", icon: BellRing },
   { id: "remises", label: "Remises", icon: BadgePercent },
+  { id: "home_search", label: "Recherche accueil", icon: Search },
 ];
 
 export function SettingsClient({ initialData, products }: {
@@ -315,6 +317,31 @@ export function SettingsClient({ initialData, products }: {
     setRemiseRules(remiseRules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
   const removeRemiseRule = (i: number) => setRemiseRules(remiseRules.filter((_, idx) => idx !== i));
 
+  // === Recherche accueil (barre animée + liens rapides) ===
+  const homeSearchData = data.home_search || {};
+  const homeSearchEnabled = homeSearchData.enabled !== false;
+  const homeSearchQuestion = homeSearchData.question ?? DEFAULT_HOME_SEARCH_QUESTION;
+  const homeSearchLinks: HomeSearchQuickLink[] = homeSearchData.quick_links ?? [];
+  const setHomeSearch = (patch: Partial<ShowcaseSettings["home_search"]>) =>
+    setData({ ...data, home_search: { ...homeSearchData, ...patch } });
+  const setHomeSearchLinks = (next: HomeSearchQuickLink[]) =>
+    setData({ ...data, home_search: { ...homeSearchData, quick_links: next } });
+  const updateSubcategoryLink = (i: number, id: string) =>
+    setHomeSearchLinks(homeSearchLinks.map((l, idx) => (idx === i ? ({ type: "subcategory" as const, id }) : l)));
+  const updatePageLink = (i: number, patch: Partial<{ name: string; href: string; image: string | null; icon: string }>) =>
+    setHomeSearchLinks(homeSearchLinks.map((l, idx) => (idx === i && l.type === "page" ? { ...l, ...patch } : l)));
+  const addSubcategoryLink = () => setHomeSearchLinks([...homeSearchLinks, { type: "subcategory", id: "" }]);
+  const addPageLink = () =>
+    setHomeSearchLinks([...homeSearchLinks, { type: "page", name: "", href: "", image: null, icon: "📄" }]);
+  const removeHomeSearchLink = (i: number) => setHomeSearchLinks(homeSearchLinks.filter((_, idx) => idx !== i));
+  const moveHomeSearchLink = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= homeSearchLinks.length) return;
+    const next = [...homeSearchLinks];
+    [next[i], next[j]] = [next[j], next[i]];
+    setHomeSearchLinks(next);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -438,6 +465,19 @@ export function SettingsClient({ initialData, products }: {
                       ? Math.min(100, Math.max(0, Number(r.value)))
                       : Math.max(0, Number(r.value)),
                 })),
+            }
+          : undefined,
+        home_search: data.home_search
+          ? {
+              enabled: !!data.home_search.enabled,
+              question: data.home_search.question?.trim() || undefined,
+              quick_links: (data.home_search.quick_links || [])
+                .filter((l) => (l.type === "subcategory" ? !!l.id : !!l.name?.trim()))
+                .map((l) =>
+                  l.type === "page"
+                    ? { type: "page", name: l.name.trim(), href: l.href?.trim() || "#", image: l.image || null, icon: l.icon || "📄" }
+                    : { type: "subcategory", id: l.id }
+                ),
             }
           : undefined,
       };
@@ -1365,6 +1405,137 @@ export function SettingsClient({ initialData, products }: {
               ))}
               {remiseRules.length === 0 && (
                 <p className="text-sm text-[var(--color-text-tertiary)]">Aucune règle de remise.</p>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+
+      {tab === "home_search" && (
+        <>
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <h2 className="text-sm font-semibold text-[var(--color-text-primary)] mb-1">Section recherche (accueil)</h2>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Barre de recherche animée (juste sous le héro) + slider de liens rapides. La barre est
+              sticky sous la navigation et ouvre le volet recherche du menu au clic. L&apos;animation
+              tape la question puis les titres de produits, en boucle.
+            </p>
+
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-[var(--color-border-default)] p-3 cursor-pointer hover:bg-[var(--color-bg-tertiary)] transition-colors mb-3">
+              <span className="text-sm font-medium text-[var(--color-text-primary)]">Afficher la section</span>
+              <input
+                type="checkbox"
+                checked={homeSearchEnabled}
+                onChange={(e) => setHomeSearch({ enabled: e.target.checked })}
+                className="w-4 h-4 accent-[var(--color-accent-blue)]"
+              />
+            </label>
+
+            <div>
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Question tapée par l&apos;animation</label>
+              <input
+                value={homeSearchQuestion}
+                onChange={(e) => setHomeSearch({ question: e.target.value })}
+                placeholder={DEFAULT_HOME_SEARCH_QUESTION}
+                className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+              />
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Liens rapides (slider)</h2>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={addSubcategoryLink} className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+                  <Plus className="w-3.5 h-3.5" /> Sous-catégorie
+                </button>
+                <button type="button" onClick={addPageLink} className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
+                  <Link2 className="w-3.5 h-3.5" /> Page
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Liste vide = toutes les sous-catégories, triées en alternance (deux sous-catégories
+              d&apos;une même famille ne se suivent jamais). Dès qu&apos;un lien est ajouté, l&apos;ordre et la
+              sélection ci-dessous sont utilisés tels quels. Les sous-catégories affichent la photo de
+              leur premier produit ; les pages affichent la miniature réglée ici.
+            </p>
+
+            <div className="space-y-3">
+              {homeSearchLinks.map((l, i) => (
+                <div key={i} className="rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-semibold text-[var(--color-text-tertiary)] w-5 shrink-0 text-center">{i + 1}</span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button type="button" onClick={() => moveHomeSearchLink(i, -1)} disabled={i === 0} aria-label="Monter" className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-tertiary)]">
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => moveHomeSearchLink(i, 1)} disabled={i === homeSearchLinks.length - 1} aria-label="Descendre" className="h-7 w-7 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--color-text-tertiary)]">
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-accent-blue)]">
+                      {l.type === "page" ? "Page" : "Sous-catégorie"}
+                    </span>
+                    <button type="button" onClick={() => removeHomeSearchLink(i)} aria-label="Supprimer" className="ml-auto h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {l.type === "subcategory" ? (
+                    <div>
+                      <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Sous-catégorie</label>
+                      <select
+                        value={l.id}
+                        onChange={(e) => updateSubcategoryLink(i, e.target.value)}
+                        className="w-full h-10 px-2.5 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                      >
+                        <option value="">Choisir une sous-catégorie…</option>
+                        {CATEGORIES.map((fam) => (
+                          <optgroup key={fam.id} label={fam.name}>
+                            {fam.children.map((sub) => (
+                              <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Nom de la page</label>
+                          <input
+                            value={l.name}
+                            onChange={(e) => updatePageLink(i, { name: e.target.value })}
+                            placeholder="Notre histoire"
+                            className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-[var(--color-text-secondary)] mb-1">Lien</label>
+                          <input
+                            value={l.href}
+                            onChange={(e) => updatePageLink(i, { href: e.target.value })}
+                            placeholder="/notre-histoire"
+                            className="w-full h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm"
+                          />
+                        </div>
+                      </div>
+                      <MediaField
+                        label="Miniature (image)"
+                        value={l.image ? { type: "image", url: l.image } : null}
+                        onChange={(m) => updatePageLink(i, { image: m?.url || null })}
+                        accept="image/*"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {homeSearchLinks.length === 0 && (
+                <p className="text-sm text-[var(--color-text-tertiary)]">
+                  Aucun lien personnalisé — le slider affiche automatiquement toutes les sous-catégories en alternance.
+                </p>
               )}
             </div>
           </section>

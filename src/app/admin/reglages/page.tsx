@@ -7,6 +7,7 @@ import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
 import { DEFAULT_GROUPAGE_INFO } from "@/lib/groupage";
 import { DEFAULT_SOCIAL_PROOF_ENTRIES, SOCIAL_PROOF_DEFAULTS } from "@/lib/social-proof";
 import { DEFAULT_ANNOUNCEMENT_MESSAGES, DEFAULT_ANNOUNCEMENT_PERIOD_MS } from "@/lib/announcements";
+import { DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
 import type { ShowcaseSettings } from "@/types";
 import { SettingsClient } from "./SettingsClient";
 
@@ -72,6 +73,11 @@ export default async function AdminSettingsPage() {
       messages: raw.announcement?.messages ?? DEFAULT_ANNOUNCEMENT_MESSAGES,
     },
     remises: raw.remises || { surplus: { enabled: false, type: "fixed", amount_fcfa: 0, percent: 0 }, rules: [] },
+    home_search: {
+      enabled: raw.home_search?.enabled !== false,
+      question: raw.home_search?.question ?? DEFAULT_HOME_SEARCH_QUESTION,
+      quick_links: raw.home_search?.quick_links,
+    },
   };
 
   return (

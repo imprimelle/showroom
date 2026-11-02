@@ -20,6 +20,9 @@ import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
 import { StoreDirectory } from "@/components/resellers/StoreDirectory";
+import { HomeSearchBar } from "@/components/search/HomeSearchBar";
+import { HomeQuickLinks } from "@/components/search/HomeQuickLinks";
+import { resolveQuickLinks, DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +109,13 @@ export default async function HomePage() {
   // la jauge « live » est chargée côté client par le composant).
   const groupageItems = buildGroupageHomeItems(products, settings.product_parameters);
 
+  // Section recherche accueil (barre animée + liens rapides).
+  const homeSearch = settings.home_search;
+  const searchEnabled = homeSearch?.enabled !== false;
+  const searchQuestion = homeSearch?.question?.trim() || DEFAULT_HOME_SEARCH_QUESTION;
+  const searchTerms = byPopularity.map((p) => p.name).filter(Boolean).slice(0, 8);
+  const quickLinks = searchEnabled ? resolveQuickLinks(homeSearch?.quick_links, CATEGORIES, products) : [];
+
   return (
     <div>
       {/* ===== 1. Hero (slider plein écran, style Cozey) ===== */}
@@ -119,6 +129,20 @@ export default async function HomePage() {
           whatsappHref={getWhatsAppUrl(whatsapp, quoteMessage())}
         />
       </section>
+
+      {/* ===== 1.25 Recherche accueil (barre sticky animée + liens rapides) ===== */}
+      {searchEnabled && (
+        <>
+          <div className="sticky top-[var(--topbar-height)] z-30 bg-[var(--color-bg-primary)]">
+            <div className="max-w-7xl mx-auto px-4 py-3">
+              <HomeSearchBar question={searchQuestion} terms={searchTerms} />
+            </div>
+          </div>
+          <div className="max-w-7xl mx-auto px-4 pb-6">
+            <HomeQuickLinks links={quickLinks} />
+          </div>
+        </>
+      )}
 
       {/* ===== 1.5 Groupages en cours (juste sous le héro) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
