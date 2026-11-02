@@ -176,11 +176,19 @@ body[data-sticky-product="1"] header {
   --topbar-height: 0px; /* aucune barre (admin, checkout, notre-histoire) */
 }
 body[data-has-topnav="1"] {
-  --topbar-height: 92px; /* annonce h-7 (28px) + nav h-16 (64px) — mobile */
+  --topbar-height: 88px; /* annonce h-8 (32px) + nav h-14 (56px) — mobile */
 }
 @media (min-width: 768px) {
   body[data-has-topnav="1"] {
-    --topbar-height: 104px; /* annonce h-8 (32px) + nav 72px */
+    --topbar-height: 96px; /* annonce h-8 (32px) + nav h-16 (64px) */
+  }
+}
+body[data-has-topnav="1"][data-announcement-collapsed="1"] {
+  --topbar-height: 56px; /* nav h-14 seule (bandeau d'annonce replié) — mobile */
+}
+@media (min-width: 768px) {
+  body[data-has-topnav="1"][data-announcement-collapsed="1"] {
+    --topbar-height: 64px; /* nav h-16 seule (bandeau d'annonce replié) */
   }
 }
 body[data-sticky-product="1"] {

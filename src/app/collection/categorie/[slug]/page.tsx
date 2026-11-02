@@ -54,10 +54,9 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const catTitle = settings.categories?.[cat.id]?.title || cat.name;
   const groupageItems = buildGroupageHomeItems(all, settings.product_parameters);
 
-  // Offset sticky de la barre recherche (sous la navbar fixe) : hauteur nav (56/64px)
-  // + bandeau d'annonce (32px) s'il est actif.
-  const announcementOn = !!(settings.announcement?.enabled && settings.announcement?.messages?.length);
-  const stickyTop = announcementOn ? "top-[88px] md:top-[96px]" : "top-[56px] md:top-[64px]";
+  // Offset sticky de la barre recherche (sous la navbar) : variable CSS --topbar-height,
+  // qui s'ajuste automatiquement quand le bandeau d'annonce se replie au scroll.
+  const stickyTop = "top-[var(--topbar-height)]";
 
   // « Prix dès » du comparateur (surplus + remises appliqués), par sous-catégorie.
   const remises = resolveRemises(settings.remises);

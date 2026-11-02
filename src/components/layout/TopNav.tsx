@@ -91,14 +91,13 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
   const [scrolled, setScrolled] = useState(false);
   const hideNav = pathname.startsWith("/admin") || pathname.startsWith("/checkout") || pathname === "/notre-histoire";
 
-  // Sur les pages avec bannière (home + univers), la barre devient solide après un léger scroll
+  // La nav devient solide (pages hero) et le bandeau d'annonce se replie après un léger scroll.
   useEffect(() => {
-    if (!isHero) return;
     const onScroll = () => setScrolled(window.scrollY > 40);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [isHero]);
+  }, []);
 
   // Verrouille le scroll quand le menu plein écran est ouvert
   useEffect(() => {
@@ -115,6 +114,14 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
       delete document.body.dataset.hasTopnav;
     };
   }, [hideNav]);
+
+  // Signale le repli du bandeau d'annonce pour ajuster l'offset sticky des éléments sous la nav.
+  useEffect(() => {
+    document.body.dataset.announcementCollapsed = scrolled ? "1" : "";
+    return () => {
+      delete document.body.dataset.announcementCollapsed;
+    };
+  }, [scrolled]);
 
   const closeMenu = () => {
     closeMenuStore();
@@ -146,13 +153,20 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
             : "bg-[var(--color-bg-primary)] border-b border-[var(--color-border-default)]"
         )}
       >
-        {/* === Bandeau d'annonce défilant (vertical, texte ambre) === */}
-        <AnnouncementBar
-          enabled={announce.enabled}
-          periodMs={announce.periodMs}
-          messages={announce.messages}
-          phone={phone}
-        />
+        {/* === Bandeau d'annonce défilant (vertical, texte ambre) — replié au scroll === */}
+        <div
+          className={cn(
+            "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out",
+            scrolled ? "max-h-0 opacity-0" : "max-h-8 opacity-100"
+          )}
+        >
+          <AnnouncementBar
+            enabled={announce.enabled}
+            periodMs={announce.periodMs}
+            messages={announce.messages}
+            phone={phone}
+          />
+        </div>
 
         <div className="max-w-7xl mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
           {/* Logo — à gauche */}
