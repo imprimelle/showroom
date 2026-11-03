@@ -13,11 +13,13 @@ import {
   Info,
   HelpCircle,
   FileText,
+  Heart,
   Sparkles,
   Handshake,
   User,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useWishlistStore } from "@/stores/wishlist";
 import { useUiStore } from "@/stores/ui";
 import { cn, getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
 import { generalInquiryMessage } from "@/lib/whatsapp";
@@ -78,6 +80,7 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
   const pathname = usePathname();
   const router = useRouter();
   const itemCount = useCartStore((s) => s.getItemCount());
+  const wishlistCount = useWishlistStore((s) => s.items.length);
   const [searchQ, setSearchQ] = useState("");
   const menuOpen = useUiStore((s) => s.menuOpen);
   const searchOpen = useUiStore((s) => s.searchOpen);
@@ -187,8 +190,28 @@ export function TopNav({ whatsapp = DEFAULT_WHATSAPP, phone, announcement }: {
               <User className="w-5 h-5" />
             </Link>
             <Link
+              href="/wishlist"
+              aria-label="Ma wishlist"
+              className={cn("relative p-1.5", fg)}
+            >
+              <Heart className="w-5 h-5" />
+              {wishlistCount > 0 && (
+                <span
+                  className={cn(
+                    "absolute top-0 right-0 w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold rounded-full",
+                    transparent
+                      ? "bg-white text-black"
+                      : "bg-[var(--color-text-primary)] text-[var(--color-bg-primary)]"
+                  )}
+                >
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
               href="/panier"
               aria-label="Panier"
+              id="cart-nav-icon"
               className={cn("relative p-1.5", fg)}
             >
               <ShoppingCart className="w-5 h-5" />

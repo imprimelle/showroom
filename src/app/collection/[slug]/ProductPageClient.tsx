@@ -10,6 +10,7 @@ import {
   Minus,
   Plus,
   Check,
+  Heart,
   ChevronRight,
   X,
   Users,
@@ -25,6 +26,7 @@ import { StickyProductBar } from "@/components/product/StickyProductBar";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useCartStore } from "@/stores/cart";
+import { useWishlistStore } from "@/stores/wishlist";
 import { useCheckoutStore } from "@/stores/checkout";
 import { useUiStore } from "@/stores/ui";
 import { useRemisesStore } from "@/stores/remises";
@@ -158,6 +160,26 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   const addItem = useCartStore((s) => s.addItem);
   const openCheckout = useCheckoutStore((s) => s.open);
   const setHasStickyBar = useUiStore((s) => s.setHasStickyBar);
+  const wishlistItems = useWishlistStore((s) => s.items);
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const inWishlist = wishlistItems.some((i) => i.id === product.id);
+
+  const handleToggleWishlist = () => {
+    toggleWishlist({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      image_url: product.main_image_url,
+      family: product.showcase?.family,
+      category: product.showcase?.category,
+      variant_label: product.variants?.[0]?.name ?? null,
+      variant_sku: product.variants?.[0]?.sku ?? null,
+      variant_price: product.variants?.[0]?.price ?? null,
+      online_enabled: !!product.showcase?.payment?.online_enabled,
+      cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
+      added_at: new Date().toISOString(),
+    });
+  };
 
   // Tracking `view_item` (une seule fois par fiche produit, et une seule
   // source d'émission — le doublon historique a été supprimé).
@@ -699,6 +721,19 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   <Zap className="w-3.5 h-3.5" /> Express
                 </span>
               )}
+              <button
+                type="button"
+                onClick={handleToggleWishlist}
+                aria-label={inWishlist ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
+                className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:border-[var(--color-error)] hover:text-[var(--color-error)] transition-colors"
+              >
+                <Heart
+                  className={cn(
+                    "h-4 w-4",
+                    inWishlist && "fill-[var(--color-error)] text-[var(--color-error)]"
+                  )}
+                />
+              </button>
             </div>
 
             {/* Nom + prix côte à côte */}
@@ -1184,7 +1219,7 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
                   viewport={{ once: true, amount: 0.2 }}
                   transition={{ duration: 0.55, ease: "easeOut", delay: (i % 4) * 0.09 }}
                 >
-                  <ProductCard product={rp} sizes="(max-width: 767px) 50vw, 25vw" />
+                  <ProductCard product={rp} sizes="(max-width: 767px) 50vw, 25vw" animateAddToCart={false} />
                 </motion.div>
               ))}
             </div>

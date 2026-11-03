@@ -1,12 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { ShoppingCart, Clock, Zap } from "lucide-react";
+import { ShoppingCart, Heart, Clock, Zap } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
+import { useWishlistStore } from "@/stores/wishlist";
+import { flyToCart } from "@/stores/fly-to-cart";
 import { useRemisesStore } from "@/stores/remises";
 import { computePrice } from "@/lib/remises";
 import { imgProxyUrl } from "@/lib/images";
-import { getMinPrice } from "@/lib/utils";
+import { getMinPrice, cn } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
 import { getCategoryLabel } from "@/lib/categories";
 import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
@@ -15,17 +17,22 @@ interface ProductCardProps {
   product: ShowcaseProduct;
   /** Attribut `sizes` responsive — précis selon la grille (2/3/4 colonnes). */
   sizes?: string;
+  /** Anime la miniature « vers le panier » lors de l'ajout rapide (désactivé sur la fiche produit). */
+  animateAddToCart?: boolean;
 }
 
 /** Grille catalogue : 2 col (mobile) → 3 col (md) → 4 col (lg). */
 const DEFAULT_SIZES = "(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw";
 
-export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps) {
+export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart = true }: ProductCardProps) {
   const formatPrice = useFormatPrice();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const remises = useRemisesStore((s) => s.config);
+  const wishlistItems = useWishlistStore((s) => s.items);
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const inWishlist = wishlistItems.some((i) => i.id === product.id);
 
   const lowestPrice = getMinPrice(product.variants);
   const priceRef = { id: product.id, family: product.showcase?.family, category: product.showcase?.category };
@@ -55,6 +62,29 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
       options: [],
       online_enabled: !!product.showcase?.payment?.online_enabled,
       cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
+    });
+    // Miniature qui vole vers le panier (liste uniquement — désactivé sur la fiche produit).
+    if (animateAddToCart && product.main_image_url) {
+      flyToCart(imgProxyUrl(product.main_image_url, 120, 160), e.currentTarget);
+    }
+  };
+
+  const handleToggleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      image_url: product.main_image_url,
+      family: product.showcase?.family,
+      category: product.showcase?.category,
+      variant_label: firstVariant?.name ?? null,
+      variant_sku: firstVariant?.sku ?? null,
+      variant_price: firstVariant?.price ?? null,
+      online_enabled: !!product.showcase?.payment?.online_enabled,
+      cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
+      added_at: new Date().toISOString(),
     });
   };
 
@@ -117,6 +147,20 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES }: ProductCardProps
             <ShoppingCart className="w-4 h-4" />
           </button>
         )}
+
+        {/* Wishlist (cœur) — en bas à gauche de l'image */}
+        <button
+          onClick={handleToggleWishlist}
+          aria-label={inWishlist ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
+          className="absolute bottom-2.5 left-2.5 z-10 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] shadow-md flex items-center justify-center hover:bg-[var(--color-bg-secondary)] active:scale-95 transition-colors"
+        >
+          <Heart
+            className={cn(
+              "w-4 h-4",
+              inWishlist && "fill-[var(--color-error)] text-[var(--color-error)]"
+            )}
+          />
+        </button>
 
         {/* Badge Express (discret) — produit payable en ligne */}
         {isOnlinePayable(product) && (
