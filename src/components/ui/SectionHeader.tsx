@@ -39,7 +39,7 @@ export function SectionHeader({
   return (
     <div
       className={cn(
-        "mb-6",
+        "mb-4",
         isCenter ? "text-center" : "flex flex-wrap items-end justify-between gap-3",
         className
       )}
@@ -54,11 +54,11 @@ export function SectionHeader({
             )}
           </p>
         ) : null}
-        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1.5">
+        <h2 className="font-serif text-3xl md:text-4xl font-bold text-[var(--color-text-primary)] mt-1">
           {titleKey ? <EditableText contentKey={titleKey} defaultValue={title} /> : title}
         </h2>
         {subtitle ? (
-          <p className="mt-1.5 text-sm md:text-base text-[var(--color-text-secondary)]">
+          <p className="mt-1 text-sm md:text-base text-[var(--color-text-secondary)]">
             {subtitleKey ? (
               <EditableText contentKey={subtitleKey} defaultValue={subtitle} />
             ) : (

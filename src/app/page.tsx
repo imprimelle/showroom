@@ -55,21 +55,27 @@ export default async function HomePage() {
     desc: homeSteps?.[i]?.desc || s.desc,
   }));
 
-  // Produits en vedette : sélection admin (home.featured) prioritaire,
-  // complétée à 6 produits (grille 2×3) par les plus populaires restants.
-  const featuredIds = settings.home?.featured;
-  const selected = featuredIds?.length
-    ? featuredIds
-        .map((id) => products.find((p) => p.id === id))
-        .filter((p): p is ShowcaseProduct => !!p)
-    : [];
+  // Sélection : 3 sliders « Tops » non-automatiques, un par famille
+  // (Mobilier / Tableaux / Enseignes), triés par popularité décroissante.
   const byPopularity = [...products].sort(
     (a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0)
   );
-  const featured = [
-    ...selected,
-    ...byPopularity.filter((p) => !selected.some((s) => s.id === p.id)),
-  ].slice(0, 6);
+  const FEATURED_FAMILIES = [
+    { familyId: "mobilier-decorations", title: "Tops du mobilier" },
+    { familyId: "tableaux-decoratifs", title: "Tops des tableaux" },
+    { familyId: "enseignes-signaletique", title: "Tops des enseignes" },
+  ] as const;
+  const featuredSliders = FEATURED_FAMILIES.map((f) => ({
+    ...f,
+    products: byPopularity
+      .filter(
+        (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === f.familyId
+      )
+      .slice(0, 6),
+  })).filter((s) => s.products.length > 0);
+
+  // Produits les plus populaires (fallback des slides du hero).
+  const featured = byPopularity.slice(0, 6);
 
   // Slides du hero : personnalisés (admin) sinon fallback sur les produits mis en avant
   const fallbackSlides: MediaItem[] = featured
@@ -147,9 +153,9 @@ export default async function HomePage() {
       {/* ===== 1.5 Groupages en cours (juste sous le héro) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
-      {/* ===== 2. Produits en vedette (remontés sous le groupage) ===== */}
-      {featured.length > 0 && (
-        <section className="py-12 md:py-16">
+      {/* ===== 2. Sélection : 3 sliders « Tops » (un par famille), non-automatiques ===== */}
+      {featuredSliders.length > 0 && (
+        <section className="py-8 md:py-10">
           <div className="max-w-7xl mx-auto px-4">
             <SectionHeader
               align="left"
@@ -165,7 +171,16 @@ export default async function HomePage() {
                 </Link>
               }
             />
-            <ProductSlider products={featured} />
+            <div className="space-y-4">
+              {featuredSliders.map((s) => (
+                <div key={s.familyId}>
+                  <h3 className="mb-2 text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
+                    {s.title}
+                  </h3>
+                  <ProductSlider products={s.products} autoPlay={false} />
+                </div>
+              ))}
+            </div>
             <div className="mt-6 text-center md:hidden">
               <Link href="/collection">
                 <Button variant="secondary" size="sm">
@@ -178,7 +193,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== 3. Catégories (focus familles) ===== */}
-      <section className="bg-[var(--color-bg-secondary)] pt-8 pb-12 md:pt-10 md:pb-16">
+      <section className="bg-[var(--color-bg-secondary)] pt-6 pb-8 md:pt-8 md:pb-10">
         <div className="max-w-7xl mx-auto px-4">
           <SectionHeader
             align="left"
@@ -296,7 +311,7 @@ export default async function HomePage() {
 
       {/* ===== 5. Réalisations ===== */}
       {realisationImages.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        <section className="max-w-7xl mx-auto px-4 py-8 md:py-10">
           <SectionHeader
             align="left"
             eyebrow="Portfolio"
@@ -336,7 +351,7 @@ export default async function HomePage() {
 
       {/* ===== 6. Comment ça marche ===== */}
       <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
-        <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
           <SectionHeader
             eyebrow="Simple & rapide"
             title="Comment ça marche"
@@ -360,7 +375,7 @@ export default async function HomePage() {
       </section>
 
       {/* ===== 7. CTA Devis ===== */}
-      <section className="bg-[var(--color-text-primary)] py-12 md:py-16 px-4">
+      <section className="bg-[var(--color-text-primary)] py-8 md:py-10 px-4">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="font-display text-2xl md:text-4xl font-bold text-[var(--color-bg-primary)]">
             {ctaTitle}

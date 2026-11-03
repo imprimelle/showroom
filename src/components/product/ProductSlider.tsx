@@ -6,9 +6,11 @@ import type { ShowcaseProduct } from "@/lib/products";
 
 interface ProductSliderProps {
   products: ShowcaseProduct[];
+  /** Défilement automatique (toutes les 5s). Défaut : `true`. */
+  autoPlay?: boolean;
 }
 
-export function ProductSlider({ products }: ProductSliderProps) {
+export function ProductSlider({ products, autoPlay = true }: ProductSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -50,8 +52,9 @@ export function ProductSlider({ products }: ProductSliderProps) {
     [maxIndex]
   );
 
-  // Auto-advance
+  // Auto-advance (désactivé si autoPlay === false)
   useEffect(() => {
+    if (!autoPlay) return;
     autoTimer.current = setInterval(() => {
       setCurrentIndex((prev) => {
         const next = prev >= maxIndex ? 0 : prev + 1;
@@ -62,7 +65,7 @@ export function ProductSlider({ products }: ProductSliderProps) {
     return () => {
       if (autoTimer.current) clearInterval(autoTimer.current);
     };
-  }, [maxIndex, scrollTo]);
+  }, [maxIndex, scrollTo, autoPlay]);
 
   // Touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
