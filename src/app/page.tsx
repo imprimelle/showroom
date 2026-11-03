@@ -150,9 +150,6 @@ export default async function HomePage() {
         </>
       )}
 
-      {/* ===== 1.5 Groupages en cours (juste sous le héro) ===== */}
-      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
-
       {/* ===== 2. Sélection : 3 sliders « Tops » (un par famille), non-automatiques ===== */}
       {featuredSliders.length > 0 && (
         <section className="py-8 md:py-10">
@@ -174,9 +171,18 @@ export default async function HomePage() {
             <div className="space-y-4">
               {featuredSliders.map((s) => (
                 <div key={s.familyId}>
-                  <h3 className="mb-2 text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
-                    {s.title}
-                  </h3>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
+                      {s.title}
+                    </h3>
+                    <Link
+                      href={`/collection/categorie/${s.familyId}`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                    >
+                      Explorer
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
                   <ProductSlider products={s.products} autoPlay={false} />
                 </div>
               ))}
@@ -191,6 +197,9 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ===== 2.5 Groupages en cours (juste sous la sélection) ===== */}
+      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
       {/* ===== 3. Catégories (focus familles) ===== */}
       <section className="bg-[var(--color-bg-secondary)] pt-6 pb-8 md:pt-8 md:pb-10">
