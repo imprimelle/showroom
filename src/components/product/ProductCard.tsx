@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { ShoppingCart, Heart, Clock, Zap } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useWishlistStore } from "@/stores/wishlist";
 import { flyToCart } from "@/stores/fly-to-cart";
@@ -10,8 +10,7 @@ import { computePrice } from "@/lib/remises";
 import { imgProxyUrl } from "@/lib/images";
 import { getMinPrice, cn } from "@/lib/utils";
 import { useFormatPrice } from "@/stores/currency";
-import { getCategoryLabel } from "@/lib/categories";
-import { isOnlinePayable, type ShowcaseProduct } from "@/lib/products";
+import type { ShowcaseProduct } from "@/lib/products";
 
 interface ProductCardProps {
   product: ShowcaseProduct;
@@ -39,10 +38,6 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
   const lowestBreakdown = lowestPrice != null ? computePrice(lowestPrice, priceRef, remises) : null;
 
   const firstVariant = product.variants?.[0];
-  const popularity = product.showcase?.popularity || 0;
-  const categoryLabel = product.showcase?.category
-    ? getCategoryLabel(product.showcase.category)
-    : null;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -95,25 +90,6 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
     >
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-[var(--color-bg-tertiary)]">
-        {/* Badges */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1.5">
-          {popularity >= 80 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] shadow-sm">
-              Best-seller
-            </span>
-          )}
-          {popularity >= 60 && popularity < 80 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-[var(--color-accent-amber)] text-white shadow-sm">
-              Populaire
-            </span>
-          )}
-          {popularity > 0 && popularity < 40 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide bg-[var(--color-accent-blue)] text-white shadow-sm">
-              Nouveau
-            </span>
-          )}
-        </div>
-
         {/* Image */}
         {!imgError && product.main_image_url ? (
           <>
@@ -161,55 +137,29 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
             )}
           />
         </button>
-
-        {/* Badge Express (discret) — produit payable en ligne */}
-        {isOnlinePayable(product) && (
-          <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold uppercase tracking-wide bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm">
-            <Zap className="w-2.5 h-2.5 text-[var(--color-accent-amber)]" /> Express
-          </span>
-        )}
       </div>
 
       {/* Info */}
-      <div className="p-3.5 md:p-4">
-        {categoryLabel && (
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--color-text-tertiary)] mb-1 truncate">
-            {categoryLabel}
-          </p>
-        )}
+      <div className="p-3">
         <h3 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug line-clamp-2">
           {product.name}
         </h3>
 
-        <div className="mt-2.5 flex items-end justify-between gap-2">
+        <div className="mt-1.5 flex items-baseline gap-1.5">
           {lowestPrice !== null ? (
-            <div>
-              <span className="block text-[10px] leading-none text-[var(--color-text-tertiary)] mb-1">
-                À partir de
-              </span>
+            <>
               {lowestBreakdown?.discounted && (
-                <span className="block text-[11px] font-mono leading-none text-[var(--color-text-tertiary)] line-through mb-0.5">
+                <span className="text-xs font-mono text-[var(--color-text-tertiary)] line-through">
                   {formatPrice(lowestBreakdown.reference)}
                 </span>
               )}
               <span className="text-[15px] font-semibold leading-none text-[var(--color-text-primary)]">
                 {formatPrice(lowestBreakdown?.final ?? lowestPrice)}
               </span>
-              {lowestBreakdown?.discounted && lowestBreakdown.rule?.type === "percent" && (
-                <span className="ml-1.5 text-[10px] font-bold leading-none text-[var(--color-success)]">
-                  −{Math.round(Number(lowestBreakdown.rule.value))}%
-                </span>
-              )}
-            </div>
+            </>
           ) : (
-            <span className="text-[15px] font-semibold text-[var(--color-text-primary)]">
+            <span className="text-[15px] font-semibold leading-none text-[var(--color-text-primary)]">
               Sur devis
-            </span>
-          )}
-          {product.showcase?.delivery_time && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-[var(--color-text-tertiary)] shrink-0">
-              <Clock className="w-3 h-3" />
-              {product.showcase.delivery_time}
             </span>
           )}
         </div>
