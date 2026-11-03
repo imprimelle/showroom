@@ -736,72 +736,64 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
               </button>
             </div>
 
-            {/* Nom + prix côte à côte */}
-            <div className="mt-3 flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] leading-tight">
-                  {product.name}
-                </h1>
-                {/* Étoiles + note (juste sous le nom, visible sur mobile) */}
-                <RatingStars average={aggregate.average} count={aggregate.count} popularity={product.showcase?.popularity} />
-              </div>
+            {/* Nom + note */}
+            <div className="mt-3">
+              <h1 className="font-display text-2xl md:text-3xl font-bold text-[var(--color-text-primary)] leading-tight">
+                {product.name}
+              </h1>
+              {/* Étoiles + note (juste sous le nom, visible sur mobile) */}
+              <RatingStars average={aggregate.average} count={aggregate.count} popularity={product.showcase?.popularity} />
+            </div>
 
-              {/* Prix (côte à côte avec le nom) — compact */}
-              <div className="shrink-0 text-right">
-                {groupageSelected && groupPrice != null ? (
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-accent-amber)]">
-                      Groupage
-                    </p>
-                    <p className="mt-0.5 font-mono text-2xl font-bold leading-tight text-[var(--color-text-primary)]">
-                      {formatPrice(groupageTotal ?? groupPrice)}
-                    </p>
-                    {groupageAdditionalTotal > 0 && (
-                      <p className="mt-0.5 text-[11px] text-[var(--color-text-secondary)]">
-                        + {formatPrice(groupageAdditionalTotal)} options
-                      </p>
+            {/* Prix (sous le nom, sur sa propre ligne — pas de chevauchement) */}
+            <div className="mt-4">
+              {groupageSelected && groupPrice != null ? (
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--color-accent-amber)]">
+                    Groupage
+                  </span>
+                  <span className="font-mono text-2xl font-bold text-[var(--color-text-primary)]">
+                    {formatPrice(groupageTotal ?? groupPrice)}
+                  </span>
+                  {groupageAdditionalTotal > 0 && (
+                    <span className="text-[11px] text-[var(--color-text-secondary)]">
+                      + {formatPrice(groupageAdditionalTotal)} options
+                    </span>
+                  )}
+                </div>
+              ) : currentPrice != null ? (
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="text-sm text-[var(--color-text-tertiary)]">
+                    {selectedVariant ? selectedVariant.name : (
+                      <EditableText contentKey="product.price.from" defaultValue="À partir de" />
                     )}
-                  </div>
-                ) : currentPrice != null ? (
-                  <div>
-                    <p className="text-[11px] text-[var(--color-text-tertiary)]">
-                      {selectedVariant ? selectedVariant.name : (
-                        <EditableText contentKey="product.price.from" defaultValue="À partir de" />
-                      )}
-                    </p>
-                    <div className="mt-0.5 flex items-baseline justify-end gap-2">
-                      {currentBreakdown?.discounted && (
-                        <span className="font-mono text-sm text-[var(--color-text-tertiary)] line-through">
-                          {formatPrice(currentBreakdown.reference + optionsTotal)}
-                        </span>
-                      )}
-                      <span className="font-mono text-2xl font-bold leading-tight text-[var(--color-text-primary)]">
-                        {formatPrice(totalPrice ?? currentPrice)}
-                      </span>
-                    </div>
-                    {(currentBreakdown?.discounted || optionsTotal > 0) && (
-                      <div className="mt-1 flex items-center justify-end gap-2">
-                        {currentBreakdown?.discounted && (
-                          <span className="rounded-full bg-[var(--color-success-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]">
-                            {currentBreakdown.rule?.type === "percent"
-                              ? `−${Math.round(Number(currentBreakdown.rule.value))}%`
-                              : `−${formatPrice(currentBreakdown.discountAmount)}`}
-                          </span>
-                        )}
-                        {optionsTotal > 0 && (
-                          <span className="text-[11px] text-[var(--color-text-secondary)]">
-                            + {formatPrice(optionsTotal)} options
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-lg font-semibold text-[var(--color-text-secondary)]">
-                    <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
-                  </p>
-                )}
-              </div>
+                  </span>
+                  {currentBreakdown?.discounted && (
+                    <span className="font-mono text-base text-[var(--color-text-tertiary)] line-through">
+                      {formatPrice(currentBreakdown.reference + optionsTotal)}
+                    </span>
+                  )}
+                  <span className="font-mono text-2xl font-bold text-[var(--color-text-primary)]">
+                    {formatPrice(totalPrice ?? currentPrice)}
+                  </span>
+                  {currentBreakdown?.discounted && (
+                    <span className="rounded-full bg-[var(--color-success-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success)]">
+                      {currentBreakdown.rule?.type === "percent"
+                        ? `−${Math.round(Number(currentBreakdown.rule.value))}%`
+                        : `−${formatPrice(currentBreakdown.discountAmount)}`}
+                    </span>
+                  )}
+                  {optionsTotal > 0 && (
+                    <span className="text-[11px] text-[var(--color-text-secondary)]">
+                      + {formatPrice(optionsTotal)} options
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="text-lg font-semibold text-[var(--color-text-secondary)]">
+                  <EditableText contentKey="product.price.on_quote" defaultValue="Sur devis" />
+                </p>
+              )}
             </div>
 
             {/* Description courte */}

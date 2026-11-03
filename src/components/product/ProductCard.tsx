@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { ShoppingCart, Heart } from "lucide-react";
+import { Plus, Heart } from "lucide-react";
 import { useCartStore } from "@/stores/cart";
 import { useWishlistStore } from "@/stores/wishlist";
 import { flyToCart } from "@/stores/fly-to-cart";
@@ -120,19 +120,19 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
             aria-label="Ajouter au panier"
             className="absolute bottom-2.5 right-2.5 z-10 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] shadow-md flex items-center justify-center hover:bg-[var(--color-text-primary)] hover:text-white active:scale-95 transition-colors"
           >
-            <ShoppingCart className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </button>
         )}
 
-        {/* Wishlist (cœur) — en bas à gauche de l'image */}
+        {/* Wishlist (cœur) — en haut à droite, sans fond */}
         <button
           onClick={handleToggleWishlist}
           aria-label={inWishlist ? "Retirer de la wishlist" : "Ajouter à la wishlist"}
-          className="absolute bottom-2.5 left-2.5 z-10 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] shadow-md flex items-center justify-center hover:bg-[var(--color-bg-secondary)] active:scale-95 transition-colors"
+          className="absolute top-2 right-2 z-10 p-1 text-white drop-shadow-md transition-transform hover:scale-110 active:scale-95"
         >
           <Heart
             className={cn(
-              "w-4 h-4",
+              "h-5 w-5",
               inWishlist && "fill-[var(--color-error)] text-[var(--color-error)]"
             )}
           />
