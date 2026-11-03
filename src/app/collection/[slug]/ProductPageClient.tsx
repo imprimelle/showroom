@@ -177,9 +177,15 @@ export function ProductPageClient({ product, relatedProducts, whatsapp = DEFAULT
   }, [product.slug]);
 
   // Remonte toujours en haut de page à chaque changement de produit
-  // (clic sur une miniature / carte produit).
+  // (clic sur une miniature / carte produit). On force un scroll instantané
+  // (bypass du `scroll-behavior: smooth` global) pour ne pas entrer en course
+  // avec la restauration de scroll de Next.js 16.
   useEffect(() => {
+    const html = document.documentElement;
+    const previous = html.style.scrollBehavior;
+    html.style.scrollBehavior = "auto";
     window.scrollTo(0, 0);
+    html.style.scrollBehavior = previous;
   }, [product.slug]);
 
   // === Groupage (achat groupé) : config produit + statut live (jauge de places) ===

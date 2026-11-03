@@ -93,7 +93,7 @@ export default async function RootLayout({
   const socialProof = resolveSocialProofConfig(settings.social_proof);
 
   return (
-    <html lang="fr" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
+    <html lang="fr" data-scroll-behavior="smooth" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <body className="min-h-screen flex flex-col">
         <ContentEditProvider initialContent={contentMap}>
         <Providers categories={catalog} remises={settings.remises}>
