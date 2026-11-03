@@ -153,7 +153,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
                   {formatPrice(lowestBreakdown.reference)}
                 </span>
               )}
-              <span className="text-[15px] font-semibold leading-none text-[var(--color-text-primary)]">
+              <span className="text-[15px] font-bold leading-none text-[var(--color-success)]">
                 {formatPrice(lowestBreakdown?.final ?? lowestPrice)}
               </span>
             </>
