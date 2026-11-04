@@ -491,7 +491,6 @@ export function SettingsClient({ initialData, products }: {
               enabled: data.flash_sale.enabled !== false,
               title: data.flash_sale.title?.trim() || undefined,
               subtitle: data.flash_sale.subtitle?.trim() || undefined,
-              button_text: data.flash_sale.button_text?.trim() || undefined,
               button_href: data.flash_sale.button_href?.trim() || "/ventes-flash",
               end_time: /^\d{1,2}:\d{2}$/.test(data.flash_sale.end_time?.trim() || "")
                 ? data.flash_sale.end_time!.trim()
@@ -754,7 +753,7 @@ export function SettingsClient({ initialData, products }: {
               label="Titre"
               value={flashSale.title ?? ""}
               onChange={(e) => setFlashSale({ title: e.target.value })}
-              placeholder="Vente flash | chaque jour"
+              placeholder="VENTE FLASH"
             />
             <div className="mt-3">
               <Input
@@ -764,23 +763,13 @@ export function SettingsClient({ initialData, products }: {
                 placeholder="Offres limitées, chaque jour"
               />
             </div>
-            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <Input
-                  label="Texte du bouton"
-                  value={flashSale.button_text ?? ""}
-                  onChange={(e) => setFlashSale({ button_text: e.target.value })}
-                  placeholder="Voir les ventes flash"
-                />
-              </div>
-              <div>
-                <Input
-                  label="Lien du bouton"
-                  value={flashSale.button_href ?? ""}
-                  onChange={(e) => setFlashSale({ button_href: e.target.value })}
-                  placeholder="/ventes-flash"
-                />
-              </div>
+            <div className="mt-3">
+              <Input
+                label="Lien du bouton flèche"
+                value={flashSale.button_href ?? ""}
+                onChange={(e) => setFlashSale({ button_href: e.target.value })}
+                placeholder="/ventes-flash"
+              />
             </div>
             <div className="mt-3">
               <label className="block text-xs text-[var(--color-text-secondary)] mb-1">

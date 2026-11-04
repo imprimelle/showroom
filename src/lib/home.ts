@@ -30,8 +30,7 @@ export const DEFAULT_CTA = {
 
 export const DEFAULT_FLASH_SALE = {
   enabled: true,
-  title: "Vente flash | chaque jour",
-  button_text: "Voir les ventes flash",
+  title: "VENTE FLASH",
   button_href: "/ventes-flash",
   end_time: "23:59",
 };

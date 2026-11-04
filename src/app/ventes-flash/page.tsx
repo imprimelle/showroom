@@ -2,7 +2,7 @@ import { getShowcaseSettings } from "@/lib/settings";
 import { getPublishedProducts } from "@/lib/products";
 import { DEFAULT_FLASH_SALE } from "@/lib/home";
 import { ProductCard } from "@/components/product/ProductCard";
-import { FlashCountdown } from "@/components/product/FlashCountdown";
+import { FlashTimerGauge } from "@/components/product/FlashTimerGauge";
 import { Zap } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 
@@ -43,7 +43,7 @@ export default async function VentesFlashPage() {
               <Zap className="w-5 h-5 text-white" />
             </span>
             <div className="min-w-0">
-              <h1 className="font-display text-xl md:text-2xl font-bold text-white leading-tight">
+              <h1 className="font-display text-xl md:text-2xl font-bold uppercase tracking-wide text-white leading-tight">
                 {title}
               </h1>
               {subtitle ? (
@@ -51,14 +51,11 @@ export default async function VentesFlashPage() {
               ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-white/90 text-xs font-semibold uppercase tracking-wide">
+          <div className="w-full sm:w-auto sm:min-w-[260px] shrink-0">
+            <span className="block text-white/90 text-xs font-semibold uppercase tracking-wide mb-1.5">
               Se termine dans
             </span>
-            <FlashCountdown
-              endTime={endTime}
-              className="inline-flex items-center rounded-md bg-black/25 px-3 py-1.5 font-mono text-base font-bold text-white tabular-nums"
-            />
+            <FlashTimerGauge endTime={endTime} />
           </div>
         </div>
       </div>

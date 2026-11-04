@@ -486,11 +486,9 @@ export interface ShowcaseSettings {
     enabled?: boolean;
     /** Titre du slide (défaut « Vente flash | chaque jour »). */
     title?: string;
-    /** Sous-titre optionnel, affiché sous le titre. */
+    /** Sous-titre optionnel, affiché sous le titre (page /ventes-flash). */
     subtitle?: string;
-    /** Libellé du bouton (défaut « Voir les ventes flash »). */
-    button_text?: string;
-    /** Destination du bouton (défaut « /ventes-flash »). */
+    /** Destination du bouton flèche (défaut « /ventes-flash »). */
     button_href?: string;
     /** Heure de fin quotidienne du minuteur, format « HH:MM » (24 h). Défaut « 23:59 ». */
     end_time?: string;

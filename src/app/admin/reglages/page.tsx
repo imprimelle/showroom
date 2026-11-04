@@ -82,7 +82,6 @@ export default async function AdminSettingsPage() {
       enabled: raw.flash_sale?.enabled !== false,
       title: raw.flash_sale?.title ?? DEFAULT_FLASH_SALE.title,
       subtitle: raw.flash_sale?.subtitle,
-      button_text: raw.flash_sale?.button_text ?? DEFAULT_FLASH_SALE.button_text,
       button_href: raw.flash_sale?.button_href ?? DEFAULT_FLASH_SALE.button_href,
       end_time: raw.flash_sale?.end_time ?? DEFAULT_FLASH_SALE.end_time,
       product_slugs: raw.flash_sale?.product_slugs ?? [],

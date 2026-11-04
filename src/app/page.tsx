@@ -165,8 +165,6 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 pb-4 md:pb-6">
           <FlashSaleSlider
             title={flashSale?.title || DEFAULT_FLASH_SALE.title}
-            subtitle={flashSale?.subtitle || undefined}
-            buttonText={flashSale?.button_text || DEFAULT_FLASH_SALE.button_text}
             buttonHref={flashSale?.button_href || DEFAULT_FLASH_SALE.button_href}
             endTime={flashSale?.end_time || DEFAULT_FLASH_SALE.end_time}
             products={flashProducts}
