@@ -27,3 +27,11 @@ export const DEFAULT_CTA = {
   title: "Un projet spécifique ?",
   desc: "Envoyez-nous vos dimensions et votre logo — devis gratuit sous 24h, sans engagement.",
 };
+
+export const DEFAULT_FLASH_SALE = {
+  enabled: true,
+  title: "Vente flash | chaque jour",
+  button_text: "Voir les ventes flash",
+  button_href: "/ventes-flash",
+  end_time: "23:59",
+};

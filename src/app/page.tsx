@@ -15,7 +15,7 @@ import { quoteMessage } from "@/lib/whatsapp";
 import { Truck, ShieldCheck, MapPin, Lock, ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem } from "@/types";
-import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA } from "@/lib/home";
+import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
@@ -23,6 +23,7 @@ import { StoreDirectory } from "@/components/resellers/StoreDirectory";
 import { HomeSearchBar } from "@/components/search/HomeSearchBar";
 import { HomeQuickLinks } from "@/components/search/HomeQuickLinks";
 import { resolveQuickLinks, DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
+import { FlashSaleSlider } from "@/components/product/FlashSaleSlider";
 
 export const dynamic = "force-dynamic";
 
@@ -57,13 +58,15 @@ export default async function HomePage() {
 
   // Sélection : 3 sliders « Tops » non-automatiques, un par famille
   // (Mobilier / Tableaux / Enseignes), triés par popularité décroissante.
+  // Chaque « top » est enveloppé dans un fond de couleur distinct, légèrement
+  // transparent, arrondi (plus léger que les cartes produit).
   const byPopularity = [...products].sort(
     (a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0)
   );
   const FEATURED_FAMILIES = [
-    { familyId: "mobilier-decorations", title: "Tops du mobilier" },
-    { familyId: "tableaux-decoratifs", title: "Tops des tableaux" },
-    { familyId: "enseignes-signaletique", title: "Tops des enseignes" },
+    { familyId: "mobilier-decorations", title: "Tops du mobilier", bg: "bg-[#FDE9D0]/60" },
+    { familyId: "tableaux-decoratifs", title: "Tops des tableaux", bg: "bg-[#DBEAFE]/60" },
+    { familyId: "enseignes-signaletique", title: "Tops des enseignes", bg: "bg-[#D1FAE5]/60" },
   ] as const;
   const featuredSliders = FEATURED_FAMILIES.map((f) => ({
     ...f,
@@ -73,6 +76,10 @@ export default async function HomePage() {
       )
       .slice(0, 6),
   })).filter((s) => s.products.length > 0);
+
+  // Slide « Vente flash » (indépendant, juste avant la sélection).
+  const flashSale = settings.flash_sale;
+  const flashEnabled = flashSale?.enabled !== false;
 
   // Produits les plus populaires (fallback des slides du hero).
   const featured = byPopularity.slice(0, 6);
@@ -150,6 +157,19 @@ export default async function HomePage() {
         </>
       )}
 
+      {/* ===== 1.75 Vente flash (slide rouge, indépendant — juste avant la sélection) ===== */}
+      {flashEnabled && (
+        <div className="max-w-7xl mx-auto px-4 pb-4 md:pb-6">
+          <FlashSaleSlider
+            title={flashSale?.title || DEFAULT_FLASH_SALE.title}
+            subtitle={flashSale?.subtitle || undefined}
+            buttonText={flashSale?.button_text || DEFAULT_FLASH_SALE.button_text}
+            buttonHref={flashSale?.button_href || DEFAULT_FLASH_SALE.button_href}
+            endTime={flashSale?.end_time || DEFAULT_FLASH_SALE.end_time}
+          />
+        </div>
+      )}
+
       {/* ===== 2. Sélection : 3 sliders « Tops » (un par famille), non-automatiques ===== */}
       {featuredSliders.length > 0 && (
         <section className="py-8 md:py-10">
@@ -170,14 +190,14 @@ export default async function HomePage() {
             />
             <div className="space-y-4">
               {featuredSliders.map((s) => (
-                <div key={s.familyId}>
-                  <div className="mb-2 flex items-center justify-between gap-3">
+                <div key={s.familyId} className={`${s.bg} rounded-lg px-2 py-3`}>
+                  <div className="mb-2 flex items-center justify-between gap-3 px-1">
                     <h3 className="text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
                       {s.title}
                     </h3>
                     <Link
                       href={`/collection/categorie/${s.familyId}`}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] bg-white/60 px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-white transition-colors"
                     >
                       Explorer
                       <ArrowRight className="h-3.5 w-3.5" />

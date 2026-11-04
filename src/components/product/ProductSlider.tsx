@@ -10,6 +10,9 @@ interface ProductSliderProps {
   autoPlay?: boolean;
 }
 
+/** Espace horizontal entre les cartes (px) — volontairement compact. */
+const GAP = 6;
+
 export function ProductSlider({ products, autoPlay = true }: ProductSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -42,9 +45,8 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
       setCurrentIndex(clamped);
       if (trackRef.current) {
         const slideWidth = trackRef.current.children[0]?.clientWidth || 0;
-        const gap = 16;
         trackRef.current.scrollTo({
-          left: clamped * (slideWidth + gap),
+          left: clamped * (slideWidth + GAP),
           behavior: "smooth",
         });
       }
@@ -84,8 +86,7 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
     if (!trackRef.current) return;
     setIsDragging(false);
     const slideWidth = trackRef.current.children[0]?.clientWidth || 0;
-    const gap = 16;
-    const index = Math.round(trackRef.current.scrollLeft / (slideWidth + gap));
+    const index = Math.round(trackRef.current.scrollLeft / (slideWidth + GAP));
     scrollTo(index);
   };
 
@@ -96,7 +97,7 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
       {/* Track */}
       <div
         ref={trackRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory -mx-4 px-4 pb-2"
+        className="flex gap-1.5 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-0 pb-2"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -105,7 +106,7 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
         {products.map((product) => (
           <div
             key={product.id}
-            className="w-[calc(50%-8px)] sm:w-[calc(33.333%-11px)] lg:w-[calc(25%-12px)] shrink-0 snap-start"
+            className="w-[calc(50%-3px)] sm:w-[calc(33.333%-4px)] lg:w-[calc(25%-4.5px)] shrink-0 snap-start"
           >
             <ProductCard product={product} />
           </div>
@@ -132,22 +133,8 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
         </>
       )}
 
-      {/* Dots — mobile */}
-      {products.length > slidesPerView && (
-        <div className="flex justify-center gap-1.5 mt-4 md:hidden">
-          {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => scrollTo(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === currentIndex
-                  ? "w-5 bg-[var(--color-text-primary)]"
-                  : "w-1.5 bg-[var(--color-border-strong)]"
-              }`}
-            />
-          ))}
-        </div>
-      )}
+      {/* Dots — supprimés : la séparation visuelle est assurée par le fond
+          coloré (rectangle légèrement arrondi) qui enveloppe chaque slider. */}
     </div>
   );
 }

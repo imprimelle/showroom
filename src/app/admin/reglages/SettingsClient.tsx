@@ -342,6 +342,12 @@ export function SettingsClient({ initialData, products }: {
     setHomeSearchLinks(next);
   };
 
+  // === Vente flash (slide rouge + minuteur quotidien) ===
+  const flashSale = data.flash_sale || {};
+  const flashSaleEnabled = flashSale.enabled !== false;
+  const setFlashSale = (patch: Partial<ShowcaseSettings["flash_sale"]>) =>
+    setData({ ...data, flash_sale: { ...flashSale, ...patch } });
+
   const handleSave = async () => {
     setSaving(true);
     setMessage("");
@@ -478,6 +484,18 @@ export function SettingsClient({ initialData, products }: {
                     ? { type: "page", name: l.name.trim(), href: l.href?.trim() || "#", image: l.image || null, icon: l.icon || "📄" }
                     : { type: "subcategory", id: l.id }
                 ),
+            }
+          : undefined,
+        flash_sale: data.flash_sale
+          ? {
+              enabled: data.flash_sale.enabled !== false,
+              title: data.flash_sale.title?.trim() || undefined,
+              subtitle: data.flash_sale.subtitle?.trim() || undefined,
+              button_text: data.flash_sale.button_text?.trim() || undefined,
+              button_href: data.flash_sale.button_href?.trim() || "/ventes-flash",
+              end_time: /^\d{1,2}:\d{2}$/.test(data.flash_sale.end_time?.trim() || "")
+                ? data.flash_sale.end_time!.trim()
+                : undefined,
             }
           : undefined,
       };
@@ -709,6 +727,73 @@ export function SettingsClient({ initialData, products }: {
                   <div className="mt-2"><Input value={homeSteps[i]?.desc || ""} onChange={(e) => setStepItem(i, { desc: e.target.value })} placeholder="Description" /></div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* Page d'accueil — Vente flash */}
+          <section className="rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-4 mb-4">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-sm font-semibold text-[var(--color-text-primary)]">Vente flash</h2>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={flashSaleEnabled}
+                  onChange={(e) => setFlashSale({ enabled: e.target.checked })}
+                  className="w-4 h-4 accent-[var(--color-accent-blue)]"
+                />
+                <span className="text-sm text-[var(--color-text-secondary)]">Afficher le slide</span>
+              </label>
+            </div>
+            <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+              Slide rouge affiché sur la page d&apos;accueil, juste avant la sélection « Top produits ».
+              Il affiche un minuteur qui compte à rebours jusqu&apos;à l&apos;heure de fin, renouvelé
+              chaque jour.
+            </p>
+            <Input
+              label="Titre"
+              value={flashSale.title ?? ""}
+              onChange={(e) => setFlashSale({ title: e.target.value })}
+              placeholder="Vente flash | chaque jour"
+            />
+            <div className="mt-3">
+              <Input
+                label="Sous-titre (optionnel)"
+                value={flashSale.subtitle ?? ""}
+                onChange={(e) => setFlashSale({ subtitle: e.target.value })}
+                placeholder="Offres limitées, chaque jour"
+              />
+            </div>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <Input
+                  label="Texte du bouton"
+                  value={flashSale.button_text ?? ""}
+                  onChange={(e) => setFlashSale({ button_text: e.target.value })}
+                  placeholder="Voir les ventes flash"
+                />
+              </div>
+              <div>
+                <Input
+                  label="Lien du bouton"
+                  value={flashSale.button_href ?? ""}
+                  onChange={(e) => setFlashSale({ button_href: e.target.value })}
+                  placeholder="/ventes-flash"
+                />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="block text-xs text-[var(--color-text-secondary)] mb-1">
+                Heure de fin du minuteur (HH:MM)
+              </label>
+              <input
+                value={flashSale.end_time ?? "23:59"}
+                onChange={(e) => setFlashSale({ end_time: e.target.value })}
+                placeholder="23:59"
+                className="w-40 h-10 px-3 rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] text-sm font-mono text-[var(--color-text-primary)]"
+              />
+              <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+                Le minuteur se réinitialise chaque jour à cette heure (ex. 23:59 pour la fin de journée).
+              </p>
             </div>
           </section>
         </>
