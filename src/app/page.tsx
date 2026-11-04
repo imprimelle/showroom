@@ -80,6 +80,9 @@ export default async function HomePage() {
   // Slide « Vente flash » (indépendant, juste avant la sélection).
   const flashSale = settings.flash_sale;
   const flashEnabled = flashSale?.enabled !== false;
+  const flashProducts = (flashSale?.product_slugs || [])
+    .map((slug) => products.find((p) => p.slug === slug))
+    .filter((p): p is ShowcaseProduct => Boolean(p));
 
   // Produits les plus populaires (fallback des slides du hero).
   const featured = byPopularity.slice(0, 6);
@@ -166,6 +169,7 @@ export default async function HomePage() {
             buttonText={flashSale?.button_text || DEFAULT_FLASH_SALE.button_text}
             buttonHref={flashSale?.button_href || DEFAULT_FLASH_SALE.button_href}
             endTime={flashSale?.end_time || DEFAULT_FLASH_SALE.end_time}
+            products={flashProducts}
           />
         </div>
       )}

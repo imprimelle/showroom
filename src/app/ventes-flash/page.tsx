@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default async function VentesFlashPage() {
-  const [settings, products] = await Promise.all([
+  const [settings, allProducts] = await Promise.all([
     getShowcaseSettings(),
     getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
   ]);
@@ -23,6 +23,15 @@ export default async function VentesFlashPage() {
   const title = fs?.title || DEFAULT_FLASH_SALE.title;
   const subtitle = fs?.subtitle;
   const endTime = fs?.end_time || DEFAULT_FLASH_SALE.end_time;
+
+  // Produits de la vente flash : ceux configurés dans l'admin, sinon tout le catalogue.
+  const slugs = fs?.product_slugs || [];
+  const products =
+    slugs.length > 0
+      ? slugs
+          .map((slug) => allProducts.find((p) => p.slug === slug))
+          .filter((p): p is ShowcaseProduct => Boolean(p))
+      : allProducts;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">

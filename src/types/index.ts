@@ -494,5 +494,7 @@ export interface ShowcaseSettings {
     button_href?: string;
     /** Heure de fin quotidienne du minuteur, format « HH:MM » (24 h). Défaut « 23:59 ». */
     end_time?: string;
+    /** Slugs des produits affichés dans le slide (vide = aucun produit / repli auto). */
+    product_slugs?: string[];
   };
 }

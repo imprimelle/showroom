@@ -40,9 +40,7 @@ export function WishlistClient() {
       online_enabled: !!item.online_enabled,
       cash_on_delivery: !!item.cash_on_delivery,
     });
-    if (item.image_url) {
-      flyToCart(imgProxyUrl(item.image_url, 120, 160), e.currentTarget);
-    }
+    flyToCart(e.currentTarget);
   };
 
   return (

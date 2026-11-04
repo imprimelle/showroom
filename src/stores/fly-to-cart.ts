@@ -4,7 +4,6 @@ import { create } from "zustand";
 
 export interface FlyFlight {
   id: string;
-  imageUrl: string;
   startX: number;
   startY: number;
   startW: number;
@@ -33,11 +32,13 @@ export const useFlyToCartStore = create<FlyToCartStore>((set) => ({
 }));
 
 /**
- * Déclenche l'animation « produit qui vole vers le panier ».
+ * Déclenche l'animation « cadeau 3D qui vole vers le panier », en 2 temps :
+ *   1. le cadeau apparaît sur le bouton d'ajout avec une rotation 3D ;
+ *   2. il s'envole vers l'icône panier de la navbar.
  * `sourceEl` = l'élément cliqué (bouton d'ajout). La cible est l'icône panier
  * de la navbar (`#cart-nav-icon`), avec repli vers le coin haut-droit.
  */
-export function flyToCart(imageUrl: string, sourceEl: Element) {
+export function flyToCart(sourceEl: Element) {
   const start = sourceEl.getBoundingClientRect();
   const target = document.getElementById("cart-nav-icon");
   const end = target
@@ -45,7 +46,6 @@ export function flyToCart(imageUrl: string, sourceEl: Element) {
     : { left: window.innerWidth - 60, top: 16, width: 20, height: 20 };
 
   useFlyToCartStore.getState().launch({
-    imageUrl,
     startX: start.left,
     startY: start.top,
     startW: start.width,

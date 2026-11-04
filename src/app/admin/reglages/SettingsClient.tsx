@@ -496,6 +496,7 @@ export function SettingsClient({ initialData, products }: {
               end_time: /^\d{1,2}:\d{2}$/.test(data.flash_sale.end_time?.trim() || "")
                 ? data.flash_sale.end_time!.trim()
                 : undefined,
+              product_slugs: (data.flash_sale.product_slugs || []).filter(Boolean),
             }
           : undefined,
       };
@@ -793,6 +794,17 @@ export function SettingsClient({ initialData, products }: {
               />
               <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
                 Le minuteur se réinitialise chaque jour à cette heure (ex. 23:59 pour la fin de journée).
+              </p>
+            </div>
+            <div className="mt-4">
+              <ProductSearchSelect
+                products={products}
+                selectedSlugs={flashSale.product_slugs ?? []}
+                onChange={(next) => setFlashSale({ product_slugs: next })}
+                label="Produits à afficher dans le slide"
+              />
+              <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+                Sélectionnez les produits présentés dans le slider du slide « Vente flash » (vide = aucun produit).
               </p>
             </div>
           </section>

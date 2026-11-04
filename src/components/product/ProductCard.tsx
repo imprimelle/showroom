@@ -27,6 +27,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
   const formatPrice = useFormatPrice();
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [adding, setAdding] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
   const remises = useRemisesStore((s) => s.config);
   const wishlistItems = useWishlistStore((s) => s.items);
@@ -36,6 +37,10 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
   const lowestPrice = getMinPrice(product.variants);
   const priceRef = { id: product.id, family: product.showcase?.family, category: product.showcase?.category };
   const lowestBreakdown = lowestPrice != null ? computePrice(lowestPrice, priceRef, remises) : null;
+  const discountPercent =
+    lowestBreakdown?.discounted && lowestBreakdown.reference > 0
+      ? Math.round((lowestBreakdown.discountAmount / lowestBreakdown.reference) * 100)
+      : null;
 
   const firstVariant = product.variants?.[0];
 
@@ -58,9 +63,11 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
       online_enabled: !!product.showcase?.payment?.online_enabled,
       cash_on_delivery: !!product.showcase?.payment?.cash_on_delivery,
     });
-    // Miniature qui vole vers le panier (liste uniquement — désactivé sur la fiche produit).
-    if (animateAddToCart && product.main_image_url) {
-      flyToCart(imgProxyUrl(product.main_image_url, 120, 160), e.currentTarget);
+    // Cadeau 3D qui vole vers le panier (liste uniquement — désactivé sur la fiche produit).
+    if (animateAddToCart) {
+      setAdding(true);
+      flyToCart(e.currentTarget);
+      window.setTimeout(() => setAdding(false), 450);
     }
   };
 
@@ -86,7 +93,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
   return (
     <Link
       href={`/collection/${product.slug}`}
-      className="group block rounded-2xl overflow-hidden bg-[var(--color-surface-card)] border border-[var(--color-border-default)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+      className="group block rounded-xl overflow-hidden bg-[var(--color-surface-card)] border border-[var(--color-border-default)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
     >
       {/* Image */}
       <div className="relative aspect-[3/4] overflow-hidden bg-[var(--color-bg-tertiary)]">
@@ -113,14 +120,21 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
           </div>
         )}
 
+        {/* Badge remise -X% (vert discret, en haut à gauche) */}
+        {discountPercent != null && (
+          <span className="absolute top-2 left-2 z-10 inline-flex items-center rounded-full bg-[var(--color-success)] px-1.5 py-0.5 text-[11px] font-bold leading-none text-white shadow-sm">
+            -{discountPercent}%
+          </span>
+        )}
+
         {/* Quick-add (persistant, ergonomique mobile) */}
         {firstVariant && firstVariant.price != null && (
           <button
             onClick={handleQuickAdd}
             aria-label="Ajouter au panier"
-            className="absolute bottom-2.5 right-2.5 z-10 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] shadow-md flex items-center justify-center hover:bg-[var(--color-text-primary)] hover:text-white active:scale-95 transition-colors"
+            className="absolute bottom-2.5 right-2.5 z-10 w-7 h-7 rounded-full bg-white text-[var(--color-text-primary)] shadow-md flex items-center justify-center hover:bg-[var(--color-text-primary)] hover:text-white active:scale-95 transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className={cn("w-3.5 h-3.5 transition-all duration-200", adding && "scale-0 opacity-0")} />
           </button>
         )}
 
@@ -141,7 +155,7 @@ export function ProductCard({ product, sizes = DEFAULT_SIZES, animateAddToCart =
 
       {/* Info */}
       <div className="p-3">
-        <h3 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug line-clamp-2">
+        <h3 className="text-sm font-medium text-[var(--color-text-primary)] leading-snug truncate">
           {product.name}
         </h3>
 

@@ -10,6 +10,8 @@ interface ProductSearchSelectProps {
   /** Slugs actuellement sélectionnés. */
   selectedSlugs: string[];
   onChange: (next: string[]) => void;
+  /** Libellé au-dessus du champ de recherche. */
+  label?: string;
 }
 
 /**
@@ -17,7 +19,7 @@ interface ProductSearchSelectProps {
  * Champ de recherche filtrant les produits publiés (insensible aux accents) ;
  * les produits sélectionnés s'affichent en chips amovibles.
  */
-export function ProductSearchSelect({ products, selectedSlugs, onChange }: ProductSearchSelectProps) {
+export function ProductSearchSelect({ products, selectedSlugs, onChange, label }: ProductSearchSelectProps) {
   const [query, setQuery] = useState("");
 
   const selected = products.filter((p) => selectedSlugs.includes(p.slug));
@@ -37,7 +39,9 @@ export function ProductSearchSelect({ products, selectedSlugs, onChange }: Produ
 
   return (
     <div className="space-y-2">
-      <span className="block text-xs text-[var(--color-text-secondary)]">Produits liés (bouton « Produits »)</span>
+      <span className="block text-xs text-[var(--color-text-secondary)]">
+        {label ?? "Produits liés (bouton « Produits »)"}
+      </span>
 
       {/* Recherche */}
       <div className="relative">
