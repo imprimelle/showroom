@@ -68,14 +68,19 @@ export default async function HomePage() {
     { familyId: "tableaux-decoratifs", title: "Tops des tableaux", bg: "bg-[#DBEAFE]/60" },
     { familyId: "enseignes-signaletique", title: "Tops des enseignes", bg: "bg-[#D1FAE5]/60" },
   ] as const;
-  const featuredSliders = FEATURED_FAMILIES.map((f) => ({
-    ...f,
-    products: byPopularity
-      .filter(
-        (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === f.familyId
-      )
-      .slice(0, 6),
-  })).filter((s) => s.products.length > 0);
+  const featuredSliders = FEATURED_FAMILIES.map((f) => {
+    const media = settings.categories?.[f.familyId]?.media;
+    return {
+      ...f,
+      products: byPopularity
+        .filter(
+          (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === f.familyId
+        )
+        .slice(0, 6),
+      // Vidéo d'en-tête : la même que celle de la section « Nos catégories ».
+      video: media?.type === "video" ? media : null,
+    };
+  }).filter((s) => s.products.length > 0);
 
   // Slide « Vente flash » (indépendant, juste avant la sélection).
   const flashSale = settings.flash_sale;
@@ -192,20 +197,29 @@ export default async function HomePage() {
             />
             <div className="space-y-4">
               {featuredSliders.map((s) => (
-                <div key={s.familyId} className={`${s.bg} rounded-lg px-2 py-3`}>
-                  <div className="mb-2 flex items-center justify-between gap-3 px-1">
-                    <h3 className="text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
-                      {s.title}
-                    </h3>
-                    <Link
-                      href={`/collection/categorie/${s.familyId}`}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] bg-white/60 px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-white transition-colors"
-                    >
-                      Explorer
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
+                <div key={s.familyId} className={`${s.bg} rounded-lg overflow-hidden`}>
+                  {s.video && (
+                    <MediaRenderer
+                      url={s.video.url}
+                      type="video"
+                      className="w-full aspect-video object-cover"
+                    />
+                  )}
+                  <div className="px-2 py-3">
+                    <div className="mb-2 flex items-center justify-between gap-3 px-1">
+                      <h3 className="text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
+                        {s.title}
+                      </h3>
+                      <Link
+                        href={`/collection/categorie/${s.familyId}`}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] bg-white/60 px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-white transition-colors"
+                      >
+                        Explorer
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                    <ProductSlider products={s.products} autoPlay={false} />
                   </div>
-                  <ProductSlider products={s.products} autoPlay={false} />
                 </div>
               ))}
             </div>

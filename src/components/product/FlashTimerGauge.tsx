@@ -49,7 +49,9 @@ export function FlashTimerGauge({
   }, [endTime]);
 
   const pad = (n: number) => String(n).padStart(2, "0");
-  const fraction = remaining == null ? 1 : Math.max(0, Math.min(1, remaining / DAY_MS));
+  // Jauge « remplie à l'approche de la fin » : plus il reste peu de temps,
+  // plus la barre est remplie (spécifique à la vente flash, inverse du groupage).
+  const fraction = remaining == null ? 0 : Math.max(0, Math.min(1, 1 - remaining / DAY_MS));
   const total = remaining == null ? 0 : Math.max(0, Math.floor(remaining / 1000));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
