@@ -64,9 +64,9 @@ export default async function HomePage() {
     (a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0)
   );
   const FEATURED_FAMILIES = [
-    { familyId: "mobilier-decorations", title: "Tops du mobilier", bg: "bg-[#FDE9D0]/60" },
-    { familyId: "tableaux-decoratifs", title: "Tops des tableaux", bg: "bg-[#DBEAFE]/60" },
-    { familyId: "enseignes-signaletique", title: "Tops des enseignes", bg: "bg-[#D1FAE5]/60" },
+    { familyId: "mobilier-decorations", title: "Top du Mobilier", bg: "bg-[#FDE9D0]/60" },
+    { familyId: "tableaux-decoratifs", title: "Top des Tableaux", bg: "bg-[#DBEAFE]/60" },
+    { familyId: "enseignes-signaletique", title: "Top des Enseignes", bg: "bg-[#D1FAE5]/60" },
   ] as const;
   const featuredSliders = FEATURED_FAMILIES.map((f) => {
     const media = settings.categories?.[f.familyId]?.media;
@@ -103,26 +103,6 @@ export default async function HomePage() {
     : settings.hero?.video_url
       ? [{ type: "video", url: settings.hero.video_url }]
       : fallbackSlides;
-
-  const familyCounts = CATEGORIES.map((fam) => {
-    const prod = products.find(
-      (p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id && p.main_image_url
-    );
-    const custom = settings.categories?.[fam.id];
-    const media: MediaItem | null = custom?.media
-      ? custom.media
-      : prod?.main_image_url
-        ? { type: "image" as const, url: prod.main_image_url, alt: fam.name }
-        : fam.image
-          ? { type: "image" as const, url: fam.image, alt: fam.name }
-          : null;
-    return {
-      ...fam,
-      count: products.filter((p) => resolveFamily(p.showcase?.family, p.showcase?.category) === fam.id).length,
-      media,
-      title: custom?.title || fam.name,
-    };
-  });
 
   const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
 
@@ -207,7 +187,7 @@ export default async function HomePage() {
                   )}
                   <div className="px-2 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3 px-1">
-                      <h3 className="text-lg md:text-xl font-semibold font-display text-[var(--color-text-primary)]">
+                      <h3 className="text-xl md:text-2xl font-bold font-display text-[var(--color-text-primary)]">
                         {s.title}
                       </h3>
                       <Link
@@ -234,114 +214,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 2.5 Groupages en cours (juste sous la sélection) ===== */}
-      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
-
-      {/* ===== 3. Catégories (focus familles) ===== */}
-      <section className="bg-[var(--color-bg-secondary)] pt-6 pb-8 md:pt-8 md:pb-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <SectionHeader
-            align="left"
-            eyebrow="Explorez"
-            title="Nos catégories"
-            subtitle="Nos univers pour illuminer vos espaces"
-            eyebrowKey="home.categories.eyebrow"
-            titleKey="home.categories.title"
-            subtitleKey="home.categories.subtitle"
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            {familyCounts.map((fam) => (
-              <div
-                key={fam.id}
-                className="group relative flex flex-col overflow-hidden rounded-3xl bg-[var(--color-surface-card)] border border-[var(--color-border-default)] hover:border-[var(--color-border-strong)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-              >
-                {/* Média 4/5 — cliquable vers l'univers */}
-                <Link
-                  href={`/collection/categorie/${fam.id}`}
-                  aria-label={`Voir l'univers ${fam.title}`}
-                  className="relative aspect-[4/5] overflow-hidden block cursor-pointer bg-[var(--color-bg-tertiary)]"
-                >
-                  {fam.media ? (
-                    <MediaRenderer
-                      url={fam.media.url}
-                      alt={fam.media.alt || fam.name}
-                      type={fam.media.type}
-                      imgWidth={800}
-                      imgHeight={1000}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${fam.color}`} />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-
-                  {/* Icône (chip verre dépoli, haut-gauche) */}
-                  <div className="absolute top-3 left-3 w-11 h-11 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center text-2xl shadow-sm">
-                    {fam.icon}
-                  </div>
-
-                  {/* Compteur (badge, haut-droite) */}
-                  <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/40 backdrop-blur-md text-white border border-white/15">
-                    {fam.count} produit{fam.count > 1 ? "s" : ""}
-                  </span>
-
-                  {/* Titre (bas-gauche) */}
-                  <div className="absolute bottom-4 left-4 right-16">
-                    <h3 className="text-white text-xl md:text-2xl font-display font-bold leading-tight drop-shadow-sm">
-                      {fam.title}
-                    </h3>
-                  </div>
-
-                  {/* Flèche (bas-droite) */}
-                  <span className="absolute bottom-3 right-3 w-9 h-9 rounded-full bg-white text-[var(--color-text-primary)] flex items-center justify-center shadow-md group-hover:bg-[var(--color-accent-amber)] group-hover:text-white transition-colors">
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  </span>
-                </Link>
-
-                {/* Sous-catégories + CTA */}
-                <div className="p-4 flex flex-col flex-1 gap-3">
-                  {fam.children.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {fam.children.map((sub) => (
-                        <Link
-                          key={sub.id}
-                          href={`/collection?category=${sub.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-[var(--color-border-default)] text-[var(--color-text-secondary)] hover:border-[var(--color-text-primary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
-                        >
-                          <span className="text-sm leading-none">{sub.icon}</span>
-                          {sub.name}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[var(--color-text-tertiary)]">
-                      <EditableText contentKey="home.categories.empty" defaultValue="Bientôt disponible" />
-                    </p>
-                  )}
-
-                  <Link
-                    href={`/collection/categorie/${fam.id}`}
-                    className="mt-auto pt-1 block"
-                  >
-                    <span className="flex w-full items-center justify-center gap-2 rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg-primary)] font-semibold min-h-[44px] px-6 text-sm transition-colors hover:bg-[#2A2A2A]">
-                      <EditableText contentKey="home.categories.explore" defaultValue="Explorer la catégorie" />
-                      <ArrowRight className="w-4 h-4" />
-                    </span>
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 4. Devenir revendeur (après les catégories) ===== */}
-      <ResellerHomeSection />
-
-      {/* ===== 5. Guide de choix ===== */}
-      <ChoiceGuide products={products} />
-
-      {/* ===== 4. Réassurance ===== */}
+      {/* ===== 3. Réassurance (juste après les « Top produits ») ===== */}
       <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
         <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
           {reassuranceItems.map((item) => (
@@ -353,6 +226,9 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ===== 4. Groupages en cours (suit la réassurance) ===== */}
+      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
       {/* ===== 5. Réalisations ===== */}
       {realisationImages.length > 0 && (
@@ -443,7 +319,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== 8. Points de vente partenaires (tout en bas) ===== */}
+      {/* ===== 8. Besoin d'un conseil ? (guide de choix — avant « Devenir partenaire ») ===== */}
+      <ChoiceGuide products={products} />
+
+      {/* ===== 9. Devenir revendeur / partenaire ===== */}
+      <ResellerHomeSection />
+
+      {/* ===== 10. Points de vente partenaires (tout en bas) ===== */}
       <StoreDirectory />
     </div>
   );

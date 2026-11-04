@@ -1,32 +1,52 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, RotateCcw } from "lucide-react";
+import {
+  ArrowRight,
+  RotateCcw,
+  Check,
+  MapPin,
+  Home,
+  Layers,
+  Sparkles,
+  Sofa,
+  PiggyBank,
+  Coins,
+  Gem,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EditableText } from "@/components/admin/content/EditableText";
-import { getMinPrice } from "@/lib/utils";
+import { getMinPrice, cn } from "@/lib/utils";
 import { resolveFamily } from "@/lib/categories";
 import type { ShowcaseProduct } from "@/lib/products";
 
 type Placement = "exterieur" | "interieur" | "les-deux";
 type Universe = "enseigne" | "mobilier";
 
-const PLACEMENTS: { id: Placement; label: string; hint: string }[] = [
-  { id: "exterieur", label: "Extérieur", hint: "Vitrine, façade, devanture" },
-  { id: "interieur", label: "Intérieur", hint: "Boutique, salon, bureau" },
-  { id: "les-deux", label: "Les deux", hint: "Je ne sais pas encore" },
+interface Option {
+  id: string;
+  label: string;
+  hint: string;
+  Icon: LucideIcon;
+}
+
+const PLACEMENTS: Option[] = [
+  { id: "exterieur", label: "Extérieur", hint: "Vitrine, façade", Icon: MapPin },
+  { id: "interieur", label: "Intérieur", hint: "Boutique, salon", Icon: Home },
+  { id: "les-deux", label: "Les deux", hint: "Je ne sais pas", Icon: Layers },
 ];
 
-const UNIVERSES: { id: Universe; label: string; hint: string }[] = [
-  { id: "enseigne", label: "Enseignes & Signalétique", hint: "Être vu et identifié" },
-  { id: "mobilier", label: "Mobilier & Décorations", hint: "Embellir un espace" },
+const UNIVERSES: Option[] = [
+  { id: "enseigne", label: "Enseignes & Signalétique", hint: "Être vu et identifié", Icon: Sparkles },
+  { id: "mobilier", label: "Mobilier & Décorations", hint: "Embellir un espace", Icon: Sofa },
 ];
 
-const BUDGETS: { id: "eco" | "standard" | "premium"; label: string; hint: string }[] = [
-  { id: "eco", label: "Économique", hint: "moins de 150 000 F" },
-  { id: "standard", label: "Standard", hint: "150 000 à 350 000 F" },
-  { id: "premium", label: "Premium", hint: "plus de 350 000 F" },
+const BUDGETS: Option[] = [
+  { id: "eco", label: "Économique", hint: "moins de 150 000 F", Icon: PiggyBank },
+  { id: "standard", label: "Standard", hint: "150 000 – 350 000 F", Icon: Coins },
+  { id: "premium", label: "Premium", hint: "plus de 350 000 F", Icon: Gem },
 ];
 
 const budgetBucket = (price: number | null): "eco" | "standard" | "premium" => {
@@ -80,11 +100,12 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
   const ctaHref = `/collection${ctaParams.toString() ? `?${ctaParams.toString()}` : ""}`;
 
   const optionClass = (active: boolean) =>
-    `flex flex-col items-start gap-0.5 w-full px-4 py-3 rounded-2xl border text-left transition-colors ${
+    cn(
+      "flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl border-2 text-left transition-all duration-150",
       active
-        ? "border-[var(--color-text-primary)] bg-[var(--color-bg-tertiary)]"
-        : "border-[var(--color-border-default)] bg-[var(--color-surface-card)] hover:border-[var(--color-border-strong)]"
-    }`;
+        ? "border-[var(--color-text-primary)] bg-[var(--color-text-primary)] text-white shadow-md"
+        : "border-[var(--color-border-default)] bg-[var(--color-surface-card)] hover:border-[var(--color-text-primary)] hover:shadow-sm"
+    );
 
   const questionTitles = [
     "Où sera installé votre produit ?",
@@ -92,14 +113,38 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
     "Quel est votre budget ?",
   ];
 
+  const renderOption = (opt: Option, active: boolean, onClick: () => void) => (
+    <button key={opt.id} type="button" onClick={onClick} className={optionClass(active)}>
+      <span
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
+          active
+            ? "bg-white/15 text-white"
+            : "bg-[var(--color-accent-amber-soft)] text-[var(--color-accent-amber)]"
+        )}
+      >
+        <opt.Icon className="h-5 w-5" />
+      </span>
+      <span className="flex min-w-0 flex-col items-start">
+        <span className={cn("font-semibold", active ? "text-white" : "text-[var(--color-text-primary)]")}>
+          {opt.label}
+        </span>
+        <span className={cn("text-xs", active ? "text-white/75" : "text-[var(--color-text-tertiary)]")}>
+          {opt.hint}
+        </span>
+      </span>
+      {active && <Check className="ml-auto h-5 w-5 shrink-0 text-white" />}
+    </button>
+  );
+
   return (
-    <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-      <div className="max-w-2xl mx-auto">
+    <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border-default)] py-12 md:py-16">
+      <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <SectionHeader
-          eyebrow="Trouvez le bon produit"
+          eyebrow="Conseil personnalisé"
           title="Besoin d&apos;un conseil ?"
-          subtitle="Répondez à 3 questions pour trouver le produit qu&apos;il vous faut"
+          subtitle="3 questions, des produits sur mesure"
           eyebrowKey="home.guide.eyebrow"
           titleKey="home.guide.title"
           subtitleKey="home.guide.subtitle"
@@ -107,15 +152,25 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
         {/* Progress */}
         {!isResult && (
-          <div className="flex gap-1.5 justify-center mb-8">
-            {Array.from({ length: totalSteps }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === step ? "w-8 bg-[var(--color-text-primary)]" : i < step ? "w-3 bg-[var(--color-text-primary)]/60" : "w-3 bg-[var(--color-border-default)]"
-                }`}
-              />
-            ))}
+          <div className="mb-8">
+            <p className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
+              Question {step + 1} / {totalSteps}
+            </p>
+            <div className="mt-2 flex gap-1.5">
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-1.5 flex-1 rounded-full transition-all duration-300",
+                    i === step
+                      ? "bg-[var(--color-text-primary)]"
+                      : i < step
+                        ? "bg-[var(--color-accent-amber)]"
+                        : "bg-[var(--color-border-strong)]"
+                  )}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -126,19 +181,12 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
               <EditableText contentKey="home.guide.q1" defaultValue={questionTitles[0]} />
             </h3>
             <div className="space-y-2.5">
-              {PLACEMENTS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setPlacement(p.id);
-                    setStep(1);
-                  }}
-                  className={optionClass(placement === p.id)}
-                >
-                  <span className="font-medium text-[var(--color-text-primary)]">{p.label}</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)]">{p.hint}</span>
-                </button>
-              ))}
+              {PLACEMENTS.map((p) =>
+                renderOption(p, placement === p.id, () => {
+                  setPlacement(p.id as Placement);
+                  setStep(1);
+                })
+              )}
             </div>
           </div>
         )}
@@ -150,21 +198,17 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
               <EditableText contentKey="home.guide.q2" defaultValue={questionTitles[1]} />
             </h3>
             <div className="space-y-2.5">
-              {UNIVERSES.map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    setUniverse(u.id);
-                    setStep(2);
-                  }}
-                  className={optionClass(universe === u.id)}
-                >
-                  <span className="font-medium text-[var(--color-text-primary)]">{u.label}</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)]">{u.hint}</span>
-                </button>
-              ))}
+              {UNIVERSES.map((u) =>
+                renderOption(u, universe === u.id, () => {
+                  setUniverse(u.id as Universe);
+                  setStep(2);
+                })
+              )}
             </div>
-            <button onClick={() => setStep(0)} className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
+            <button
+              onClick={() => setStep(0)}
+              className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
               <EditableText contentKey="home.guide.back" defaultValue="← Revenir" />
             </button>
           </div>
@@ -177,21 +221,17 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
               <EditableText contentKey="home.guide.q3" defaultValue={questionTitles[2]} />
             </h3>
             <div className="space-y-2.5">
-              {BUDGETS.map((b) => (
-                <button
-                  key={b.id}
-                  onClick={() => {
-                    setBudget(b.id);
-                    setStep(3);
-                  }}
-                  className={optionClass(budget === b.id)}
-                >
-                  <span className="font-medium text-[var(--color-text-primary)]">{b.label}</span>
-                  <span className="text-xs text-[var(--color-text-tertiary)]">{b.hint}</span>
-                </button>
-              ))}
+              {BUDGETS.map((b) =>
+                renderOption(b, budget === b.id, () => {
+                  setBudget(b.id as "eco" | "standard" | "premium");
+                  setStep(3);
+                })
+              )}
             </div>
-            <button onClick={() => setStep(1)} className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors">
+            <button
+              onClick={() => setStep(1)}
+              className="w-full text-center text-sm text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+            >
               <EditableText contentKey="home.guide.back" defaultValue="← Revenir" />
             </button>
           </div>
@@ -208,7 +248,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
                 {matches.length > 0 ? (
                   <EditableText contentKey="home.guide.result_found" defaultValue="Sélectionnés selon vos réponses" />
                 ) : (
-                  <EditableText contentKey="home.guide.result_empty" defaultValue="Essayez d'élargir vos critères — nous fabriquons aussi sur mesure." />
+                  <EditableText contentKey="home.guide.result_empty" defaultValue="Nous fabriquons aussi sur mesure." />
                 )}
               </p>
             </div>
