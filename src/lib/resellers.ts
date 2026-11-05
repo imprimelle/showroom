@@ -77,6 +77,36 @@ export async function getPublicStores(): Promise<PublicStore[]> {
 }
 
 /**
+ * Nombre de départ du compteur d'affiliés affiché dans la section « Devenir partenaire »
+ * (social proof). Le compteur affiché = ce nombre + le nombre réel d'affiliés actifs.
+ */
+export const AFFILIATE_BASE_COUNT = 74;
+
+const getAffiliateCountCached = unstable_cache(
+  async (): Promise<number> => {
+    const supabase = createServerClient();
+    const { count, error } = await supabase
+      .from("showcase_resellers")
+      .select("id", { count: "exact", head: true })
+      .eq("type", "affiliate")
+      .eq("status", "active");
+    if (error || count == null) return 0;
+    return count;
+  },
+  ["resellers-affiliate-count"],
+  { revalidate: 120, tags: ["resellers"] }
+);
+
+/** Nombre d'affiliés actifs (pour le compteur social proof). */
+export async function getAffiliateCount(): Promise<number> {
+  try {
+    return await getAffiliateCountCached();
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * Résout un affilié ACTIF depuis son `ref_code` (lien `?ref=CODE`).
  * Renvoie `null` si introuvable, non-actif, ou de type non-affilié.
  * À utiliser côté serveur uniquement (service-role).

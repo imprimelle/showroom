@@ -46,7 +46,8 @@ export function ResellerChoice() {
           return (
             <div
               key={c.type}
-              className="rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-6 flex flex-col"
+              id={c.type === "affiliate" ? "affiliation" : "point-de-vente"}
+              className="scroll-mt-24 rounded-2xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] p-6 flex flex-col"
             >
               <div className="w-11 h-11 rounded-2xl bg-[var(--color-accent-amber)]/15 text-[var(--color-accent-amber)] flex items-center justify-center mb-4">
                 <Icon className="w-5 h-5" />

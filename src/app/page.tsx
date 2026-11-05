@@ -18,8 +18,7 @@ import type { MediaItem } from "@/types";
 import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_SOCIAL_PROOF_STAT, DEFAULT_SOCIAL_PROOF_LABEL, DEFAULT_LOGOS, DEFAULT_FLASH_SALE, normalizeLogos } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
-import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
-import { StoreDirectory } from "@/components/resellers/StoreDirectory";
+import { PartnerSection } from "@/components/resellers/PartnerSection";
 import { ReassuranceBlock } from "@/components/home/ReassuranceBlock";
 import { SocialProofBlock } from "@/components/home/SocialProofBlock";
 import { HomeSearchBar } from "@/components/search/HomeSearchBar";
@@ -206,8 +205,9 @@ export default async function HomePage() {
             <ReassuranceBlock items={reassuranceItems} />
             <div className="mt-6 text-center md:hidden">
               <Link href="/collection">
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" className="gap-2">
                   <EditableText contentKey="home.featured.see_all_mobile" defaultValue="Voir tout le catalogue" />
+                  <ArrowRight className="h-4 w-4 text-[var(--color-text-tertiary)]" />
                 </Button>
               </Link>
             </div>
@@ -256,8 +256,9 @@ export default async function HomePage() {
           />
           <div className="mt-6 text-center md:hidden">
             <Link href="/realisations">
-              <Button variant="secondary" size="sm">
+              <Button variant="secondary" size="sm" className="gap-2">
                 <EditableText contentKey="home.realisations.see_all_mobile" defaultValue="Voir toutes les réalisations" />
+                <ArrowRight className="h-4 w-4 text-[var(--color-text-tertiary)]" />
               </Button>
             </Link>
           </div>
@@ -267,11 +268,8 @@ export default async function HomePage() {
       {/* ===== 8. Besoin d'un conseil ? (guide de choix — avant « Devenir partenaire ») ===== */}
       <ChoiceGuide products={products} />
 
-      {/* ===== 9. Devenir revendeur / partenaire ===== */}
-      <ResellerHomeSection />
-
-      {/* ===== 10. Points de vente partenaires (tout en bas) ===== */}
-      <StoreDirectory />
+      {/* ===== 9. Partenaires (affiliation + point de vente + carte) ===== */}
+      <PartnerSection />
     </div>
   );
 }
