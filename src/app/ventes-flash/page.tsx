@@ -36,7 +36,7 @@ export default async function VentesFlashPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       {/* Bandeau rouge + minuteur */}
-      <div className="rounded-lg bg-[#DC2626] px-5 py-6 md:px-8 md:py-8 mb-8">
+      <div className="rounded-lg bg-[#be1d3e] px-5 py-6 md:px-8 md:py-8 mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
           <div className="flex items-center gap-3">
             <span className="w-11 h-11 shrink-0 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center">

@@ -58,9 +58,9 @@ export default async function HomePage() {
     (a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0)
   );
   const FEATURED_FAMILIES = [
-    { familyId: "mobilier-decorations", title: "Top du Mobilier", bg: "bg-[#FDE9D0]/60", solid: "#FDE9D0", emoji: "🛋️" },
-    { familyId: "tableaux-decoratifs", title: "Top des Tableaux", bg: "bg-[#DBEAFE]/60", solid: "#DBEAFE", emoji: "🖼️" },
-    { familyId: "enseignes-signaletique", title: "Top des Enseignes", bg: "bg-[#D1FAE5]/60", solid: "#D1FAE5", emoji: "💡" },
+    { familyId: "mobilier-decorations", title: "Top du Mobilier", bg: "bg-[#FDE9D0]/60", icon: "/icons/family/canape-long.png" },
+    { familyId: "tableaux-decoratifs", title: "Top des Tableaux", bg: "bg-[#DBEAFE]/60", icon: "/icons/family/portrait.png" },
+    { familyId: "enseignes-signaletique", title: "Top des Enseignes", bg: "bg-[#D1FAE5]/60", icon: "/icons/family/ampoule.png" },
   ] as const;
   const featuredSliders = FEATURED_FAMILIES.map((f) => {
     const media = settings.categories?.[f.familyId]?.media;
@@ -182,8 +182,9 @@ export default async function HomePage() {
                   <div className="px-2 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3 px-1">
                       <div className="flex items-center gap-2.5">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-sm">
-                          {s.emoji}
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={s.icon} alt="" className="h-6 w-6 object-contain" />
                         </span>
                         <h3 className="text-xl md:text-2xl font-bold font-display text-[var(--color-text-primary)]">
                           {s.title}
@@ -192,13 +193,9 @@ export default async function HomePage() {
                       <Link
                         href={`/collection/categorie/${s.familyId}`}
                         aria-label={`Explorer ${s.title}`}
-                        className="flex shrink-0 items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-2.5 shadow-sm transition-transform hover:scale-105"
-                        style={{ backgroundColor: s.solid }}
+                        className="flex h-9 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-primary)] shadow-sm transition-colors hover:bg-[var(--color-bg-tertiary)]"
                       >
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-base shadow-sm">
-                          {s.emoji}
-                        </span>
-                        <ArrowRight className="h-4 w-4 text-white" />
+                        <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
                     <ProductSlider products={s.products} autoPlay={false} />

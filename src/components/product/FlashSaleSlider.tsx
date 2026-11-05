@@ -24,7 +24,7 @@ export function FlashSaleSlider({
   products = [],
 }: FlashSaleSliderProps) {
   return (
-    <div className="rounded-lg bg-[#DC2626] px-4 py-3.5 md:px-6 md:py-4">
+    <div className="rounded-lg bg-[#be1d3e] px-4 py-3.5 md:px-6 md:py-4">
       <div className="flex items-center gap-3">
         <span className="w-9 h-9 shrink-0 rounded-lg bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center">
           <Zap className="w-4 h-4 text-white" />
@@ -36,7 +36,7 @@ export function FlashSaleSlider({
         <Link
           href={buttonHref}
           aria-label="Voir les ventes flash"
-          className="shrink-0 w-9 h-9 rounded-full bg-white text-[#DC2626] flex items-center justify-center hover:bg-red-50 transition-colors"
+          className="shrink-0 w-9 h-9 rounded-full bg-white text-[#be1d3e] flex items-center justify-center hover:bg-red-50 transition-colors"
         >
           <ArrowRight className="w-4 h-4" />
         </Link>

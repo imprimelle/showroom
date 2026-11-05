@@ -127,7 +127,7 @@ export function GroupageHomeSlider({ items }: { items: GroupageHomeItem[] }) {
                   type="button"
                   onClick={() => scrollTo(currentIndex - 1)}
                   aria-label="Groupage précédent"
-                  className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                  className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -137,7 +137,7 @@ export function GroupageHomeSlider({ items }: { items: GroupageHomeItem[] }) {
                   type="button"
                   onClick={() => scrollTo(currentIndex + 1)}
                   aria-label="Groupage suivant"
-                  className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                  className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
