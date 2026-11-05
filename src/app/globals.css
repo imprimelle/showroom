@@ -241,6 +241,18 @@ body[data-sticky-product="1"] {
   box-shadow: 0 0 10px 1px rgba(255, 160, 0, 0.35);
 }
 
+/* === Marquee logos (bloc réassurance) : défilement infini gauche → droite === */
+@keyframes logo-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.logo-marquee {
+  animation: logo-marquee 28s linear infinite;
+}
+.logo-marquee:hover {
+  animation-play-state: paused;
+}
+
 /* ============================================================
    Page « Notre Histoire » — néon & immersif (mode sombre dédié)
    ============================================================ */

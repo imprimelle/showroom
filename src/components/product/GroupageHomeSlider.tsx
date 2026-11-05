@@ -119,27 +119,29 @@ export function GroupageHomeSlider({ items }: { items: GroupageHomeItem[] }) {
             ))}
           </div>
 
-          {/* Flèches — desktop uniquement */}
+          {/* Indicateurs de scroll — discrets, noir & blanc, contextuels */}
           {items.length > slidesPerView && (
             <>
-              <button
-                type="button"
-                onClick={() => scrollTo(currentIndex - 1)}
-                disabled={currentIndex === 0}
-                aria-label="Groupage précédent"
-                className="hidden md:flex absolute top-1/2 -translate-y-1/2 -left-4 w-10 h-10 rounded-full bg-white shadow-lg border border-[var(--color-border-default)] items-center justify-center text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollTo(currentIndex + 1)}
-                disabled={currentIndex >= maxIndex}
-                aria-label="Groupage suivant"
-                className="hidden md:flex absolute top-1/2 -translate-y-1/2 -right-4 w-10 h-10 rounded-full bg-white shadow-lg border border-[var(--color-border-default)] items-center justify-center text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
+              {currentIndex > 0 && (
+                <button
+                  type="button"
+                  onClick={() => scrollTo(currentIndex - 1)}
+                  aria-label="Groupage précédent"
+                  className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+              )}
+              {currentIndex < maxIndex && (
+                <button
+                  type="button"
+                  onClick={() => scrollTo(currentIndex + 1)}
+                  aria-label="Groupage suivant"
+                  className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              )}
             </>
           )}
         </div>

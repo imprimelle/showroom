@@ -113,23 +113,27 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
         ))}
       </div>
 
-      {/* Arrows — desktop only */}
+      {/* Indicateurs de scroll — discrets, noir & blanc, contextuels */}
       {products.length > slidesPerView && (
         <>
-          <button
-            onClick={() => scrollTo(currentIndex - 1)}
-            disabled={currentIndex === 0}
-            className="hidden md:flex absolute top-1/2 -translate-y-1/2 -left-4 w-10 h-10 rounded-full bg-white shadow-lg border border-[var(--color-border-default)] items-center justify-center text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => scrollTo(currentIndex + 1)}
-            disabled={currentIndex >= maxIndex}
-            className="hidden md:flex absolute top-1/2 -translate-y-1/2 -right-4 w-10 h-10 rounded-full bg-white shadow-lg border border-[var(--color-border-default)] items-center justify-center text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] disabled:opacity-30 disabled:cursor-not-allowed transition-all z-10"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+          {currentIndex > 0 && (
+            <button
+              onClick={() => scrollTo(currentIndex - 1)}
+              aria-label="Faire défiler vers la gauche"
+              className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          )}
+          {currentIndex < maxIndex && (
+            <button
+              onClick={() => scrollTo(currentIndex + 1)}
+              aria-label="Faire défiler vers la droite"
+              className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[var(--color-text-primary)] shadow-sm backdrop-blur-sm transition-colors hover:bg-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
         </>
       )}
 

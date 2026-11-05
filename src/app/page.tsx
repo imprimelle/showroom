@@ -12,14 +12,15 @@ import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
 import { getWhatsAppUrl, normalizePhone } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
-import { Truck, ShieldCheck, MapPin, Lock, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem } from "@/types";
-import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
+import { DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
 import { StoreDirectory } from "@/components/resellers/StoreDirectory";
+import { ReassuranceBlock } from "@/components/home/ReassuranceBlock";
 import { HomeSearchBar } from "@/components/search/HomeSearchBar";
 import { HomeQuickLinks } from "@/components/search/HomeQuickLinks";
 import { resolveQuickLinks, DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
@@ -27,7 +28,6 @@ import { FlashSaleSlider } from "@/components/product/FlashSaleSlider";
 
 export const dynamic = "force-dynamic";
 
-const reassuranceIcons = [Truck, ShieldCheck, MapPin, Lock];
 const stepIcons = ["🔍", "🛒", "📞", "🚚"];
 
 export default async function HomePage() {
@@ -43,12 +43,6 @@ export default async function HomePage() {
 
   const ctaTitle = settings.home?.cta_title || DEFAULT_CTA.title;
   const ctaDesc = settings.home?.cta_desc || DEFAULT_CTA.desc;
-  const homeReassurance = settings.home?.reassurance;
-  const reassuranceItems = DEFAULT_REASSURANCE.map((r, i) => ({
-    icon: reassuranceIcons[i],
-    title: homeReassurance?.[i]?.title || r.title,
-    desc: homeReassurance?.[i]?.desc || r.desc,
-  }));
   const homeSteps = settings.home?.steps;
   const stepItems = DEFAULT_STEPS.map((s, i) => ({
     icon: stepIcons[i],
@@ -64,9 +58,9 @@ export default async function HomePage() {
     (a, b) => (b.showcase?.popularity || 0) - (a.showcase?.popularity || 0)
   );
   const FEATURED_FAMILIES = [
-    { familyId: "mobilier-decorations", title: "Top du Mobilier", bg: "bg-[#FDE9D0]/60" },
-    { familyId: "tableaux-decoratifs", title: "Top des Tableaux", bg: "bg-[#DBEAFE]/60" },
-    { familyId: "enseignes-signaletique", title: "Top des Enseignes", bg: "bg-[#D1FAE5]/60" },
+    { familyId: "mobilier-decorations", title: "Top du Mobilier", bg: "bg-[#FDE9D0]/60", solid: "#FDE9D0", emoji: "🛋️" },
+    { familyId: "tableaux-decoratifs", title: "Top des Tableaux", bg: "bg-[#DBEAFE]/60", solid: "#DBEAFE", emoji: "🖼️" },
+    { familyId: "enseignes-signaletique", title: "Top des Enseignes", bg: "bg-[#D1FAE5]/60", solid: "#D1FAE5", emoji: "💡" },
   ] as const;
   const featuredSliders = FEATURED_FAMILIES.map((f) => {
     const media = settings.categories?.[f.familyId]?.media;
@@ -187,15 +181,24 @@ export default async function HomePage() {
                   )}
                   <div className="px-2 py-3">
                     <div className="mb-2 flex items-center justify-between gap-3 px-1">
-                      <h3 className="text-xl md:text-2xl font-bold font-display text-[var(--color-text-primary)]">
-                        {s.title}
-                      </h3>
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-sm">
+                          {s.emoji}
+                        </span>
+                        <h3 className="text-xl md:text-2xl font-bold font-display text-[var(--color-text-primary)]">
+                          {s.title}
+                        </h3>
+                      </div>
                       <Link
                         href={`/collection/categorie/${s.familyId}`}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--color-border-default)] bg-white/60 px-3 py-1 text-xs font-semibold text-[var(--color-accent-blue)] hover:bg-white transition-colors"
+                        aria-label={`Explorer ${s.title}`}
+                        className="flex shrink-0 items-center gap-1.5 rounded-full py-1.5 pl-1.5 pr-2.5 shadow-sm transition-transform hover:scale-105"
+                        style={{ backgroundColor: s.solid }}
                       >
-                        Explorer
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-base shadow-sm">
+                          {s.emoji}
+                        </span>
+                        <ArrowRight className="h-4 w-4 text-white" />
                       </Link>
                     </div>
                     <ProductSlider products={s.products} autoPlay={false} />
@@ -215,17 +218,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== 3. Réassurance (juste après les « Top produits ») ===== */}
-      <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
-        <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {reassuranceItems.map((item) => (
-            <div key={item.title} className="flex flex-col items-center text-center gap-2">
-              <item.icon className="w-7 h-7 text-[var(--color-accent-amber)]" />
-              <h4 className="font-semibold text-sm text-[var(--color-text-primary)]">{item.title}</h4>
-              <p className="text-xs text-[var(--color-text-secondary)]">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ReassuranceBlock />
 
       {/* ===== 4. Groupages en cours (suit la réassurance) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
