@@ -218,15 +218,7 @@ export default async function HomePage() {
       {/* ===== 3. Groupages en cours ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
-      {/* ===== 4. Preuve sociale (juste avant les réalisations) ===== */}
-      <SocialProofBlock
-        stat={socialProofStat}
-        label={socialProofLabel}
-        title={reassuranceTitle}
-        logos={resolvedLogos}
-      />
-
-      {/* ===== 5. Réalisations ===== */}
+      {/* ===== 4. Réalisations ===== */}
       {realisationImages.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-8 md:py-10">
           <SectionHeader
@@ -256,6 +248,12 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
+          <SocialProofBlock
+            stat={socialProofStat}
+            label={socialProofLabel}
+            title={reassuranceTitle}
+            logos={resolvedLogos}
+          />
           <div className="mt-6 text-center md:hidden">
             <Link href="/realisations">
               <Button variant="secondary" size="sm">
