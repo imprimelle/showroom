@@ -192,9 +192,18 @@ export function ResellersListClient({ resellers }: { resellers: ResellerRow[] })
         await patch(r.id, { status: "active", ref_code: refCode, promo_code: promoCode });
       } else {
         // Point de vente : active + génère un code ref + commission 12 % (si absente).
-        const body: Record<string, unknown> = { status: "active", ref_code: refCode };
+        // Publie automatiquement sur la carte publique et tente une géolocalisation
+        // best-effort si le point de vente n'a pas encore de coordonnées.
+        const body: Record<string, unknown> = { status: "active", ref_code: refCode, is_published: true };
         if (r.commission_rate == null) body.commission_rate = 12;
         await patch(r.id, body);
+        if (r.lat == null || r.lng == null) {
+          try {
+            await fetch(`/api/admin/resellers/${r.id}/geocode`, { method: "POST" });
+          } catch {
+            /* best-effort */
+          }
+        }
       }
       router.refresh();
     } catch (e) {
