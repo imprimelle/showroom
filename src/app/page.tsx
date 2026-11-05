@@ -192,9 +192,9 @@ export default async function HomePage() {
                       <Link
                         href={`/collection/categorie/${s.familyId}`}
                         aria-label={`Explorer ${s.title}`}
-                        className="flex h-9 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border-default)] bg-white text-[var(--color-text-primary)] shadow-sm transition-colors hover:bg-[var(--color-bg-tertiary)]"
+                        className="flex h-9 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-success)] text-white shadow-sm transition-colors hover:bg-[#15803d]"
                       >
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                       </Link>
                     </div>
                     <ProductSlider products={s.products} autoPlay={false} />

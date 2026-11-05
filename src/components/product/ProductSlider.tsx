@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "@/components/product/ProductCard";
 import type { ShowcaseProduct } from "@/lib/products";
 
@@ -120,18 +120,18 @@ export function ProductSlider({ products, autoPlay = true }: ProductSliderProps)
             <button
               onClick={() => scrollTo(currentIndex - 1)}
               aria-label="Faire défiler vers la gauche"
-              className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-9 w-10 items-center justify-center rounded-full bg-[var(--color-success)] text-white shadow-md transition-colors hover:bg-[#15803d]"
+              className="absolute top-1/2 -translate-y-1/2 -left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
             >
-              <ArrowLeft className="h-4 w-6" strokeWidth={2.5} />
+              <ChevronLeft className="h-4 w-4" />
             </button>
           )}
           {currentIndex < maxIndex && (
             <button
               onClick={() => scrollTo(currentIndex + 1)}
               aria-label="Faire défiler vers la droite"
-              className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-9 w-10 items-center justify-center rounded-full bg-[var(--color-success)] text-white shadow-md transition-colors hover:bg-[#15803d]"
+              className="absolute top-1/2 -translate-y-1/2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-black/80"
             >
-              <ArrowRight className="h-4 w-6" strokeWidth={2.5} />
+              <ChevronRight className="h-4 w-4" />
             </button>
           )}
         </>
