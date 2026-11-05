@@ -17,7 +17,7 @@ import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { MentionTextInput } from "@/components/admin/MentionTextInput";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType, HomeSearchQuickLink } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType, HomeSearchQuickLink, ClientLogo } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
 type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises" | "home_search";
@@ -118,9 +118,21 @@ export function SettingsClient({ initialData, products }: {
     list[i] = { ...(list[i] || {}), ...patch };
     setHome({ steps: list });
   };
-  const homeLogos = data.home?.logos || [];
-  const setLogosText = (text: string) =>
-    setHome({ logos: text.split("\n").map((s) => s.trim()).filter(Boolean) });
+  const homeLogos: ClientLogo[] = data.home?.logos || [];
+  const setLogoItem = (i: number, patch: Partial<ClientLogo>) => {
+    const list = [...homeLogos];
+    list[i] = { ...(list[i] || { name: "" }), ...patch };
+    setHome({ logos: list });
+  };
+  const addLogo = () => setHome({ logos: [...homeLogos, { name: "", logo_url: null }] });
+  const removeLogo = (i: number) => setHome({ logos: homeLogos.filter((_, idx) => idx !== i) });
+  const moveLogo = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= homeLogos.length) return;
+    const list = [...homeLogos];
+    [list[i], list[j]] = [list[j], list[i]];
+    setHome({ logos: list });
+  };
 
   // === Produits en vedette ===
   const featuredIds: string[] = data.home?.featured || [];
@@ -359,6 +371,14 @@ export function SettingsClient({ initialData, products }: {
       const cleanData: ShowcaseSettings = {
         ...data,
         hero: data.hero ? { ...data.hero, slides: (data.hero.slides || []).filter((s) => s.url) } : undefined,
+        home: data.home
+          ? {
+              ...data.home,
+              logos: (data.home.logos || [])
+                .map((l) => ({ name: (l.name || "").trim(), logo_url: l.logo_url?.trim() || null }))
+                .filter((l) => l.name || l.logo_url),
+            }
+          : undefined,
         categories: Object.fromEntries(
           Object.entries(data.categories || {}).map(([id, c]) => [
             id,
@@ -713,7 +733,12 @@ export function SettingsClient({ initialData, products }: {
             <div className="mt-3"><Input label="Texte CTA devis" value={getVal("home.cta_desc")} onChange={(e) => update("home.cta_desc", e.target.value)} /></div>
 
             <div className="mt-4">
-              <Input label="Titre du bloc réassurance" value={getVal("home.reassurance_title")} onChange={(e) => update("home.reassurance_title", e.target.value)} placeholder="Ils nous ont fait confiance" />
+              <Input label="Stat preuve sociale (chiffre animé)" value={getVal("home.social_proof_stat")} onChange={(e) => update("home.social_proof_stat", e.target.value)} placeholder="+1240" />
+              <div className="mt-2"><Input label="Libellé du stat" value={getVal("home.social_proof_label")} onChange={(e) => update("home.social_proof_label", e.target.value)} placeholder="Business & Particulier" /></div>
+            </div>
+
+            <div className="mt-4">
+              <Input label="Titre du bloc preuve sociale" value={getVal("home.reassurance_title")} onChange={(e) => update("home.reassurance_title", e.target.value)} placeholder="Nous ont fait confiance" />
             </div>
 
             <div className="mt-4">
@@ -727,19 +752,73 @@ export function SettingsClient({ initialData, products }: {
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                Logos « Ils nous ont fait confiance » (un par ligne)
-              </label>
-              <textarea
-                value={homeLogos.join("\n")}
-                onChange={(e) => setLogosText(e.target.value)}
-                rows={6}
-                placeholder={"AFRILUX\nNOVATECH\nAZUR GROUP"}
-                className="w-full rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent-blue)]"
-              />
-              <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
-                Un nom de logo par ligne. Laissez vide pour masquer le slider.
-              </p>
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-sm font-medium text-[var(--color-text-secondary)]">
+                  Logos « Nous ont fait confiance » (nom + logo)
+                </span>
+                <button
+                  type="button"
+                  onClick={addLogo}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-bg-tertiary)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Ajouter
+                </button>
+              </div>
+              {homeLogos.length === 0 && (
+                <p className="mb-2 text-xs text-[var(--color-text-tertiary)]">
+                  Aucune entreprise. Cliquez « Ajouter » pour en créer une.
+                </p>
+              )}
+              <div className="space-y-3">
+                {homeLogos.map((logo, i) => (
+                  <div key={i} className="rounded-lg border border-[var(--color-border-default)] bg-[var(--color-bg-secondary)] p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Input
+                          value={logo.name}
+                          onChange={(e) => setLogoItem(i, { name: e.target.value })}
+                          placeholder="Nom de l'entreprise"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => moveLogo(i, -1)}
+                        disabled={i === 0}
+                        aria-label="Monter"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border-default)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] disabled:opacity-40"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveLogo(i, 1)}
+                        disabled={i === homeLogos.length - 1}
+                        aria-label="Descendre"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border-default)] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] disabled:opacity-40"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeLogo(i)}
+                        aria-label="Supprimer"
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border-default)] text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-2">
+                      <MediaField
+                        label="Logo (image)"
+                        hint="Transparent/PNG recommandé. Si vide, le nom est affiché."
+                        accept="image/*"
+                        value={logo.logo_url ? { type: "image", url: logo.logo_url } : null}
+                        onChange={(media) => setLogoItem(i, { logo_url: media?.url ?? null })}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="mt-4">

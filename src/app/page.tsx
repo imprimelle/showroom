@@ -15,7 +15,7 @@ import { quoteMessage } from "@/lib/whatsapp";
 import { ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem } from "@/types";
-import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_LOGOS, DEFAULT_FLASH_SALE } from "@/lib/home";
+import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_SOCIAL_PROOF_STAT, DEFAULT_SOCIAL_PROOF_LABEL, DEFAULT_LOGOS, DEFAULT_FLASH_SALE, normalizeLogos } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
@@ -44,7 +44,10 @@ export default async function HomePage() {
     : DEFAULT_REASSURANCE
   ).map((r) => ({ title: r.title, subtitle: r.desc || null }));
   const reassuranceTitle = settings.home?.reassurance_title || DEFAULT_REASSURANCE_TITLE;
-  const reassuranceLogos = settings.home?.logos?.length ? settings.home.logos : DEFAULT_LOGOS;
+  const reassuranceLogos = normalizeLogos(settings.home?.logos);
+  const resolvedLogos = reassuranceLogos.length ? reassuranceLogos : DEFAULT_LOGOS;
+  const socialProofStat = settings.home?.social_proof_stat || DEFAULT_SOCIAL_PROOF_STAT;
+  const socialProofLabel = settings.home?.social_proof_label || DEFAULT_SOCIAL_PROOF_LABEL;
 
   // Sélection : 3 sliders « Tops » non-automatiques, un par famille
   // (Mobilier / Tableaux / Enseignes), triés par popularité décroissante.
@@ -210,8 +213,14 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 3. Réassurance (juste après les « Top produits ») ===== */}
-      <ReassuranceBlock title={reassuranceTitle} items={reassuranceItems} logos={reassuranceLogos} />
+      {/* ===== 3. Preuve sociale + Réassurance (juste après les « Top produits ») ===== */}
+      <ReassuranceBlock
+        stat={socialProofStat}
+        label={socialProofLabel}
+        title={reassuranceTitle}
+        items={reassuranceItems}
+        logos={resolvedLogos}
+      />
 
       {/* ===== 4. Groupages en cours (suit la réassurance) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}

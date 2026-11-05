@@ -211,6 +211,14 @@ export interface SocialProofEntry {
   flag: string;
 }
 
+/** Logo d'une entreprise cliente (preuve sociale « Ils nous ont fait confiance »). */
+export interface ClientLogo {
+  /** Nom de l'entreprise (affiché si aucun logo n'est uploadé). */
+  name: string;
+  /** URL du logo (image). null = afficher le nom en toutes lettres. */
+  logo_url?: string | null;
+}
+
 /** Rubrique de la modale d'infos groupage. */
 export interface GroupageInfoSection {
   title: string;
@@ -392,12 +400,16 @@ export interface ShowcaseSettings {
   home?: {
     cta_title?: string;
     cta_desc?: string;
-    /** Titre du bloc de réassurance (au-dessus du slider de logos). */
+    /** Titre du bloc preuve sociale (ex. « Nous ont fait confiance »). */
     reassurance_title?: string;
+    /** Stat de preuve sociale (ex. « +1240 »), animé à l'apparition (count-up). */
+    social_proof_stat?: string;
+    /** Libellé du stat (ex. « Business & Particulier »). */
+    social_proof_label?: string;
     /** Éléments du bloc réassurance (titre + sous-titre ; illustrations fixes par position). */
     reassurance?: { title: string; desc: string }[];
-    /** Logos d'entreprise du slider « Ils nous ont fait confiance ». */
-    logos?: string[];
+    /** Logos clients du slider « Ils nous ont fait confiance ». */
+    logos?: ClientLogo[];
     steps?: { title: string; desc: string }[];
     featured?: string[];
   };

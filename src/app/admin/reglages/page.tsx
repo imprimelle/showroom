@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublishedProducts } from "@/lib/products";
-import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_LOGOS, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
+import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_SOCIAL_PROOF_STAT, DEFAULT_SOCIAL_PROOF_LABEL, DEFAULT_LOGOS, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE, normalizeLogos } from "@/lib/home";
 import { DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
@@ -22,6 +22,7 @@ export default async function AdminSettingsPage() {
 
   const raw = (data?.data || {}) as ShowcaseSettings;
   const rawHome = raw.home;
+  const rawLogos = normalizeLogos(rawHome?.logos);
 
   // Pré-remplissage des sections de la page d'accueil avec leurs valeurs par défaut,
   // afin que l'admin affiche le contenu actuellement visible (et non des champs vides).
@@ -59,14 +60,13 @@ export default async function AdminSettingsPage() {
       cta_title: rawHome?.cta_title ?? DEFAULT_CTA.title,
       cta_desc: rawHome?.cta_desc ?? DEFAULT_CTA.desc,
       reassurance_title: rawHome?.reassurance_title ?? DEFAULT_REASSURANCE_TITLE,
+      social_proof_stat: rawHome?.social_proof_stat ?? DEFAULT_SOCIAL_PROOF_STAT,
+      social_proof_label: rawHome?.social_proof_label ?? DEFAULT_SOCIAL_PROOF_LABEL,
       reassurance:
         rawHome && rawHome.reassurance && rawHome.reassurance.length > 0
           ? rawHome.reassurance
           : DEFAULT_REASSURANCE,
-      logos:
-        rawHome && rawHome.logos && rawHome.logos.length > 0
-          ? rawHome.logos
-          : DEFAULT_LOGOS,
+      logos: rawLogos.length > 0 ? rawLogos : DEFAULT_LOGOS,
       steps:
         rawHome && rawHome.steps && rawHome.steps.length > 0
           ? rawHome.steps
