@@ -21,6 +21,7 @@ import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
 import { StoreDirectory } from "@/components/resellers/StoreDirectory";
 import { ReassuranceBlock } from "@/components/home/ReassuranceBlock";
+import { SocialProofBlock } from "@/components/home/SocialProofBlock";
 import { HomeSearchBar } from "@/components/search/HomeSearchBar";
 import { HomeQuickLinks } from "@/components/search/HomeQuickLinks";
 import { resolveQuickLinks, DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
@@ -192,7 +193,7 @@ export default async function HomePage() {
                       <Link
                         href={`/collection/categorie/${s.familyId}`}
                         aria-label={`Explorer ${s.title}`}
-                        className="flex h-9 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--color-success)] text-white shadow-sm transition-colors hover:bg-[#15803d]"
+                        className="flex h-5 w-10 shrink-0 items-center justify-center rounded-md bg-[var(--color-success)] text-white shadow-sm transition-colors hover:bg-[#15803d]"
                       >
                         <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                       </Link>
@@ -202,6 +203,7 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+            <ReassuranceBlock items={reassuranceItems} />
             <div className="mt-6 text-center md:hidden">
               <Link href="/collection">
                 <Button variant="secondary" size="sm">
@@ -213,17 +215,16 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ===== 3. Preuve sociale + Réassurance (juste après les « Top produits ») ===== */}
-      <ReassuranceBlock
+      {/* ===== 3. Groupages en cours ===== */}
+      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
+
+      {/* ===== 4. Preuve sociale (juste avant les réalisations) ===== */}
+      <SocialProofBlock
         stat={socialProofStat}
         label={socialProofLabel}
         title={reassuranceTitle}
-        items={reassuranceItems}
         logos={resolvedLogos}
       />
-
-      {/* ===== 4. Groupages en cours (suit la réassurance) ===== */}
-      {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
 
       {/* ===== 5. Réalisations ===== */}
       {realisationImages.length > 0 && (
