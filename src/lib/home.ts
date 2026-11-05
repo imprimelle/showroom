@@ -18,13 +18,13 @@ export const DEFAULT_REASSURANCE: { title: string; desc: string }[] = [
 ];
 
 /** Titre du bloc preuve sociale (au-dessus du slider de logos). */
-export const DEFAULT_REASSURANCE_TITLE = "Nous ont fait confiance";
+export const DEFAULT_REASSURANCE_TITLE = "à travers 5 pays !";
 
 /** Stat de preuve sociale (chiffre en gras, animé à l'apparition). */
 export const DEFAULT_SOCIAL_PROOF_STAT = "+1240";
 
 /** Libellé affiché à côté du stat de preuve sociale. */
-export const DEFAULT_SOCIAL_PROOF_LABEL = "Business & Particulier";
+export const DEFAULT_SOCIAL_PROOF_LABEL = "Clients satisfaits";
 
 /** Logos clients du slider « Nous ont fait confiance » (nom + logo optionnel). */
 export const DEFAULT_LOGOS: ClientLogo[] = [

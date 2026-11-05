@@ -138,25 +138,25 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
   );
 
   return (
-    <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border-default)] py-12 md:py-16">
+    <section className="bg-[var(--color-bg-secondary)] border-y border-[var(--color-border-default)] py-8 md:py-10">
       <div className="max-w-2xl mx-auto px-4">
         {/* Header */}
         <SectionHeader
-          eyebrow="Conseil personnalisé"
-          title="Besoin d&apos;un conseil ?"
-          subtitle="3 questions, des produits sur mesure"
-          eyebrowKey="home.guide.eyebrow"
+          title="Trouvez le produit parfait"
+          subtitle="en 3 réponses"
           titleKey="home.guide.title"
           subtitleKey="home.guide.subtitle"
         />
 
         {/* Progress */}
         {!isResult && (
-          <div className="mb-8">
-            <p className="text-center text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">
-              Question {step + 1} / {totalSteps}
-            </p>
-            <div className="mt-2 flex gap-1.5">
+          <div className="mb-4">
+            <div className="flex items-center justify-center">
+              <span className="inline-flex items-center rounded-full bg-[var(--color-text-primary)] px-3.5 py-1 text-sm font-bold text-white">
+                {step + 1}/{totalSteps}
+              </span>
+            </div>
+            <div className="mt-2.5 flex gap-1.5">
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <span
                   key={i}
@@ -176,7 +176,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
         {/* Step 1 — Emplacement */}
         {step === 0 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
               <EditableText contentKey="home.guide.q1" defaultValue={questionTitles[0]} />
             </h3>
@@ -193,7 +193,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
         {/* Step 2 — Univers */}
         {step === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
               <EditableText contentKey="home.guide.q2" defaultValue={questionTitles[1]} />
             </h3>
@@ -216,7 +216,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
         {/* Step 3 — Budget */}
         {step === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <h3 className="text-lg font-semibold text-[var(--color-text-primary)] text-center">
               <EditableText contentKey="home.guide.q3" defaultValue={questionTitles[2]} />
             </h3>
@@ -239,7 +239,7 @@ export function ChoiceGuide({ products }: ChoiceGuideProps) {
 
         {/* Result */}
         {isResult && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div className="text-center">
               <h3 className="text-lg font-semibold text-[var(--color-text-primary)]">
                 {matches.length > 0 ? `Voici ${matches.length} produit${matches.length > 1 ? "s" : ""} pour vous` : "Aucun résultat exact"}

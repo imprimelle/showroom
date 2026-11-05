@@ -28,9 +28,9 @@ export function SocialProofBlock({
       {/* 1. Stat animé + titre */}
       <div className="flex flex-col items-center text-center">
         <SocialProofStat value={stat} label={label} />
-        <h2 className="mt-2 font-display text-xl font-bold text-[var(--color-text-primary)] md:text-2xl">
+        <p className="mt-1 text-base font-semibold text-[var(--color-text-primary)] md:text-lg">
           {title}
-        </h2>
+        </p>
       </div>
 
       {/* 2. Slider de logos (marquee) */}
