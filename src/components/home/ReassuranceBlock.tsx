@@ -1,25 +1,15 @@
 /**
  * Bloc de réassurance persuasif — 3 parties superposées :
- *   1. Titre « Ils nous ont fait confiance »
+ *   1. Titre (ex. « Ils nous ont fait confiance »)
  *   2. Slider de logos d'entreprise (marquee CSS, défilement infini)
- *   3. Grille 3×1 d'illustrations (pas d'icônes) avec titre + sous-titre
+ *   3. Rangée d'illustrations (pas d'icônes) : titre + sous-titre, sur une seule ligne
  *
- * NB : les logos ci-dessous sont des PLACEHOLDERS génériques. Remplacer
- * `LOGOS` par les vrais logos clients (nom + éventuelle image) avant mise en prod.
+ * Contenu piloté par les réglages admin (`home.reassurance_title`,
+ * `home.reassurance`, `home.logos`). Les illustrations sont fixes et
+ * mappées par position (1 = camion, 2 = usine, 3 = bouclier).
  */
 
 import type { ReactNode } from "react";
-
-const LOGOS = [
-  "AFRILUX",
-  "NOVATECH",
-  "AZUR GROUP",
-  "MAISON & CO",
-  "SUNRISE",
-  "BRIGHTSIGN",
-  "VISION PRO",
-  "LOCAL ART",
-];
 
 const TruckIllustration = (
   <svg
@@ -29,7 +19,7 @@ const TruckIllustration = (
     strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-10 w-10"
+    className="h-8 w-8 md:h-10 md:w-10"
     aria-hidden="true"
   >
     <path d="M2 15h22v16H2z" />
@@ -48,7 +38,7 @@ const FactoryIllustration = (
     strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-10 w-10"
+    className="h-8 w-8 md:h-10 md:w-10"
     aria-hidden="true"
   >
     <path d="M5 40h38" />
@@ -72,7 +62,7 @@ const ShieldIllustration = (
     strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-10 w-10"
+    className="h-8 w-8 md:h-10 md:w-10"
     aria-hidden="true"
   >
     <path d="M24 3l15 5.5V21c0 11.5-6.5 18.5-15 24C15.5 39.5 9 32.5 9 21V8.5z" />
@@ -80,54 +70,72 @@ const ShieldIllustration = (
   </svg>
 );
 
-const ITEMS: { title: string; subtitle: string | null; illustration: ReactNode }[] = [
-  { title: "Livraison", subtitle: "Partout", illustration: TruckIllustration },
-  { title: "Made in 🇨🇮", subtitle: "Fabrication locale", illustration: FactoryIllustration },
-  { title: "Garantie 2 ans", subtitle: null, illustration: ShieldIllustration },
-];
+const ILLUSTRATIONS: ReactNode[] = [TruckIllustration, FactoryIllustration, ShieldIllustration];
 
-export function ReassuranceBlock() {
+export interface ReassuranceItem {
+  title: string;
+  subtitle?: string | null;
+}
+
+export function ReassuranceBlock({
+  title = "Ils nous ont fait confiance",
+  items,
+  logos,
+}: {
+  title?: string;
+  items?: ReassuranceItem[];
+  logos?: string[];
+}) {
+  const resolvedItems: ReassuranceItem[] =
+    items && items.length > 0
+      ? items
+      : [
+          { title: "Livraison", subtitle: "Partout" },
+          { title: "Made in 🇨🇮", subtitle: "Fabrication locale" },
+          { title: "Garantie", subtitle: "2 ans" },
+        ];
+  const resolvedLogos = logos && logos.length > 0 ? logos : [];
+
   return (
     <section className="border-y border-[var(--color-border-default)] bg-[var(--color-surface-card)]">
-      <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
+      <div className="max-w-7xl mx-auto px-4 py-7 md:py-9">
         {/* 1. Titre */}
         <h2 className="text-center font-display text-xl md:text-2xl font-bold text-[var(--color-text-primary)]">
-          Ils nous ont fait confiance
+          {title}
         </h2>
 
         {/* 2. Slider de logos (marquee) */}
-        <div className="relative mt-6 overflow-hidden">
-          <div className="logo-marquee flex w-max items-center">
-            {[...LOGOS, ...LOGOS].map((name, i) => (
-              <span
-                key={i}
-                className="flex items-center gap-2.5 whitespace-nowrap px-7 text-[var(--color-text-tertiary)]"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[10px] font-bold text-[var(--color-text-secondary)]">
-                  {name.charAt(0)}
+        {resolvedLogos.length > 0 && (
+          <div className="relative mt-5 overflow-hidden">
+            <div className="logo-marquee flex w-max items-center">
+              {[...resolvedLogos, ...resolvedLogos].map((name, i) => (
+                <span
+                  key={i}
+                  className="flex items-center gap-2.5 whitespace-nowrap px-7 text-[var(--color-text-tertiary)]"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-[var(--color-border-strong)] text-[10px] font-bold text-[var(--color-text-secondary)]">
+                    {name.charAt(0)}
+                  </span>
+                  <span className="text-sm font-semibold tracking-wide">{name}</span>
                 </span>
-                <span className="text-sm font-semibold tracking-wide">{name}</span>
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* 3. Grille réassurance 3×1 (illustrations, discrètes) */}
-        <div className="mt-8 grid grid-cols-1 gap-6 border-t border-[var(--color-border-default)] pt-6 sm:grid-cols-3 sm:gap-4">
-          {ITEMS.map((item) => (
-            <div
-              key={item.title}
-              className="flex items-center gap-3 justify-start sm:justify-center"
-            >
+        {/* 3. Rangée réassurance (une seule ligne) */}
+        <div className="mt-6 flex flex-row items-stretch justify-between gap-3 border-t border-[var(--color-border-default)] pt-5">
+          {resolvedItems.map((item, i) => (
+            <div key={i} className="flex min-w-0 flex-1 items-center justify-center gap-2.5">
               <span className="shrink-0 text-[var(--color-text-tertiary)]">
-                {item.illustration}
+                {ILLUSTRATIONS[i % ILLUSTRATIONS.length]}
               </span>
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--color-text-primary)]">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-semibold text-[var(--color-text-primary)]">
                   {item.title}
                 </h3>
                 {item.subtitle && (
-                  <p className="text-xs text-[var(--color-text-secondary)]">{item.subtitle}</p>
+                  <p className="truncate text-xs text-[var(--color-text-secondary)]">{item.subtitle}</p>
                 )}
               </div>
             </div>

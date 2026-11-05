@@ -15,7 +15,7 @@ import { quoteMessage } from "@/lib/whatsapp";
 import { ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem } from "@/types";
-import { DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
+import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_LOGOS, DEFAULT_FLASH_SALE } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { ResellerHomeSection } from "@/components/resellers/ResellerHomeSection";
@@ -28,8 +28,6 @@ import { FlashSaleSlider } from "@/components/product/FlashSaleSlider";
 
 export const dynamic = "force-dynamic";
 
-const stepIcons = ["🔍", "🛒", "📞", "🚚"];
-
 export default async function HomePage() {
   const [settings, products] = await Promise.all([
     getShowcaseSettings(),
@@ -41,14 +39,12 @@ export default async function HomePage() {
   const heroCta = settings.hero?.cta_text || "Voir le catalogue";
   const heroCtaHref = settings.hero?.cta_href || "/collection";
 
-  const ctaTitle = settings.home?.cta_title || DEFAULT_CTA.title;
-  const ctaDesc = settings.home?.cta_desc || DEFAULT_CTA.desc;
-  const homeSteps = settings.home?.steps;
-  const stepItems = DEFAULT_STEPS.map((s, i) => ({
-    icon: stepIcons[i],
-    title: homeSteps?.[i]?.title || s.title,
-    desc: homeSteps?.[i]?.desc || s.desc,
-  }));
+  const reassuranceItems = (settings.home?.reassurance?.length
+    ? settings.home.reassurance
+    : DEFAULT_REASSURANCE
+  ).map((r) => ({ title: r.title, subtitle: r.desc || null }));
+  const reassuranceTitle = settings.home?.reassurance_title || DEFAULT_REASSURANCE_TITLE;
+  const reassuranceLogos = settings.home?.logos?.length ? settings.home.logos : DEFAULT_LOGOS;
 
   // Sélection : 3 sliders « Tops » non-automatiques, un par famille
   // (Mobilier / Tableaux / Enseignes), triés par popularité décroissante.
@@ -215,7 +211,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== 3. Réassurance (juste après les « Top produits ») ===== */}
-      <ReassuranceBlock />
+      <ReassuranceBlock title={reassuranceTitle} items={reassuranceItems} logos={reassuranceLogos} />
 
       {/* ===== 4. Groupages en cours (suit la réassurance) ===== */}
       {groupageItems.length > 0 && <GroupageHomeSlider items={groupageItems} />}
@@ -259,55 +255,6 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-
-      {/* ===== 6. Comment ça marche ===== */}
-      <section className="bg-[var(--color-cream)] border-y border-[var(--color-border-default)]">
-        <div className="max-w-7xl mx-auto px-4 py-8 md:py-10">
-          <SectionHeader
-            eyebrow="Simple & rapide"
-            title="Comment ça marche"
-            subtitle="De la commande à la livraison en 4 étapes"
-            eyebrowKey="home.how.eyebrow"
-            titleKey="home.how.title"
-            subtitleKey="home.how.subtitle"
-          />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stepItems.map((step) => (
-              <div key={step.title} className="text-center">
-                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-[var(--color-surface-card)] flex items-center justify-center text-2xl">
-                  {step.icon}
-                </div>
-                <h3 className="font-semibold text-[var(--color-text-primary)] mb-1">{step.title}</h3>
-                <p className="text-sm text-[var(--color-text-secondary)]">{step.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== 7. CTA Devis ===== */}
-      <section className="bg-[var(--color-text-primary)] py-8 md:py-10 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="font-display text-2xl md:text-4xl font-bold text-[var(--color-bg-primary)]">
-            {ctaTitle}
-          </h2>
-          <p className="mt-3 text-[var(--color-bg-secondary)]/80">
-            {ctaDesc}
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <a href={getWhatsAppUrl(whatsapp, quoteMessage("Devis gratuit"))} target="_blank" rel="noopener noreferrer">
-              <Button variant="whatsapp" size="lg">
-                <EditableText contentKey="home.cta.whatsapp" defaultValue="💬 Devis gratuit sur WhatsApp" />
-              </Button>
-            </a>
-            <Link href="/comment-ca-marche">
-              <Button variant="secondary" size="lg" className="bg-transparent text-[var(--color-bg-primary)] border-[var(--color-bg-primary)]/30 hover:bg-white/10">
-                <EditableText contentKey="home.cta.how" defaultValue="Comment ça marche" /> <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* ===== 8. Besoin d'un conseil ? (guide de choix — avant « Devenir partenaire ») ===== */}
       <ChoiceGuide products={products} />

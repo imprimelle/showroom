@@ -118,6 +118,9 @@ export function SettingsClient({ initialData, products }: {
     list[i] = { ...(list[i] || {}), ...patch };
     setHome({ steps: list });
   };
+  const homeLogos = data.home?.logos || [];
+  const setLogosText = (text: string) =>
+    setHome({ logos: text.split("\n").map((s) => s.trim()).filter(Boolean) });
 
   // === Produits en vedette ===
   const featuredIds: string[] = data.home?.featured || [];
@@ -710,13 +713,33 @@ export function SettingsClient({ initialData, products }: {
             <div className="mt-3"><Input label="Texte CTA devis" value={getVal("home.cta_desc")} onChange={(e) => update("home.cta_desc", e.target.value)} /></div>
 
             <div className="mt-4">
-              <span className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Réassurance (4 cartes — icônes fixes)</span>
-              {[0, 1, 2, 3].map((i) => (
+              <Input label="Titre du bloc réassurance" value={getVal("home.reassurance_title")} onChange={(e) => update("home.reassurance_title", e.target.value)} placeholder="Ils nous ont fait confiance" />
+            </div>
+
+            <div className="mt-4">
+              <span className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Réassurance (3 éléments — illustrations fixes)</span>
+              {[0, 1, 2].map((i) => (
                 <div key={i} className="mb-3 rounded-lg border border-[var(--color-border-default)] p-3 bg-[var(--color-bg-secondary)]">
-                  <Input value={homeReassurance[i]?.title || ""} onChange={(e) => setReassuranceItem(i, { title: e.target.value })} placeholder={`Carte ${i + 1} — Titre`} />
-                  <div className="mt-2"><Input value={homeReassurance[i]?.desc || ""} onChange={(e) => setReassuranceItem(i, { desc: e.target.value })} placeholder="Description" /></div>
+                  <Input value={homeReassurance[i]?.title || ""} onChange={(e) => setReassuranceItem(i, { title: e.target.value })} placeholder={`Élément ${i + 1} — Titre`} />
+                  <div className="mt-2"><Input value={homeReassurance[i]?.desc || ""} onChange={(e) => setReassuranceItem(i, { desc: e.target.value })} placeholder="Sous-titre" /></div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                Logos « Ils nous ont fait confiance » (un par ligne)
+              </label>
+              <textarea
+                value={homeLogos.join("\n")}
+                onChange={(e) => setLogosText(e.target.value)}
+                rows={6}
+                placeholder={"AFRILUX\nNOVATECH\nAZUR GROUP"}
+                className="w-full rounded-xl border border-[var(--color-border-default)] bg-[var(--color-surface-card)] px-3 py-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent-blue)]"
+              />
+              <p className="mt-1 text-[11px] text-[var(--color-text-tertiary)]">
+                Un nom de logo par ligne. Laissez vide pour masquer le slider.
+              </p>
             </div>
 
             <div className="mt-4">

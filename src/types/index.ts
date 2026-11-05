@@ -392,7 +392,12 @@ export interface ShowcaseSettings {
   home?: {
     cta_title?: string;
     cta_desc?: string;
+    /** Titre du bloc de réassurance (au-dessus du slider de logos). */
+    reassurance_title?: string;
+    /** Éléments du bloc réassurance (titre + sous-titre ; illustrations fixes par position). */
     reassurance?: { title: string; desc: string }[];
+    /** Logos d'entreprise du slider « Ils nous ont fait confiance ». */
+    logos?: string[];
     steps?: { title: string; desc: string }[];
     featured?: string[];
   };

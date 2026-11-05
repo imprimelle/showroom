@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublishedProducts } from "@/lib/products";
-import { DEFAULT_REASSURANCE, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
+import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_LOGOS, DEFAULT_STEPS, DEFAULT_CTA, DEFAULT_FLASH_SALE } from "@/lib/home";
 import { DEFAULT_PRODUCT_PARAMETERS } from "@/lib/parameters";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { DEFAULT_FAQ_PILLS } from "@/lib/faq";
@@ -58,10 +58,15 @@ export default async function AdminSettingsPage() {
       ...rawHome,
       cta_title: rawHome?.cta_title ?? DEFAULT_CTA.title,
       cta_desc: rawHome?.cta_desc ?? DEFAULT_CTA.desc,
+      reassurance_title: rawHome?.reassurance_title ?? DEFAULT_REASSURANCE_TITLE,
       reassurance:
         rawHome && rawHome.reassurance && rawHome.reassurance.length > 0
           ? rawHome.reassurance
           : DEFAULT_REASSURANCE,
+      logos:
+        rawHome && rawHome.logos && rawHome.logos.length > 0
+          ? rawHome.logos
+          : DEFAULT_LOGOS,
       steps:
         rawHome && rawHome.steps && rawHome.steps.length > 0
           ? rawHome.steps

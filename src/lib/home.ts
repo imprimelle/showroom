@@ -10,10 +10,24 @@
  */
 
 export const DEFAULT_REASSURANCE: { title: string; desc: string }[] = [
-  { title: "Livraison gratuite", desc: "Sur toute commande" },
-  { title: "Garantie 2 ans", desc: "Sur tous nos produits" },
-  { title: "Made in CI", desc: "Fabrication locale" },
-  { title: "Paiement livraison", desc: "Espèces ou mobile money" },
+  { title: "Livraison", desc: "Partout" },
+  { title: "Made in 🇨🇮", desc: "Fabrication locale" },
+  { title: "Garantie", desc: "2 ans" },
+];
+
+/** Titre du bloc de réassurance (au-dessus du slider de logos). */
+export const DEFAULT_REASSURANCE_TITLE = "Ils nous ont fait confiance";
+
+/** Logos d'entreprise du slider « Ils nous ont fait confiance » (placeholders). */
+export const DEFAULT_LOGOS: string[] = [
+  "AFRILUX",
+  "NOVATECH",
+  "AZUR GROUP",
+  "MAISON & CO",
+  "SUNRISE",
+  "BRIGHTSIGN",
+  "VISION PRO",
+  "LOCAL ART",
 ];
 
 export const DEFAULT_STEPS: { title: string; desc: string }[] = [
