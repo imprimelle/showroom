@@ -87,6 +87,9 @@ export function SettingsClient({ initialData, products }: {
     else next.splice(i, 1);
     setSlides(next);
   };
+  const updateSlideContent = (i: number, patch: Partial<MediaItem>) => {
+    setSlides(slides.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
+  };
   const reorderSlides = (from: number, to: number) => {
     if (from === to || from < 0 || to < 0 || from >= slides.length || to >= slides.length) return;
     const next = [...slides];
@@ -619,7 +622,7 @@ export function SettingsClient({ initialData, products }: {
 
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-[var(--color-text-secondary)]">Slides (images ou vidéos — glissez pour réordonner)</span>
+                <span className="text-xs font-medium text-[var(--color-text-secondary)]">Slides (images ou vidéos — glissez pour réordonner, contenu & CTA par slide)</span>
                 <button type="button" onClick={addSlide} className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg text-xs font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-border-default)] transition-colors">
                   <Plus className="w-3.5 h-3.5" /> Ajouter
                 </button>
@@ -668,6 +671,14 @@ export function SettingsClient({ initialData, products }: {
                     <span className="text-xs font-bold text-[var(--color-text-tertiary)] mt-1 w-4 shrink-0">{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <MediaField value={s} onChange={(m) => updateSlide(i, m)} hint={MEDIA_SPECS.heroSlide} cropSpec={CROP_SPECS.heroSlide} />
+                      <div className="mt-2 space-y-2">
+                        <Input label="Titre du slide (optionnel)" value={s.title || ""} onChange={(e) => updateSlideContent(i, { title: e.target.value })} placeholder="Repli sur le titre global" />
+                        <Input label="Sous-titre (optionnel)" value={s.subtitle || ""} onChange={(e) => updateSlideContent(i, { subtitle: e.target.value })} placeholder="Repli sur le sous-titre global" />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input label="Texte CTA (optionnel)" value={s.cta_text || ""} onChange={(e) => updateSlideContent(i, { cta_text: e.target.value })} placeholder="Repli global" />
+                          <Input label="Lien CTA (optionnel)" value={s.cta_href || ""} onChange={(e) => updateSlideContent(i, { cta_href: e.target.value })} placeholder="/collection" />
+                        </div>
+                      </div>
                     </div>
                     <button type="button" onClick={() => updateSlide(i, null)} aria-label="Supprimer le slide" className="mt-1 shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors">
                       <Trash2 className="w-4 h-4" />

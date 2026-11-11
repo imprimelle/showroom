@@ -112,8 +112,8 @@ export default async function HomePage() {
 
   return (
     <div>
-      {/* ===== 1. Hero (slider plein écran, style Cozey) ===== */}
-      <section className="relative w-full aspect-[3/4] md:aspect-auto md:h-[80dvh] md:min-h-[540px] md:max-h-[90dvh]">
+      {/* ===== 1. Hero (slider vertical plein écran, piloté au scroll) ===== */}
+      <section className="relative w-full h-[100dvh]">
         <HeroSlider
           slides={heroSlides}
           title={heroTitle}

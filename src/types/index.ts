@@ -125,6 +125,11 @@ export interface MediaItem {
   type: 'image' | 'video';
   url: string;
   alt?: string;
+  /** Contenu optionnel par slide (utilisé par le hero) — repli sur les réglages globaux. */
+  title?: string;
+  subtitle?: string;
+  cta_text?: string;
+  cta_href?: string;
 }
 
 /** Point fort d'une fiche produit : titre + icône + texte révélé au clic. */
