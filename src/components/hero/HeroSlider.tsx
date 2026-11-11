@@ -1,8 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
-import type { MediaItem } from "@/types";
+import { HomeSearchBar } from "@/components/search/HomeSearchBar";
+import { imgProxyUrl } from "@/lib/images";
+import { formatFCFA } from "@/lib/utils";
+import type { HeroHotspot, HotspotProduct, MediaItem } from "@/types";
 
 interface HeroSliderProps {
   slides: MediaItem[];
@@ -11,6 +14,9 @@ interface HeroSliderProps {
   ctaText: string;
   ctaHref: string;
   whatsappHref: string;
+  searchQuestion: string;
+  searchTerms: string[];
+  products: HotspotProduct[];
 }
 
 /** Durée de la transition entre deux slides (ms). */
@@ -20,20 +26,31 @@ const WHEEL_THRESHOLD = 40;
 /** Seuil tactile (px) pour un swipe vertical. */
 const TOUCH_THRESHOLD = 40;
 
+/** Point + slide actuellement ouvert en popover (null = fermé). */
+interface OpenHotspot {
+  slide: number;
+  hotspot: number;
+}
+
 /**
- * Hero plein écran en **slider vertical piloté au scroll**.
- *
- * Comportement :
- *  - la molette (desktop) et le swipe (mobile) font défiler les slides verticalement ;
- *  - tant qu'il reste des slides dans la direction du scroll, celui-ci est « avalé »
- *    par le héro (pas de défilement de page) ;
- *  - arrivé au dernier slide, le scroll est relâché vers les sections suivantes.
- *
- * Chaque slide peut porter son propre contenu (titre / sous-titre / CTA) ; à défaut,
- * les réglages globaux (`title`, `subtitle`, `ctaText`, `ctaHref`) sont utilisés.
+ * Hero plein écran en **slider vertical piloté au scroll**, avec :
+ *  - recherche épinglée en bas (toujours visible sur tous les slides) ;
+ *  - titre / sous-titre / CTA / bouton WhatsApp par slide (repli sur les globaux) ;
+ *  - slides « collection » : points cliquables sur l'image → popover produit (nom + prix).
  */
-export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsappHref }: HeroSliderProps) {
+export function HeroSlider({
+  slides,
+  title,
+  subtitle,
+  ctaText,
+  ctaHref,
+  whatsappHref,
+  searchQuestion,
+  searchTerms,
+  products,
+}: HeroSliderProps) {
   const [active, setActive] = useState(0);
+  const [open, setOpen] = useState<OpenHotspot | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(0);
   const lockRef = useRef(false);
@@ -43,12 +60,19 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
 
   const lastIndex = Math.max(0, slides.length - 1);
 
+  const productBySlug = useMemo(() => {
+    const m = new Map<string, HotspotProduct>();
+    for (const p of products) if (p.slug) m.set(p.slug, p);
+    return m;
+  }, [products]);
+
   const goTo = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(lastIndex, next));
       if (clamped === activeRef.current) return;
       activeRef.current = clamped;
       setActive(clamped);
+      setOpen(null);
       lockRef.current = true;
       if (lockTimerRef.current !== null) window.clearTimeout(lockTimerRef.current);
       lockTimerRef.current = window.setTimeout(() => {
@@ -69,7 +93,6 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
       const down = delta > 0;
       const idx = activeRef.current;
 
-      // Relâchement : vers le bas au dernier slide, vers le haut au premier slide.
       if (down && idx >= lastIndex) return;
       if (!down && idx <= 0) return;
 
@@ -97,19 +120,17 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
 
     const onTouchMove = (e: TouchEvent) => {
       if (touchStartYRef.current === null) return;
-      const dy = touchStartYRef.current - e.touches[0].clientY; // > 0 = swipe vers le haut
+      const dy = touchStartYRef.current - e.touches[0].clientY;
       if (Math.abs(dy) < TOUCH_THRESHOLD) return;
 
-      const down = dy < 0; // swipe vers le bas (retour au slide précédent)
+      const down = dy < 0;
       const idx = activeRef.current;
 
-      // Relâchement vers le bas : dernier slide → défilement de page d'un écran.
       if (!down && idx >= lastIndex) {
         touchStartYRef.current = null;
         window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
         return;
       }
-      // Tout en haut : rien au-dessus, on laisse le navigateur (rebond éventuel).
       if (down && idx <= 0) return;
 
       e.preventDefault();
@@ -154,6 +175,10 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
           const slideSubtitle = s.subtitle || subtitle;
           const slideCtaText = s.cta_text || ctaText;
           const slideCtaHref = s.cta_href || ctaHref;
+          const slideWhatsappText = s.whatsapp_text || "💬 WhatsApp";
+          const slideWhatsappHref = s.whatsapp_href || whatsappHref;
+          const hotspots = s.hotspots || [];
+
           return (
             <div key={i} className="relative w-full h-full overflow-hidden">
               <MediaRenderer
@@ -171,8 +196,81 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
               {/* Dégradés : haut sombre (nav) + bas sombre (texte) */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70 pointer-events-none" />
 
+              {/* Points cliquables « collection » */}
+              {hotspots.map((h: HeroHotspot, hi: number) => {
+                const isOpen = open?.slide === i && open?.hotspot === hi;
+                const product = h.product_slug ? productBySlug.get(h.product_slug) : undefined;
+                const flipX = h.x > 55;
+                const flipY = h.y > 70;
+                const cornerClass =
+                  !flipX && !flipY
+                    ? "-top-1.5 -left-1.5"
+                    : flipX && !flipY
+                      ? "-top-1.5 -right-1.5"
+                      : !flipX && flipY
+                        ? "-bottom-1.5 -left-1.5"
+                        : "-bottom-1.5 -right-1.5";
+                return (
+                  <div key={hi} className="absolute z-20" style={{ left: `${h.x}%`, top: `${h.y}%` }}>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpen(isOpen ? null : { slide: i, hotspot: hi });
+                      }}
+                      aria-label={`Produit ${product?.name || hi + 1}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 p-1"
+                    >
+                      <span className="absolute inset-0 rounded-full bg-white/80 animate-ping" />
+                      <span
+                        className={`relative block h-4 w-4 rounded-full border-2 shadow-md ${
+                          isOpen ? "bg-[var(--color-accent-blue)] border-white" : "bg-white border-[var(--color-accent-blue)]"
+                        }`}
+                      />
+                    </button>
+
+                    {/* Popover ancré au point */}
+                    {isOpen && (
+                      <div
+                        className="absolute w-52"
+                        style={{
+                          transform: `translate(${flipX ? "calc(-100% - 16px)" : "16px"}, ${flipY ? "calc(-100% - 16px)" : "16px"})`,
+                        }}
+                      >
+                        <div className="relative rounded-xl bg-white shadow-xl border border-[var(--color-border-default)] p-3">
+                          <span className={`absolute h-3 w-3 rotate-45 bg-white border-l border-t border-[var(--color-border-default)] ${cornerClass}`} />
+                          {product ? (
+                            <Link href={`/collection/${product.slug}`} onClick={() => setOpen(null)} className="block">
+                              <div className="flex gap-2.5">
+                                {product.image_url && (
+                                  <span className="w-14 h-14 shrink-0 rounded-lg overflow-hidden border border-[var(--color-border-default)] bg-[var(--color-bg-tertiary)]">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={imgProxyUrl(product.image_url, 120, 120)} alt={product.name} className="w-full h-full object-cover" />
+                                  </span>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2">{product.name}</p>
+                                  {product.price != null && (
+                                    <p className="mt-0.5 text-sm font-bold text-[var(--color-accent-amber)]">{formatFCFA(product.price)}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-accent-blue)]">
+                                Voir le produit →
+                              </span>
+                            </Link>
+                          ) : (
+                            <p className="text-xs text-[var(--color-text-tertiary)]">Produit introuvable.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
               {/* Contenu bas-gauche */}
-              <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 md:px-12 md:pb-12">
+              <div className="absolute bottom-0 left-0 right-0 px-4 pb-24 md:px-12 md:pb-28">
                 <div className="max-w-7xl mx-auto">
                   <h1 className="font-display text-3xl md:text-4xl font-extrabold text-white tracking-tight leading-tight whitespace-pre-line max-w-2xl">
                     {slideTitle}
@@ -190,12 +288,12 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
                       {slideCtaText}
                     </Link>
                     <a
-                      href={whatsappHref}
+                      href={slideWhatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center font-medium rounded-full min-h-[34px] px-4 text-xs md:text-sm bg-[#25D366]/90 text-white hover:bg-[#1EA952] transition-colors"
                     >
-                      💬 WhatsApp
+                      {slideWhatsappText}
                     </a>
                   </div>
                 </div>
@@ -205,9 +303,16 @@ export function HeroSlider({ slides, title, subtitle, ctaText, ctaHref, whatsapp
         })}
       </div>
 
+      {/* Recherche épinglée en bas (toujours visible) */}
+      <div className="absolute bottom-3 left-0 right-0 z-30 px-4 md:px-12">
+        <div className="max-w-7xl mx-auto">
+          <HomeSearchBar question={searchQuestion} terms={searchTerms} />
+        </div>
+      </div>
+
       {/* Indicateurs verticaux (barres latérales) */}
       {slides.length > 1 && (
-        <div className="absolute top-1/2 -translate-y-1/2 right-3 md:right-6 flex flex-col items-center gap-1.5 z-10">
+        <div className="absolute top-1/2 -translate-y-1/2 right-3 md:right-6 flex flex-col items-center gap-1.5 z-30">
           {slides.map((_, i) => (
             <button
               key={i}

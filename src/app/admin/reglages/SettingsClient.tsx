@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { MediaField } from "@/components/admin/MediaField";
 import { ProductSearchSelect } from "@/components/admin/ProductSearchSelect";
+import { HotspotEditor } from "@/components/admin/HotspotEditor";
 import { SaveBar } from "@/components/admin/SaveBar";
 import { Plus, Trash2, Settings, House, Layers, Check, GripVertical, SlidersHorizontal, Tags, Truck, Wallet, HelpCircle, ChevronUp, ChevronDown, Megaphone, Users, Rotate3d, Store, BellRing, BadgePercent, Search, Link2 } from "lucide-react";
 import { CATEGORIES } from "@/lib/categories";
@@ -17,7 +18,7 @@ import { MEDIA_SPECS, CROP_SPECS } from "@/lib/media-specs";
 import { cn } from "@/lib/utils";
 import { imgProxyUrl } from "@/lib/images";
 import { MentionTextInput } from "@/components/admin/MentionTextInput";
-import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType, HomeSearchQuickLink, ClientLogo } from "@/types";
+import type { MediaItem, ShowcaseSettings, ProductParameter, ProductParameterOption, FaqPill, IdeaDecoVideo, GroupageInfo, GroupageInfoSection, AnnouncementMessage, RemiseRule, SurplusType, HomeSearchQuickLink, ClientLogo, HeroHotspot } from "@/types";
 import type { Category, SubCategory } from "@/lib/categories";
 
 type TabId = "coordonnees" | "accueil" | "univers" | "catalog" | "parametres" | "livraison" | "paiement" | "faq" | "preuve" | "groupage" | "three_sixty" | "revendeurs" | "annonces" | "remises" | "home_search";
@@ -373,7 +374,17 @@ export function SettingsClient({ initialData, products }: {
       // Nettoyage : retire les slides sans URL et les médias d'univers sans URL
       const cleanData: ShowcaseSettings = {
         ...data,
-        hero: data.hero ? { ...data.hero, slides: (data.hero.slides || []).filter((s) => s.url) } : undefined,
+        hero: data.hero
+          ? {
+              ...data.hero,
+              slides: (data.hero.slides || [])
+                .filter((s) => s.url)
+                .map((s) => ({
+                  ...s,
+                  hotspots: (s.hotspots || []).filter((h) => h.product_slug),
+                })),
+            }
+          : undefined,
         home: data.home
           ? {
               ...data.home,
@@ -678,6 +689,16 @@ export function SettingsClient({ initialData, products }: {
                           <Input label="Texte CTA (optionnel)" value={s.cta_text || ""} onChange={(e) => updateSlideContent(i, { cta_text: e.target.value })} placeholder="Repli global" />
                           <Input label="Lien CTA (optionnel)" value={s.cta_href || ""} onChange={(e) => updateSlideContent(i, { cta_href: e.target.value })} placeholder="/collection" />
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input label="WhatsApp (libellé, optionnel)" value={s.whatsapp_text || ""} onChange={(e) => updateSlideContent(i, { whatsapp_text: e.target.value })} placeholder="💬 WhatsApp" />
+                          <Input label="WhatsApp (lien, optionnel)" value={s.whatsapp_href || ""} onChange={(e) => updateSlideContent(i, { whatsapp_href: e.target.value })} placeholder="Repli global" />
+                        </div>
+                        <HotspotEditor
+                          imageUrl={s.type === "image" ? s.url || null : null}
+                          hotspots={s.hotspots || []}
+                          products={products}
+                          onChange={(hotspots) => updateSlideContent(i, { hotspots })}
+                        />
                       </div>
                     </div>
                     <button type="button" onClick={() => updateSlide(i, null)} aria-label="Supprimer le slide" className="mt-1 shrink-0 h-8 w-8 inline-flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] hover:bg-[var(--color-error-soft)] transition-colors">

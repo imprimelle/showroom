@@ -10,11 +10,11 @@ import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
-import { getWhatsAppUrl, normalizePhone } from "@/lib/utils";
+import { getWhatsAppUrl, normalizePhone, getMinPrice } from "@/lib/utils";
 import { quoteMessage } from "@/lib/whatsapp";
 import { ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
-import type { MediaItem } from "@/types";
+import type { MediaItem, HotspotProduct } from "@/types";
 import { DEFAULT_REASSURANCE, DEFAULT_REASSURANCE_TITLE, DEFAULT_SOCIAL_PROOF_STAT, DEFAULT_SOCIAL_PROOF_LABEL, DEFAULT_LOGOS, DEFAULT_FLASH_SALE, normalizeLogos } from "@/lib/home";
 import { buildGroupageHomeItems } from "@/lib/groupage-home";
 import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
@@ -99,6 +99,11 @@ export default async function HomePage() {
 
   const realisationImages = products.filter((p) => p.main_image_url).slice(0, 4);
 
+  // Produits résolus pour les points « collection » du hero (image + nom + prix).
+  const hotspotProducts: HotspotProduct[] = products
+    .map((p) => ({ slug: p.slug, name: p.name, price: getMinPrice(p.variants), image_url: p.main_image_url }))
+    .filter((p) => p.slug);
+
   // Produits groupables pour le slider « groupage » (résolus côté serveur ;
   // la jauge « live » est chargée côté client par le composant).
   const groupageItems = buildGroupageHomeItems(products, settings.product_parameters);
@@ -121,6 +126,9 @@ export default async function HomePage() {
           ctaText={heroCta}
           ctaHref={heroCtaHref}
           whatsappHref={getWhatsAppUrl(whatsapp, quoteMessage())}
+          searchQuestion={searchQuestion}
+          searchTerms={searchTerms}
+          products={hotspotProducts}
         />
       </section>
 

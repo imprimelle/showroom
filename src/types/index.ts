@@ -130,6 +130,29 @@ export interface MediaItem {
   subtitle?: string;
   cta_text?: string;
   cta_href?: string;
+  /** Bouton WhatsApp du slide (libellé + lien) — repli sur les réglages globaux. */
+  whatsapp_text?: string;
+  whatsapp_href?: string;
+  /** Points cliquables (slide « collection » / image shoppable) : coordonnées en % + produit. */
+  hotspots?: HeroHotspot[];
+}
+
+/** Point cliquable d'un slide « collection » (image shoppable). */
+export interface HeroHotspot {
+  /** Position horizontale en % de l'image affichée (0-100). */
+  x: number;
+  /** Position verticale en % de l'image affichée (0-100). */
+  y: number;
+  /** Slug du produit lié au point. */
+  product_slug: string;
+}
+
+/** Produit résolu pour un point du hero (image + nom + prix). */
+export interface HotspotProduct {
+  slug: string;
+  name: string;
+  price: number | null;
+  image_url: string | null;
 }
 
 /** Point fort d'une fiche produit : titre + icône + texte révélé au clic. */
