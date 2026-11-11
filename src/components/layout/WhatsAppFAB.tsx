@@ -1,5 +1,5 @@
 "use client";
-import { getWhatsAppUrl, DEFAULT_WHATSAPP } from "@/lib/utils";
+import { getWhatsAppUrl, DEFAULT_WHATSAPP, cn } from "@/lib/utils";
 import { generalInquiryMessage } from "@/lib/whatsapp";
 
 /** Icône officielle WhatsApp (logo complet, pas un glyphe générique). */
@@ -11,13 +11,16 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function WhatsAppFAB({ whatsapp = DEFAULT_WHATSAPP }: { whatsapp?: string }) {
+export function WhatsAppFAB({ whatsapp = DEFAULT_WHATSAPP, raised = false }: { whatsapp?: string; raised?: boolean }) {
   return (
     <a
       href={getWhatsAppUrl(whatsapp, generalInquiryMessage("Je suis sur le site Imprimelle"))}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-8 right-4 z-40 w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform duration-200 animate-pulse-slow"
+      className={cn(
+        "fixed right-4 z-40 w-14 h-14 bg-[#25D366] text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-90 transition-transform duration-200",
+        raised ? "bottom-24" : "bottom-8"
+      )}
       style={{
         boxShadow: "0 4px 16px rgba(37,211,102,0.35)",
       }}

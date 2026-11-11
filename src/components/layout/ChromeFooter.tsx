@@ -24,7 +24,7 @@ export function ChromeFooter({
   return (
     <>
       <Footer social={social} contact={contact} />
-      <WhatsAppFAB whatsapp={whatsapp} />
+      <WhatsAppFAB whatsapp={whatsapp} raised={pathname === "/"} />
     </>
   );
 }
