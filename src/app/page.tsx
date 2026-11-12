@@ -10,8 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EditableText } from "@/components/admin/content/EditableText";
 import { imgProxyUrl } from "@/lib/images";
-import { getWhatsAppUrl, normalizePhone, getMinPrice } from "@/lib/utils";
-import { quoteMessage } from "@/lib/whatsapp";
+import { getMinPrice } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import type { ShowcaseProduct } from "@/lib/products";
 import type { MediaItem, HotspotProduct } from "@/types";
@@ -34,7 +33,6 @@ export default async function HomePage() {
     getPublishedProducts().catch(() => [] as ShowcaseProduct[]),
   ]);
 
-  const whatsapp = normalizePhone(settings.contact?.whatsapp);
   const heroTitle = settings.hero?.title || "La lumière, sur mesure.";
   const heroCta = settings.hero?.cta_text || "Voir le catalogue";
   const heroCtaHref = settings.hero?.cta_href || "/collection";
@@ -125,7 +123,6 @@ export default async function HomePage() {
           subtitle={settings.hero?.subtitle || undefined}
           ctaText={heroCta}
           ctaHref={heroCtaHref}
-          whatsappHref={getWhatsAppUrl(whatsapp, quoteMessage())}
           searchQuestion={searchQuestion}
           searchTerms={searchTerms}
           products={hotspotProducts}

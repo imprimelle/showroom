@@ -13,7 +13,6 @@ interface HeroSliderProps {
   subtitle?: string;
   ctaText: string;
   ctaHref: string;
-  whatsappHref: string;
   searchQuestion: string;
   searchTerms: string[];
   products: HotspotProduct[];
@@ -44,7 +43,6 @@ export function HeroSlider({
   subtitle,
   ctaText,
   ctaHref,
-  whatsappHref,
   searchQuestion,
   searchTerms,
   products,
@@ -175,8 +173,6 @@ export function HeroSlider({
           const slideSubtitle = s.subtitle || subtitle;
           const slideCtaText = s.cta_text || ctaText;
           const slideCtaHref = s.cta_href || ctaHref;
-          const slideWhatsappText = s.whatsapp_text || "💬 WhatsApp";
-          const slideWhatsappHref = s.whatsapp_href || whatsappHref;
           const hotspots = s.hotspots || [];
 
           return (
@@ -283,18 +279,10 @@ export function HeroSlider({
                   <div className="mt-5 md:mt-6 flex flex-col items-start gap-2">
                     <Link
                       href={slideCtaHref}
-                      className="inline-flex items-center justify-center font-semibold rounded-full min-h-[40px] px-5 text-sm md:text-base bg-white text-black shadow-lg hover:bg-[var(--color-cream)] transition-colors"
+                      className="inline-flex items-center justify-center font-semibold rounded-full min-h-[48px] px-7 text-base md:text-lg bg-[var(--color-success)]/90 text-white shadow-lg hover:bg-[var(--color-success)] transition-colors"
                     >
                       {slideCtaText}
                     </Link>
-                    <a
-                      href={slideWhatsappHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center font-medium rounded-full min-h-[34px] px-4 text-xs md:text-sm bg-[#25D366]/90 text-white hover:bg-[#1EA952] transition-colors"
-                    >
-                      {slideWhatsappText}
-                    </a>
                   </div>
                 </div>
               </div>
