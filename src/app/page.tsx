@@ -21,6 +21,7 @@ import { GroupageHomeSlider } from "@/components/product/GroupageHomeSlider";
 import { PartnerSection } from "@/components/resellers/PartnerSection";
 import { ReassuranceBlock } from "@/components/home/ReassuranceBlock";
 import { SocialProofBlock } from "@/components/home/SocialProofBlock";
+import { HomeSearchBar } from "@/components/search/HomeSearchBar";
 import { HomeQuickLinks } from "@/components/search/HomeQuickLinks";
 import { resolveQuickLinks, DEFAULT_HOME_SEARCH_QUESTION } from "@/lib/home-search";
 import { FlashSaleSlider } from "@/components/product/FlashSaleSlider";
@@ -117,23 +118,32 @@ export default async function HomePage() {
   return (
     <div>
       {/* ===== 1. Hero (slider vertical plein écran, piloté au scroll) ===== */}
-      <HeroSlider
-        slides={heroSlides}
-        title={heroTitle}
-        subtitle={settings.hero?.subtitle || undefined}
-        ctaText={heroCta}
-        ctaHref={heroCtaHref}
-        whatsappHref={getWhatsAppUrl(whatsapp, quoteMessage())}
-        searchQuestion={searchQuestion}
-        searchTerms={searchTerms}
-        products={hotspotProducts}
-      />
+      <section className="relative w-full h-[100dvh]">
+        <HeroSlider
+          slides={heroSlides}
+          title={heroTitle}
+          subtitle={settings.hero?.subtitle || undefined}
+          ctaText={heroCta}
+          ctaHref={heroCtaHref}
+          whatsappHref={getWhatsAppUrl(whatsapp, quoteMessage())}
+          searchQuestion={searchQuestion}
+          searchTerms={searchTerms}
+          products={hotspotProducts}
+        />
+      </section>
 
-      {/* ===== 1.25 Liens rapides (sous la recherche épinglée) ===== */}
+      {/* ===== 1.25 Recherche accueil (barre sticky animée + liens rapides) ===== */}
       {searchEnabled && (
-        <div className="max-w-7xl mx-auto px-4 pt-4 pb-6">
-          <HomeQuickLinks links={quickLinks} />
-        </div>
+        <>
+          <div className="sticky top-[var(--topbar-height)] z-30 bg-[var(--color-bg-primary)]">
+            <div className="max-w-7xl mx-auto px-4 py-3">
+              <HomeSearchBar question={searchQuestion} terms={searchTerms} />
+            </div>
+          </div>
+          <div className="max-w-7xl mx-auto px-4 pb-6">
+            <HomeQuickLinks links={quickLinks} />
+          </div>
+        </>
       )}
 
       {/* ===== 1.75 Vente flash (slide rouge, indépendant — juste avant la sélection) ===== */}
