@@ -95,6 +95,10 @@ export default async function RootLayout({
 
   return (
     <html lang="fr" data-scroll-behavior="smooth" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://yqioyfuxviiximembver.supabase.co" />
+        <link rel="dns-prefetch" href="https://yqioyfuxviiximembver.supabase.co" />
+      </head>
       <body className="min-h-screen flex flex-col">
         <ContentEditProvider initialContent={contentMap}>
         <Providers categories={catalog} remises={settings.remises}>

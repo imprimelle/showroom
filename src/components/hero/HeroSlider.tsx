@@ -186,6 +186,7 @@ export function HeroSlider({
                 loading={i === 0 ? "eager" : "lazy"}
                 fetchPriority={i === 0 ? "high" : "low"}
                 videoPreload={i === 0 ? "metadata" : "none"}
+                sizes="100vw"
                 className="absolute inset-0 w-full h-full object-cover"
               />
 

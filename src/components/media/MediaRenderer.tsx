@@ -22,6 +22,8 @@ interface MediaRendererProps {
   fetchPriority?: "high" | "low" | "auto";
   /** `preload` natif de la <video> (default "none" — ne télécharge pas avant lecture). */
   videoPreload?: "none" | "metadata" | "auto";
+  /** Attribut `sizes` (ex. "100vw") → active le `srcset` responsif sur les images. */
+  sizes?: string;
 }
 
 /**
@@ -40,6 +42,7 @@ export function MediaRenderer({
   loading = "lazy",
   fetchPriority = "auto",
   videoPreload = "none",
+  sizes,
 }: MediaRendererProps) {
   const isVideo = type === "video" || (type !== "image" && isVideoUrl(url));
 
@@ -60,9 +63,19 @@ export function MediaRenderer({
     );
   }
 
+  // srcset responsif (même ratio, plusieurs largeurs) — uniquement si `sizes` est fourni.
+  const srcSet =
+    sizes && !isVideo && imgHeight != null
+      ? [480, 768, 1200, 1600]
+          .map((w) => `${imgProxyUrl(url, w, Math.round((imgHeight / imgWidth) * w))} ${w}w`)
+          .join(", ")
+      : undefined;
+
   return (
     <img
       src={imgProxyUrl(url, imgWidth, imgHeight)}
+      srcSet={srcSet}
+      sizes={sizes}
       alt={alt}
       loading={loading}
       fetchPriority={fetchPriority}
