@@ -125,6 +125,12 @@ export interface MediaItem {
   type: 'image' | 'video';
   url: string;
   alt?: string;
+  /**
+   * Image d'attente (affiche) d'une vidéo — affichée instantanément pendant que la
+   * vidéo se télécharge. Posée automatiquement à l'upload (1re frame en WebP), mais
+   * peut être saisie/remplacée depuis l'admin.
+   */
+  poster?: string;
   /** Contenu optionnel par slide (utilisé par le hero) — repli sur les réglages globaux. */
   title?: string;
   subtitle?: string;

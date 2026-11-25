@@ -181,12 +181,13 @@ export function HeroSlider({
                 url={s.url}
                 alt={s.alt}
                 type={s.type}
+                posterUrl={s.poster}
                 imgWidth={1200}
                 imgHeight={1600}
                 loading={i === 0 ? "eager" : "lazy"}
                 fetchPriority={i === 0 ? "high" : "low"}
-                videoPreload={i === active ? "metadata" : "none"}
-                autoPlay={i === active}
+                playInView
+                autoPlay
                 sizes="100vw"
                 className="absolute inset-0 w-full h-full object-cover"
               />

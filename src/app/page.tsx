@@ -180,6 +180,12 @@ export default async function HomePage() {
                     <MediaRenderer
                       url={s.video.url}
                       type="video"
+                      posterUrl={s.video.poster}
+                      imgWidth={1280}
+                      imgHeight={720}
+                      playInView
+                      autoPlay
+                      videoPreload="none"
                       className="w-full aspect-video object-cover"
                     />
                   )}
