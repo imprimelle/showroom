@@ -45,17 +45,12 @@ export function Providers({
     return null;
   });
 
-  // Détection de la devise (pays du visiteur) — client uniquement, différée en
-  // idle pour ne pas concurrencer l'hydratation ni le LCP. Les prix s'affichent
-  // d'abord en FCFA puis se mettent à jour (comportement inchangé).
+  // Détection de la devise (pays du visiteur) — client uniquement.
+  // Lancée immédiatement : le re-render des prix se fond dans l'hydratation.
+  // (Différer en idle le faisait émerger comme long task isolée à ~7–10 s,
+  // faisant exploser le TBT.)
   useEffect(() => {
-    const run = () => useCurrencyStore.getState().init();
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(run, { timeout: 4000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = window.setTimeout(run, 1500);
-    return () => window.clearTimeout(id);
+    useCurrencyStore.getState().init();
   }, []);
 
   return (
