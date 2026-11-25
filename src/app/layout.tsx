@@ -23,6 +23,7 @@ import { getPublishedProducts } from "@/lib/products";
 import { resolveSocialProofConfig } from "@/lib/social-proof";
 import { normalizePhone } from "@/lib/utils";
 import { resolveCategories } from "@/lib/categories";
+import { imgProxyUrl } from "@/lib/images";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -93,11 +94,23 @@ export default async function RootLayout({
   const products = await getPublishedProducts().catch(() => []);
   const socialProof = resolveSocialProofConfig(settings.social_proof);
 
+  // Visuel du premier slide du hero → préchargé en priorité haute (LCP).
+  // Pour une slide vidéo, c'est le poster qui est préchargé : le <video poster>
+  // n'a pas de fetchpriority=high natif (contrairement à un <img fetchPriority>).
+  const heroFirst = settings.hero?.slides?.[0];
+  const heroLcpImage =
+    heroFirst?.type === "video" && heroFirst.poster
+      ? imgProxyUrl(heroFirst.poster, 1200, 1600)
+      : null;
+
   return (
     <html lang="fr" data-scroll-behavior="smooth" className={`${inter.variable} ${plusJakarta.variable} ${jetbrainsMono.variable} ${playfair.variable}`}>
       <head>
         <link rel="preconnect" href="https://yqioyfuxviiximembver.supabase.co" />
         <link rel="dns-prefetch" href="https://yqioyfuxviiximembver.supabase.co" />
+        {heroLcpImage && (
+          <link rel="preload" as="image" href={heroLcpImage} fetchPriority="high" />
+        )}
       </head>
       <body className="min-h-screen flex flex-col">
         <ContentEditProvider initialContent={contentMap}>

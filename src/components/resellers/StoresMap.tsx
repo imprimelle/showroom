@@ -7,6 +7,10 @@ import type { PublicStore } from "@/types";
  * Carte des points de vente partenaires (Leaflet + tuiles OSM).
  * Chargée côté client uniquement (`ssr:false` via next/dynamic dans le parent).
  * Aucune clé API requise.
+ *
+ * 🚀 Optimisation : la carte (et donc Leaflet + les tuiles OSM) n'est initialisée
+ * que lorsqu'elle approche du viewport (400 px avant), pour ne pas coûter
+ * de téléchargement/CPU au chargement initial de la page.
  */
 
 interface StoresMapProps {
@@ -17,8 +21,27 @@ export default function StoresMap({ stores }: StoresMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const [ready, setReady] = useState(false);
+  const [inView, setInView] = useState(false);
+
+  // N'initialise la carte que lorsqu'elle s'approche du viewport.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "400px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
+    if (!inView) return;
     let cancelled = false;
     let map: any = null;
     let L: any = null;
@@ -94,7 +117,7 @@ export default function StoresMap({ stores }: StoresMapProps) {
       }
       mapRef.current = null;
     };
-  }, [stores]);
+  }, [stores, inView]);
 
   return (
     <div
