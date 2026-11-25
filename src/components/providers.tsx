@@ -50,13 +50,12 @@ export function Providers({
   // d'abord en FCFA puis se mettent à jour (comportement inchangé).
   useEffect(() => {
     const run = () => useCurrencyStore.getState().init();
-    let handle: number;
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      handle = window.requestIdleCallback(run, { timeout: 4000 });
-      return () => window.cancelIdleCallback(handle);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
     }
-    handle = window.setTimeout(run, 1500);
-    return () => window.clearTimeout(handle);
+    const id = window.setTimeout(run, 1500);
+    return () => window.clearTimeout(id);
   }, []);
 
   return (
