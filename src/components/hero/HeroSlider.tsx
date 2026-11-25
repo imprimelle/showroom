@@ -181,7 +181,7 @@ export function HeroSlider({
                 url={s.url}
                 alt={s.alt}
                 type={s.type}
-                posterUrl={s.poster}
+                posterUrl={i === active ? s.poster : undefined}
                 imgWidth={1200}
                 imgHeight={1600}
                 loading={i === 0 ? "eager" : "lazy"}
