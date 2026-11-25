@@ -5,7 +5,7 @@ import { CATEGORIES, resolveFamily } from "@/lib/categories";
 import { ProductSlider } from "@/components/product/ProductSlider";
 import { HeroSlider } from "@/components/hero/HeroSlider";
 import { MediaRenderer } from "@/components/media/MediaRenderer";
-import { ChoiceGuide } from "@/components/decision/ChoiceGuide";
+import { LazyChoiceGuide } from "@/components/decision/LazyChoiceGuide";
 import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { EditableText } from "@/components/admin/content/EditableText";
@@ -250,8 +250,12 @@ export default async function HomePage() {
             {realisationImages.map((p) => (
               <Link key={p.id} href={`/collection/${p.slug}`} className="relative aspect-square rounded-2xl overflow-hidden group">
                 <img
-                  src={imgProxyUrl(p.main_image_url, 600, 600)}
+                  src={imgProxyUrl(p.main_image_url, 400, 400)}
+                  srcSet={`${imgProxyUrl(p.main_image_url, 400, 400)} 400w, ${imgProxyUrl(p.main_image_url, 600, 600)} 600w, ${imgProxyUrl(p.main_image_url, 900, 900)} 900w`}
+                  sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
                   alt={p.name}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -277,7 +281,7 @@ export default async function HomePage() {
       )}
 
       {/* ===== 8. Besoin d'un conseil ? (guide de choix — avant « Devenir partenaire ») ===== */}
-      <ChoiceGuide products={products} />
+      <LazyChoiceGuide products={products} />
 
       {/* ===== 9. Partenaires (affiliation + point de vente + carte) ===== */}
       <PartnerSection />

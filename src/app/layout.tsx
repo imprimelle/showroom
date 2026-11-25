@@ -108,6 +108,11 @@ export default async function RootLayout({
       <head>
         <link rel="preconnect" href="https://yqioyfuxviiximembver.supabase.co" />
         <link rel="dns-prefetch" href="https://yqioyfuxviiximembver.supabase.co" />
+        {/* Géolocalisation (devise) : handshake démarré en avance, sinon payé
+            pendant la course au LCP (ipwho.is / ipapi.co / er-api). */}
+        <link rel="preconnect" href="https://ipwho.is" />
+        <link rel="preconnect" href="https://ipapi.co" />
+        <link rel="preconnect" href="https://open.er-api.com" />
         {heroLcpImage && (
           <link rel="preload" as="image" href={heroLcpImage} fetchPriority="high" />
         )}

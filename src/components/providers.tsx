@@ -45,9 +45,18 @@ export function Providers({
     return null;
   });
 
-  // Détection de la devise (pays du visiteur) — client uniquement.
+  // Détection de la devise (pays du visiteur) — client uniquement, différée en
+  // idle pour ne pas concurrencer l'hydratation ni le LCP. Les prix s'affichent
+  // d'abord en FCFA puis se mettent à jour (comportement inchangé).
   useEffect(() => {
-    useCurrencyStore.getState().init();
+    const run = () => useCurrencyStore.getState().init();
+    let handle: number;
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      handle = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback(handle);
+    }
+    handle = window.setTimeout(run, 1500);
+    return () => window.clearTimeout(handle);
   }, []);
 
   return (

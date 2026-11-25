@@ -1,8 +1,22 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Link2, Store, ArrowRight } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import StoresMap from "./StoresMap";
 import { getPublicStores, getAffiliateCount, AFFILIATE_BASE_COUNT } from "@/lib/resellers";
+
+// Carte Leaflet chargée côté client uniquement (code-split) : Leaflet + tuiles OSM
+// ne pèsent plus sur le chargement initial de la home. Le composant initialise déjà
+// la carte à l'approche du viewport (IntersectionObserver) — un placeholder neutre
+// occupe la place en attendant.
+const StoresMap = dynamic(() => import("./StoresMap"), {
+  ssr: false,
+  loading: () => (
+    <div
+      className="h-[360px] md:h-[440px] w-full rounded-2xl border border-[var(--color-border-default)] overflow-hidden bg-[var(--color-bg-tertiary)] animate-pulse"
+      aria-hidden="true"
+    />
+  ),
+});
 
 /**
  * Section unifiée « Partenaires » (fusionne « Devenir partenaire » + « Où nous trouver ») :
